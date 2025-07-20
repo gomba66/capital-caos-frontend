@@ -1,0 +1,134 @@
+import React from "react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Typography,
+  Box,
+} from "@mui/material";
+
+function formatDate(date) {
+  if (!date) return "-";
+  if (typeof date === "number") {
+    // ms timestamp
+    return new Date(date).toLocaleString();
+  }
+  if (typeof date === "string" && !isNaN(Date.parse(date))) {
+    return new Date(date).toLocaleString();
+  }
+  return date;
+}
+
+function formatNumber(val, decimals = 4) {
+  if (val === undefined || val === null || val === "") return "-";
+  const num = Number(val);
+  if (isNaN(num)) return val;
+  return num.toFixed(decimals);
+}
+
+export default function OperationsTable({ operations, title }) {
+  // Detect if open_trades format (Binance) or closed trades (tracker)
+  const isOpenTrades =
+    operations &&
+    operations.length > 0 &&
+    operations[0].positionAmt !== undefined;
+
+  return (
+    <>
+      <Typography variant="h6" gutterBottom>
+        {title}
+      </Typography>
+      <TableContainer component={Paper} sx={{ mb: 4 }}>
+        <Table size="small">
+          <TableHead>
+            <TableRow>
+              <TableCell>Symbol</TableCell>
+              <TableCell>Side</TableCell>
+              <TableCell>Size</TableCell>
+              <TableCell>Entry</TableCell>
+              <TableCell>{isOpenTrades ? "Unrealized PnL" : "PnL"}</TableCell>
+              <TableCell>{isOpenTrades ? "Leverage" : "Status"}</TableCell>
+              <TableCell>{isOpenTrades ? "Notional" : "Open date"}</TableCell>
+              <TableCell>
+                {isOpenTrades ? "Last Update" : "Close date"}
+              </TableCell>
+              <TableCell>TP Target</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {operations && operations.length > 0 ? (
+              operations.map((op, idx) => (
+                <TableRow key={idx}>
+                  <TableCell>{op.symbol || "-"}</TableCell>
+                  <TableCell>{op.side || op.positionSide || "-"}</TableCell>
+                  <TableCell>
+                    {formatNumber(op.size || op.positionAmt)}
+                  </TableCell>
+                  <TableCell>
+                    {formatNumber(op.entry || op.entryPrice)}
+                  </TableCell>
+                  <TableCell>
+                    {isOpenTrades
+                      ? formatNumber(op.unrealizedProfit)
+                      : formatNumber(op.pnl)}
+                  </TableCell>
+                  <TableCell>
+                    {isOpenTrades ? op.leverage || "-" : op.status || "-"}
+                  </TableCell>
+                  <TableCell>
+                    {isOpenTrades
+                      ? formatNumber(op.notional)
+                      : formatDate(op.timestamp || op.openTime)}
+                  </TableCell>
+                  <TableCell>
+                    {isOpenTrades
+                      ? formatDate(op.updateTime)
+                      : formatDate(op.closed_at || op.closeTime)}
+                  </TableCell>
+                  <TableCell>
+                    {op.take_profit_target ? (
+                      typeof op.take_profit_target === "object" ? (
+                        <Box>
+                          <Typography
+                            variant="body2"
+                            sx={{ fontWeight: 600, color: "#2de2e6" }}
+                          >
+                            {op.take_profit_target.ratio}x
+                          </Typography>
+                          {op.take_profit_target.value_usd && (
+                            <Typography variant="caption" color="textSecondary">
+                              (~${op.take_profit_target.value_usd})
+                            </Typography>
+                          )}
+                        </Box>
+                      ) : (
+                        <Typography
+                          variant="body2"
+                          sx={{ fontWeight: 600, color: "#2de2e6" }}
+                        >
+                          {op.take_profit_target}x
+                        </Typography>
+                      )
+                    ) : (
+                      "-"
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={9} align="center">
+                  No operations found.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </>
+  );
+}
