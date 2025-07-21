@@ -45,6 +45,21 @@ function formatUnrealizedProfit(val) {
   );
 }
 
+function formatClosedPnL(val) {
+  if (val === undefined || val === null || val === "") return "-";
+  const num = Number(val);
+  if (isNaN(num)) return val;
+  const isPositive = num > 0;
+  const isNegative = num < 0;
+  const color = isPositive ? "#2de2a6" : isNegative ? "#ff2e63" : undefined;
+  const sign = isPositive ? "+" : isNegative ? "-" : "";
+  return (
+    <span style={{ color, fontWeight: 600 }}>
+      {sign}${Math.abs(num).toFixed(2)}
+    </span>
+  );
+}
+
 function getSideStyle(side) {
   if (!side) return {};
   const s = side.toLowerCase();
@@ -208,7 +223,7 @@ export default function OperationsTable({ operations, title }) {
                   <TableCell>
                     {isOpenTrades
                       ? formatUnrealizedProfit(op.unrealizedProfit)
-                      : formatNumber(op.pnl)}
+                      : formatClosedPnL(op.pnl)}
                   </TableCell>
                   <TableCell>
                     {isOpenTrades ? op.leverage || "-" : op.status || "-"}
