@@ -127,7 +127,7 @@ export default function OperationsTable({ operations, title }) {
                   </TableCell>
                   <TableCell>
                     {isOpenTrades
-                      ? getDurationString(op.entryTime || op.openTime)
+                      ? getDurationString(op.updateTime)
                       : formatDate(op.timestamp || op.openTime)}
                   </TableCell>
                   <TableCell>
