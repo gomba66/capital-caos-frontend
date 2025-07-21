@@ -36,8 +36,11 @@ export default function Dashboard() {
   const [closedTrades, setClosedTrades] = useState([]);
   const [momentumPairs, setMomentumPairs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [lastUpdate, setLastUpdate] = useState(null);
 
+  // Auto-refresh cada 10 segundos
   useEffect(() => {
+    let isMounted = true;
     async function fetchAll() {
       setLoading(true);
       const [statsData, opsData, openData, momentumData] = await Promise.all([
@@ -46,13 +49,20 @@ export default function Dashboard() {
         getOpenTrades(),
         getMomentumPairs(),
       ]);
+      if (!isMounted) return;
       setStats(statsData);
       setClosedTrades(opsData?.closed || []);
       setOpenTrades(openData?.open_trades || []);
       setMomentumPairs(momentumData?.momentum_pairs || []);
+      setLastUpdate(new Date());
       setLoading(false);
     }
     fetchAll();
+    const id = setInterval(fetchAll, 10000);
+    return () => {
+      isMounted = false;
+      clearInterval(id);
+    };
   }, []);
 
   if (loading) {
@@ -85,6 +95,14 @@ export default function Dashboard() {
         }}
       >
         Trading Dashboard
+      </Typography>
+      <Typography
+        variant="caption"
+        color="secondary"
+        sx={{ mb: 2, display: "block" }}
+      >
+        Última actualización:{" "}
+        {lastUpdate ? lastUpdate.toLocaleTimeString() : "-"}
       </Typography>
       <Grid container spacing={3} mb={4}>
         {Object.entries(statLabels).map(([key, label]) => (
