@@ -40,7 +40,7 @@ function formatUnrealizedProfit(val) {
   const sign = isPositive ? "+" : isNegative ? "-" : "";
   return (
     <span style={{ color, fontWeight: 600 }}>
-      {sign}${Math.abs(num).toFixed(4)}
+      {sign}${Math.abs(num).toFixed(2)}
     </span>
   );
 }
