@@ -35,13 +35,22 @@ function formatUnrealizedProfit(val) {
   const num = Number(val);
   if (isNaN(num)) return val;
   const isPositive = num > 0;
-  const color = isPositive ? "#2de2a6" : num < 0 ? "#ff2e63" : undefined;
-  const sign = isPositive ? "+" : "";
+  const isNegative = num < 0;
+  const color = isPositive ? "#2de2a6" : isNegative ? "#ff2e63" : undefined;
+  const sign = isPositive ? "+" : isNegative ? "-" : "";
   return (
     <span style={{ color, fontWeight: 600 }}>
       {sign}${Math.abs(num).toFixed(4)}
     </span>
   );
+}
+
+function getSideStyle(side) {
+  if (!side) return {};
+  const s = side.toLowerCase();
+  if (s.includes("short")) return { color: "#ff2e63", fontWeight: 700 };
+  if (s.includes("long")) return { color: "#2de2a6", fontWeight: 700 };
+  return { fontWeight: 700 };
 }
 
 export default function OperationsTable({ operations, title }) {
@@ -62,14 +71,13 @@ export default function OperationsTable({ operations, title }) {
             <TableRow>
               <TableCell>Symbol</TableCell>
               <TableCell>Side</TableCell>
-              <TableCell>Size</TableCell>
               <TableCell>Entry</TableCell>
               <TableCell>{isOpenTrades ? "Unrealized PnL" : "PnL"}</TableCell>
               <TableCell>{isOpenTrades ? "Leverage" : "Status"}</TableCell>
-              <TableCell>{isOpenTrades ? "Notional" : "Open date"}</TableCell>
               <TableCell>
-                {isOpenTrades ? "Last Update" : "Close date"}
+                {isOpenTrades ? "Last Update" : "Open date"}
               </TableCell>
+              <TableCell>{isOpenTrades ? "" : "Close date"}</TableCell>
               <TableCell>TP Target</TableCell>
             </TableRow>
           </TableHead>
@@ -78,9 +86,8 @@ export default function OperationsTable({ operations, title }) {
               operations.map((op, idx) => (
                 <TableRow key={idx}>
                   <TableCell>{op.symbol || "-"}</TableCell>
-                  <TableCell>{op.side || op.positionSide || "-"}</TableCell>
-                  <TableCell>
-                    {formatNumber(op.size || op.positionAmt)}
+                  <TableCell style={getSideStyle(op.side || op.positionSide)}>
+                    {op.side || op.positionSide || "-"}
                   </TableCell>
                   <TableCell>
                     {formatNumber(op.entry || op.entryPrice)}
@@ -95,12 +102,12 @@ export default function OperationsTable({ operations, title }) {
                   </TableCell>
                   <TableCell>
                     {isOpenTrades
-                      ? formatNumber(op.notional)
+                      ? formatDate(op.updateTime)
                       : formatDate(op.timestamp || op.openTime)}
                   </TableCell>
                   <TableCell>
                     {isOpenTrades
-                      ? formatDate(op.updateTime)
+                      ? ""
                       : formatDate(op.closed_at || op.closeTime)}
                   </TableCell>
                   <TableCell>
@@ -114,7 +121,10 @@ export default function OperationsTable({ operations, title }) {
                             {op.take_profit_target.ratio}x
                           </Typography>
                           {op.take_profit_target.value_usd && (
-                            <Typography variant="caption" color="textSecondary">
+                            <Typography
+                              variant="caption"
+                              style={{ color: "#2de2a6" }}
+                            >
                               (~${op.take_profit_target.value_usd})
                             </Typography>
                           )}
