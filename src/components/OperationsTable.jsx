@@ -30,6 +30,20 @@ function formatNumber(val, decimals = 4) {
   return num.toFixed(decimals);
 }
 
+function formatUnrealizedProfit(val) {
+  if (val === undefined || val === null || val === "") return "-";
+  const num = Number(val);
+  if (isNaN(num)) return val;
+  const isPositive = num > 0;
+  const color = isPositive ? "#2de2a6" : num < 0 ? "#ff2e63" : undefined;
+  const sign = isPositive ? "+" : "";
+  return (
+    <span style={{ color, fontWeight: 600 }}>
+      {sign}${Math.abs(num).toFixed(4)}
+    </span>
+  );
+}
+
 export default function OperationsTable({ operations, title }) {
   // Detect if open_trades format (Binance) or closed trades (tracker)
   const isOpenTrades =
@@ -73,7 +87,7 @@ export default function OperationsTable({ operations, title }) {
                   </TableCell>
                   <TableCell>
                     {isOpenTrades
-                      ? formatNumber(op.unrealizedProfit)
+                      ? formatUnrealizedProfit(op.unrealizedProfit)
                       : formatNumber(op.pnl)}
                   </TableCell>
                   <TableCell>
