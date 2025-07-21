@@ -8,6 +8,9 @@ import {
   Tooltip,
   ResponsiveContainer,
   Legend,
+  ReferenceLine,
+  Area,
+  Dot,
 } from "recharts";
 import {
   Typography,
@@ -54,6 +57,10 @@ export default function EquityChart({ operations, showDrawdown = true }) {
   const [showEquity, setShowEquity] = useState(true);
   const [showDrawdownState, setShowDrawdown] = useState(true);
   const effectiveShowDrawdown = showDrawdown && showDrawdownState;
+
+  // Determinar color de la ReferenceLine según el último equity
+  const lastEquity = data.length ? data[data.length - 1].equity : 0;
+  const refLineColor = lastEquity >= 0 ? "#2de2e6" : "#ff2e63";
 
   if (!data.length) {
     return <Typography>No closed trades to display equity curve.</Typography>;
@@ -138,6 +145,14 @@ export default function EquityChart({ operations, showDrawdown = true }) {
                   axisLine={{ stroke: "#ff2e63" }}
                 />
               )}
+              {/* Línea horizontal en y=0, color dinámico, sin label */}
+              <ReferenceLine
+                y={0}
+                yAxisId="left"
+                stroke={refLineColor}
+                strokeDasharray="4 2"
+                ifOverflow="visible"
+              />
               <Tooltip
                 contentStyle={tooltipStyle}
                 labelStyle={{ color: "#2de2e6", fontWeight: 700 }}
@@ -154,15 +169,17 @@ export default function EquityChart({ operations, showDrawdown = true }) {
                 height={36}
                 wrapperStyle={{ color: "#fff" }}
               />
+              {/* Línea de equity única, siempre cyan */}
               {showEquity && (
                 <Line
                   yAxisId="left"
                   type="monotone"
                   dataKey="equity"
                   stroke="#2de2e6"
-                  strokeWidth={2}
+                  strokeWidth={3}
                   dot={false}
                   name="Equity"
+                  isAnimationActive={false}
                 />
               )}
               {effectiveShowDrawdown && (
