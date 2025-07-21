@@ -37,33 +37,61 @@ export default function Dashboard() {
   const [momentumPairs, setMomentumPairs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState(null);
+  const [prevOpenTrades, setPrevOpenTrades] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Auto-refresh cada 10 segundos
+  // Fetch global (stats, closed, momentum)
+  const fetchAll = async () => {
+    setRefreshing(true);
+    const [statsData, opsData, openData, momentumData] = await Promise.all([
+      getStats(),
+      getOperations(),
+      getOpenTrades(),
+      getMomentumPairs(),
+    ]);
+    setStats(statsData);
+    setClosedTrades(opsData?.closed || []);
+    setOpenTrades(openData?.open_trades || []);
+    setMomentumPairs(momentumData?.momentum_pairs || []);
+    setLastUpdate(new Date());
+    setRefreshing(false);
+    setPrevOpenTrades(openData?.open_trades || []);
+  };
+
+  // Primer fetch global al montar
+  useEffect(() => {
+    setLoading(true);
+    fetchAll().then(() => setLoading(false));
+    // eslint-disable-next-line
+  }, []);
+
+  // Auto-refresh solo de open trades cada 10s
   useEffect(() => {
     let isMounted = true;
-    async function fetchAll() {
-      setLoading(true);
-      const [statsData, opsData, openData, momentumData] = await Promise.all([
-        getStats(),
-        getOperations(),
-        getOpenTrades(),
-        getMomentumPairs(),
-      ]);
+    const fetchOpen = async () => {
+      const openData = await getOpenTrades();
       if (!isMounted) return;
-      setStats(statsData);
-      setClosedTrades(opsData?.closed || []);
-      setOpenTrades(openData?.open_trades || []);
-      setMomentumPairs(momentumData?.momentum_pairs || []);
-      setLastUpdate(new Date());
-      setLoading(false);
-    }
-    fetchAll();
-    const id = setInterval(fetchAll, 10000);
+      const newOpen = openData?.open_trades || [];
+      setOpenTrades(newOpen);
+      // Detectar si algún trade fue cerrado
+      const prevIds = new Set(
+        (prevOpenTrades || []).map((t) => t.symbol + t.side)
+      );
+      const newIds = new Set(newOpen.map((t) => t.symbol + t.side));
+      // Si algún id de prevOpenTrades ya no está en newOpen, refrescar todo
+      if ([...prevIds].some((id) => !newIds.has(id))) {
+        fetchAll();
+      } else {
+        setPrevOpenTrades(newOpen);
+      }
+    };
+    const id = setInterval(fetchOpen, 10000);
     return () => {
       isMounted = false;
       clearInterval(id);
     };
-  }, []);
+    // eslint-disable-next-line
+  }, [prevOpenTrades]);
 
   if (loading) {
     return (
@@ -103,6 +131,7 @@ export default function Dashboard() {
       >
         Última actualización:{" "}
         {lastUpdate ? lastUpdate.toLocaleTimeString() : "-"}
+        {refreshing && <span style={{ marginLeft: 8 }}>Actualizando...</span>}
       </Typography>
       <Grid container spacing={3} mb={4}>
         {Object.entries(statLabels).map(([key, label]) => (
