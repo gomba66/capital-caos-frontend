@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Table,
   TableBody,
@@ -84,6 +84,52 @@ export default function OperationsTable({ operations, title }) {
     operations.length > 0 &&
     operations[0].positionAmt !== undefined;
 
+  // Estado para ordenamiento
+  const [orderBy, setOrderBy] = useState(null);
+  const [order, setOrder] = useState("asc");
+
+  // Función para ordenar
+  function handleSort(col) {
+    if (orderBy === col) {
+      setOrder(order === "asc" ? "desc" : "asc");
+    } else {
+      setOrderBy(col);
+      setOrder("asc");
+    }
+  }
+
+  function getComparator(col) {
+    return (a, b) => {
+      let aVal = a[col];
+      let bVal = b[col];
+      // Si es PnL, usar unrealizedProfit o pnl
+      if (col === "pnl") {
+        aVal = isOpenTrades ? Number(a.unrealizedProfit) : Number(a.pnl);
+        bVal = isOpenTrades ? Number(b.unrealizedProfit) : Number(b.pnl);
+      }
+      if (aVal === undefined || aVal === null) return 1;
+      if (bVal === undefined || bVal === null) return -1;
+      if (typeof aVal === "string" && !isNaN(Number(aVal))) aVal = Number(aVal);
+      if (typeof bVal === "string" && !isNaN(Number(bVal))) bVal = Number(bVal);
+      if (aVal < bVal) return order === "asc" ? -1 : 1;
+      if (aVal > bVal) return order === "asc" ? 1 : -1;
+      return 0;
+    };
+  }
+
+  let sortedOps = operations;
+  if (orderBy) {
+    sortedOps = [...operations].sort(getComparator(orderBy));
+  }
+
+  // Sumatoria de PnL para open trades
+  const totalPnL = isOpenTrades
+    ? operations.reduce(
+        (acc, op) => acc + (Number(op.unrealizedProfit) || 0),
+        0
+      )
+    : null;
+
   return (
     <>
       <Typography variant="h6" gutterBottom>
@@ -93,22 +139,64 @@ export default function OperationsTable({ operations, title }) {
         <Table size="small">
           <TableHead>
             <TableRow>
-              <TableCell>Symbol</TableCell>
-              <TableCell>Side</TableCell>
-              <TableCell>Entry</TableCell>
-              <TableCell>{isOpenTrades ? "Unrealized PnL" : "PnL"}</TableCell>
-              <TableCell>{isOpenTrades ? "Leverage" : "Status"}</TableCell>
-              <TableCell>
+              <TableCell
+                onClick={() => handleSort("symbol")}
+                style={{ cursor: "pointer" }}
+              >
+                Symbol
+              </TableCell>
+              <TableCell
+                onClick={() => handleSort("side")}
+                style={{ cursor: "pointer" }}
+              >
+                Side
+              </TableCell>
+              <TableCell
+                onClick={() => handleSort("entryPrice")}
+                style={{ cursor: "pointer" }}
+              >
+                Entry
+              </TableCell>
+              <TableCell
+                onClick={() => handleSort("pnl")}
+                style={{ cursor: "pointer" }}
+              >
+                {isOpenTrades ? "Unrealized PnL" : "PnL"}
+              </TableCell>
+              <TableCell
+                onClick={() => handleSort(isOpenTrades ? "leverage" : "status")}
+                style={{ cursor: "pointer" }}
+              >
+                {isOpenTrades ? "Leverage" : "Status"}
+              </TableCell>
+              <TableCell
+                onClick={() =>
+                  handleSort(isOpenTrades ? "updateTime" : "timestamp")
+                }
+                style={{ cursor: "pointer" }}
+              >
                 {isOpenTrades ? "Tiempo abierto" : "Open date"}
               </TableCell>
-              <TableCell>{isOpenTrades ? "" : "Close date"}</TableCell>
-              {!isOpenTrades && <TableCell>Resultado</TableCell>}
+              <TableCell
+                onClick={() => handleSort(isOpenTrades ? "" : "closeTime")}
+                style={{ cursor: isOpenTrades ? undefined : "pointer" }}
+              >
+                {isOpenTrades ? "" : "Close date"}
+              </TableCell>
+              {!isOpenTrades && (
+                <TableCell
+                  onClick={() => handleSort("pnl")}
+                  style={{ cursor: "pointer" }}
+                >
+                  Resultado
+                </TableCell>
+              )}
               {isOpenTrades && <TableCell>TP Target</TableCell>}
             </TableRow>
           </TableHead>
           <TableBody>
-            {operations && operations.length > 0 ? (
-              operations.map((op, idx) => (
+            {sortedOps && sortedOps.length > 0 ? (
+              sortedOps.map((op, idx) => (
                 <TableRow key={idx}>
                   <TableCell>{op.symbol || "-"}</TableCell>
                   <TableCell style={getSideStyle(op.side || op.positionSide)}>
@@ -179,6 +267,29 @@ export default function OperationsTable({ operations, title }) {
               </TableRow>
             )}
           </TableBody>
+          {/* Total PnL para open trades */}
+          {isOpenTrades && (
+            <tfoot>
+              <TableRow>
+                <TableCell colSpan={3} />
+                <TableCell
+                  style={{
+                    fontWeight: 700,
+                    color:
+                      totalPnL > 0
+                        ? "#2de2a6"
+                        : totalPnL < 0
+                        ? "#ff2e63"
+                        : undefined,
+                  }}
+                >
+                  Total: {totalPnL > 0 ? "+" : totalPnL < 0 ? "-" : ""}$
+                  {Math.abs(totalPnL).toFixed(2)}
+                </TableCell>
+                <TableCell colSpan={5} />
+              </TableRow>
+            </tfoot>
+          )}
         </Table>
       </TableContainer>
     </>
