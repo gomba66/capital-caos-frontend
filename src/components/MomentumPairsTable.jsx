@@ -21,6 +21,20 @@ function formatTime(time) {
   return time;
 }
 
+function formatVolume(volume) {
+  if (volume === undefined || volume === null || volume === "") return "-";
+  const absVol = Math.abs(Number(volume));
+  if (absVol >= 1_000_000_000) {
+    return (volume / 1_000_000_000).toFixed(1) + "B";
+  } else if (absVol >= 1_000_000) {
+    return (volume / 1_000_000).toFixed(1) + "M";
+  } else if (absVol >= 1_000) {
+    return (volume / 1_000).toFixed(1) + "K";
+  } else {
+    return Number(volume).toFixed(1);
+  }
+}
+
 export default function MomentumPairsTable({ pairs, title, openTrades = [] }) {
   // Crear un set de símbolos que están en open trades para búsqueda rápida
   const openTradeSymbols = new Set(
@@ -81,7 +95,9 @@ export default function MomentumPairsTable({ pairs, title, openTrades = [] }) {
                         : "-"}
                     </TableCell>
                     <TableCell>
-                      {pair.volume !== undefined ? pair.volume : "-"}
+                      {pair.volume !== undefined
+                        ? formatVolume(pair.volume)
+                        : "-"}
                     </TableCell>
                     <TableCell>
                       {pair.type ||

@@ -216,6 +216,11 @@ export default function OperationsTable({ operations, title }) {
                   <TableCell>{op.symbol || "-"}</TableCell>
                   <TableCell style={getSideStyle(op.side || op.positionSide)}>
                     {op.side || op.positionSide || "-"}
+                    {op.protected && (
+                      <span title="Protected" style={{ marginLeft: 6 }}>
+                        🔒
+                      </span>
+                    )}
                   </TableCell>
                   <TableCell>
                     {formatNumber(op.entry || op.entryPrice)}
@@ -248,14 +253,18 @@ export default function OperationsTable({ operations, title }) {
                               variant="body2"
                               sx={{ fontWeight: 600, color: "#2de2e6" }}
                             >
-                              {op.take_profit_target.ratio}x
+                              {Number(op.take_profit_target.ratio).toFixed(2)}x{" "}
                             </Typography>
                             {op.take_profit_target.value_usd && (
                               <Typography
                                 variant="caption"
                                 style={{ color: "#2de2a6" }}
                               >
-                                (~${op.take_profit_target.value_usd})
+                                (~$
+                                {Number(
+                                  op.take_profit_target.value_usd
+                                ).toFixed(2)}
+                                )
                               </Typography>
                             )}
                           </Box>
@@ -264,7 +273,7 @@ export default function OperationsTable({ operations, title }) {
                             variant="body2"
                             sx={{ fontWeight: 600, color: "#2de2e6" }}
                           >
-                            {op.take_profit_target}x
+                            {Number(op.take_profit_target).toFixed(2)}x{" "}
                           </Typography>
                         )
                       ) : (
