@@ -61,15 +61,13 @@ export default function LongShortWinLossChart({ operations }) {
 
   if (!hasData) {
     return (
-      <Typography>
-        No hay operaciones cerradas para mostrar long/short win/loss.
-      </Typography>
+      <Typography>No closed trades to display long/short win/loss.</Typography>
     );
   }
 
   return (
     <Box mb={4} display="flex" justifyContent="center">
-      <Box width={{ xs: "100%", sm: 400, md: 450 }}>
+      <Box width={{ xs: "100%", sm: 350, md: 400 }}>
         <Typography variant="h6" gutterBottom>
           Long vs Short Win/Loss
         </Typography>
@@ -78,8 +76,8 @@ export default function LongShortWinLossChart({ operations }) {
           color="secondary"
           sx={{ mb: 1, display: "block" }}
         >
-          Esta gráfica muestra el número de operaciones ganadoras y perdedoras,
-          separadas por tipo de operación (Long/Short).
+          This chart shows the number of winning and losing trades, separated by
+          trade type (Long/Short).
         </Typography>
         <Paper sx={{ p: 2, background: "#181c2f" }}>
           <ResponsiveContainer width="100%" minWidth={250} height={250}>
@@ -103,29 +101,63 @@ export default function LongShortWinLossChart({ operations }) {
                 labelStyle={{ color: "#2de2e6", fontWeight: 700 }}
                 itemStyle={{ color: "#fff" }}
                 cursor={false}
-                formatter={(value, name) => [
-                  value,
-                  name === "win" ? "Ganadas" : "Perdidas",
-                ]}
+                formatter={(value, name) => {
+                  if (name && name.toLowerCase().includes("win")) {
+                    return [value, "Wins"];
+                  }
+                  if (name && name.toLowerCase().includes("loss")) {
+                    return [value, "Losses"];
+                  }
+                  return [value, name];
+                }}
+                itemSorter={(item) => (item.dataKey === "win" ? -1 : 1)}
               />
+              {/* Barra de ganadas */}
               <Bar
                 dataKey="win"
-                name="Ganadas"
-                fill="#2de2a6"
+                name="Wins"
                 radius={[6, 6, 0, 0]}
+                activeBar={{
+                  style: {
+                    filter:
+                      "drop-shadow(0 0 16px #fff) drop-shadow(0 0 12px #2de2e6)",
+                    opacity: 1,
+                  },
+                }}
               >
+                {data.map((entry, idx) => (
+                  <Cell
+                    key={`cell-win-${idx}`}
+                    fill="#2de2e6"
+                    style={{ filter: `drop-shadow(0 0 8px #2de2e6)` }}
+                  />
+                ))}
                 <LabelList
                   dataKey="win"
                   position="top"
                   style={{ fill: "#fff", fontWeight: 700 }}
                 />
               </Bar>
+              {/* Barra de perdidas */}
               <Bar
                 dataKey="loss"
-                name="Perdidas"
-                fill="#ff2e63"
+                name="Losses"
                 radius={[6, 6, 0, 0]}
+                activeBar={{
+                  style: {
+                    filter:
+                      "drop-shadow(0 0 16px #fff) drop-shadow(0 0 12px #ff2e63)",
+                    opacity: 1,
+                  },
+                }}
               >
+                {data.map((entry, idx) => (
+                  <Cell
+                    key={`cell-loss-${idx}`}
+                    fill="#ff2e63"
+                    style={{ filter: `drop-shadow(0 0 8px #ff2e63)` }}
+                  />
+                ))}
                 <LabelList
                   dataKey="loss"
                   position="top"

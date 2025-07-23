@@ -5,6 +5,7 @@ import EquityChart from "../components/charts/EquityChart";
 import PnLHistogram from "../components/charts/PnLHistogram";
 import WinrateChart from "../components/charts/WinrateChart";
 import LongShortWinLossChart from "../components/charts/LongShortWinLossChart";
+import ProfitFactorChart from "../components/charts/ProfitFactorChart";
 
 export default function Charts() {
   const [closedTrades, setClosedTrades] = useState([]);
@@ -39,7 +40,9 @@ export default function Charts() {
         Advanced Charts
       </Typography>
       <EquityChart operations={closedTrades} showDrawdown={true} />
+
       <Box display="flex" flexWrap="wrap" gap={4} justifyContent="center">
+        <ProfitFactorChart operations={closedTrades} />
         <PnLHistogram operations={closedTrades} />
         <WinrateChart operations={closedTrades} />
         <LongShortWinLossChart operations={closedTrades} />

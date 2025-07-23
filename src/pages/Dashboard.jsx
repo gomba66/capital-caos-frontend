@@ -18,6 +18,7 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import OperationsTable from "../components/OperationsTable";
 import MomentumPairsTable from "../components/MomentumPairsTable";
 import EquityChart from "../components/charts/EquityChart";
+import ProfitFactorChart from "../components/charts/ProfitFactorChart";
 
 const statLabels = {
   winrate: "Winrate (%)",
@@ -134,22 +135,91 @@ export default function Dashboard() {
         {refreshing && <span style={{ marginLeft: 8 }}>Actualizando...</span>}
       </Typography>
       <Grid container spacing={3} mb={4}>
-        {Object.entries(statLabels).map(([key, label]) => (
-          <Grid item xs={12} sm={6} md={3} key={key}>
-            <Card>
-              <CardContent>
-                <Typography variant="subtitle2" color="textSecondary">
+        {Object.entries(statLabels).map(([key, label]) => {
+          // Colores para los valores destacados
+          let valueColor = "#fff";
+          let displayValue = stats[key] !== undefined ? stats[key] : "-";
+          let textShadow = undefined;
+          if (key === "winrate" || key === "wins" || key === "average_pnl")
+            valueColor = "#2de2e6";
+          if (key === "losses" || key === "max_loss_streak")
+            valueColor = "#ff2e63";
+          if (key === "total_pnl") {
+            const pnl = Number(stats[key]);
+            if (!isNaN(pnl)) {
+              valueColor = pnl > 0 ? "#27ff7e" : pnl < 0 ? "#ff2e63" : "#fff";
+              textShadow = `0 0 12px ${valueColor}`;
+              displayValue = `${pnl > 0 ? "+" : ""}$${pnl.toFixed(2)}`;
+            } else {
+              displayValue = "-";
+              valueColor = "#fff";
+            }
+          } else {
+            textShadow = `0 0 12px ${valueColor}`;
+          }
+          return (
+            <Grid item xs={12} sm={6} md={3} key={key}>
+              <Box
+                sx={{
+                  background: "rgba(24,28,47,0.95)",
+                  borderRadius: 3,
+                  boxShadow: `0 0 16px ${valueColor}33`,
+                  p: 3,
+                  textAlign: "center",
+                  minHeight: 110,
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  transition: "box-shadow 0.2s",
+                  "&:hover": {
+                    boxShadow: `0 0 32px ${valueColor}99`,
+                  },
+                }}
+              >
+                <Typography
+                  variant="subtitle2"
+                  sx={{
+                    color: "#aaa",
+                    letterSpacing: 1,
+                    textTransform: "uppercase",
+                    fontWeight: 600,
+                    mb: 1,
+                  }}
+                >
                   {label}
                 </Typography>
-                <Typography variant="h5">
-                  {stats[key] !== undefined ? stats[key] : "-"}
+                <Typography
+                  variant="h4"
+                  sx={{
+                    color: valueColor,
+                    fontWeight: 700,
+                    textShadow,
+                    fontSize: "2.2rem",
+                    lineHeight: 1.1,
+                  }}
+                >
+                  {displayValue}
                 </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
+              </Box>
+            </Grid>
+          );
+        })}
       </Grid>
-      <EquityChart operations={closedTrades} showDrawdown={false} />
+      <Grid container spacing={2} direction="row">
+        <Grid item sx={{ minWidth: "66%", maxWidth: "78%" }}>
+          <EquityChart operations={closedTrades} showDrawdown={false} />
+        </Grid>
+        <Grid
+          item
+          sx={{
+            minWidth: "32%",
+            maxWidth: "32%",
+          }}
+        >
+          <ProfitFactorChart operations={closedTrades} hideDescription />
+        </Grid>
+      </Grid>
       <OperationsTable operations={openTrades} title="Open Trades" />
       <Accordion sx={{ mb: 2 }}>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
