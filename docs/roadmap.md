@@ -1,167 +1,167 @@
 # Frontend Roadmap - Capital Caos Trading Dashboard
 
-## 🎯 Estado Actual
+## 🎯 Current State
 
-- ✅ Dashboard básico con estadísticas
-- ✅ Gráficos de equity, PnL, winrate y drawdown
-- ✅ Tablas de operaciones y momentum pairs
-- ✅ TP targets con cálculo en USD
-- ✅ Tema cyberpunk con colores neon
-- ✅ Sidebar con navegación
-- ✅ Resaltado de pares en open trades
+- ✅ Basic dashboard with statistics
+- ✅ Equity, PnL, winrate, and drawdown charts
+- ✅ Operations and momentum pairs tables
+- ✅ TP targets with USD calculation
+- ✅ Cyberpunk theme with neon colors
+- ✅ Sidebar navigation
+- ✅ Highlighting of pairs in open trades
 
-## 🚀 Próximas Mejoras
+## 🚀 Upcoming Improvements
 
-### 1. 📊 Gráficos y Visualizaciones Avanzadas
+### 1. 📊 Advanced Charts and Visualizations
 
-**Prioridad: Alta**
+**Priority: High**
 
-- [ ] **Gráfico de distribución de PnL por timeframe**
+- [ ] **PnL Distribution Chart by Timeframe**
 
-  - Distribución diaria, semanal, mensual
-  - Histogramas interactivos con filtros
-  - Análisis de estacionalidad
+  - Daily, weekly, monthly distribution
+  - Interactive histograms with filters
+  - Seasonality analysis
 
-- [ ] **Gráfico de correlación entre pares**
+- [ ] **Pair Correlation Chart**
 
-  - Matriz de correlación de momentum pairs
-  - Heatmap interactivo
-  - Identificación de pares correlacionados
+  - Correlation matrix of momentum pairs
+  - Interactive heatmap
+  - Identification of correlated pairs
 
-- [ ] **Gráfico de hit rate por ratio de TP**
+- [ ] **Hit Rate Chart by TP Ratio**
 
-  - Análisis de qué ratios funcionan mejor
-  - Distribución de resultados por ratio
-  - Optimización de ratios dinámicos
+  - Analysis of which ratios work best
+  - Distribution of results by ratio
+  - Dynamic ratio optimization
 
-- [ ] **Gráfico de volatilidad por par**
-  - ATR (Average True Range) visual
-  - Comparación de volatilidad entre pares
-  - Alertas de alta volatilidad
+- [ ] **Volatility Chart by Pair**
+  - ATR (Average True Range) visualization
+  - Volatility comparison between pairs
+  - High volatility alerts
 
-### 2. ⚡ Funcionalidades de Trading en Tiempo Real
+### 2. ⚡ Real-Time Trading Features
 
-**Prioridad: Alta**
+**Priority: High**
 
-- [ ] **Alertas en tiempo real**
+- [ ] **Real-Time Alerts**
 
-  - Notificaciones cuando se alcance TP target
-  - Alertas de drawdown crítico
-  - Notificaciones de nuevos momentum pairs
+  - Notifications when TP target is reached
+  - Critical drawdown alerts
+  - New momentum pairs notifications
 
-- [ ] **Auto-refresh inteligente**
+- [ ] **Smart Auto-Refresh**
 
-  - Refresh automático cada 30 segundos
-  - Indicador de última actualización
-  - Configuración de intervalos
+  - Automatic refresh every 30 seconds
+  - Last update indicator
+  - Configurable intervals
 
-- [ ] **WebSocket integration**
+- [ ] **WebSocket Integration**
 
-  - Datos en tiempo real desde Binance
-  - Actualizaciones instantáneas de precios
-  - Notificaciones push
+  - Real-time data from Binance
+  - Instant price updates
+  - Push notifications
 
-- [ ] **Filtros avanzados**
-  - Filtro por símbolo, timeframe, resultado
-  - Búsqueda en tiempo real
-  - Filtros guardados
+- [ ] **Advanced Filters**
+  - Filter by symbol, timeframe, result
+  - Real-time search
+  - Saved filters
 
-### 3. 📈 Análisis Avanzado y Métricas
+### 3. 📈 Advanced Analysis and Metrics
 
-**Prioridad: Media**
+**Priority: Medium**
 
-- [ ] **Métricas de riesgo**
+- [ ] **Risk Metrics**
 
   - Sharpe ratio
   - Maximum drawdown
   - Sortino ratio
   - Calmar ratio
 
-- [ ] **Análisis de patrones**
+- [ ] **Pattern Analysis**
 
-  - Patrones de entrada/salida
-  - Análisis de horarios óptimos
-  - Correlación con eventos del mercado
+  - Entry/exit patterns
+  - Optimal timing analysis
+  - Correlation with market events
 
-- [ ] **Backtesting visual**
+- [ ] **Visual Backtesting**
 
-  - Simulación de estrategias
-  - Comparación de parámetros
-  - Visualización de resultados
+  - Strategy simulation
+  - Parameter comparison
+  - Results visualization
 
-- [ ] **Análisis de performance por par**
-  - Win rate por símbolo
-  - PnL promedio por par
-  - Tiempo promedio en posición
+- [ ] **Pair Performance Analysis**
+  - Win rate by symbol
+  - Average PnL per pair
+  - Average time in position
 
-### 4. 🎨 UX/UI Mejoras
+### 4. 🎨 UX/UI Improvements
 
-**Prioridad: Media**
+**Priority: Medium**
 
-- [ ] **Tema personalizable**
+- [ ] **Customizable Theme**
 
-  - Toggle entre tema oscuro/claro
-  - Paletas de colores personalizables
-  - Modo high contrast
+  - Dark/light mode toggle
+  - Custom color palettes
+  - High contrast mode
 
-- [ ] **Dashboard personalizable**
+- [ ] **Customizable Dashboard**
 
-  - Drag & drop de widgets
-  - Layouts guardados
-  - Widgets configurables
+  - Drag & drop widgets
+  - Saved layouts
+  - Configurable widgets
 
-- [ ] **Responsive design mejorado**
+- [ ] **Improved Responsive Design**
 
-  - Optimización para móviles
+  - Mobile optimization
   - Tablet layout
   - Touch gestures
 
-- [ ] **Accesibilidad**
-  - Navegación por teclado
+- [ ] **Accessibility**
+  - Keyboard navigation
   - Screen reader support
   - High contrast mode
 
-### 5. 🔧 Integración y Configuración
+### 5. 🔧 Integration and Configuration
 
-**Prioridad: Baja**
+**Priority: Low**
 
-- [ ] **Configuración avanzada**
+- [ ] **Advanced Configuration**
 
-  - Parámetros de riesgo configurables
-  - Alertas personalizables
-  - Exportación de datos
+  - Configurable risk parameters
+  - Customizable alerts
+  - Data export
 
-- [ ] **Integración con servicios externos**
+- [ ] **External Service Integration**
 
   - Telegram notifications
   - Email alerts
   - Slack integration
 
-- [ ] **Exportación y reportes**
+- [ ] **Export and Reports**
 
   - PDF reports
   - CSV export
-  - Gráficos descargables
+  - Downloadable charts
 
-- [ ] **Multi-usuario support**
+- [ ] **Multi-User Support**
   - Login system
   - User preferences
   - Role-based access
 
-## 🛠️ Mejoras Técnicas
+## 🛠️ Technical Improvements
 
 ### Performance
 
-- [ ] Lazy loading de componentes
-- [ ] Memoización de cálculos pesados
-- [ ] Optimización de re-renders
-- [ ] Caching de datos
+- [ ] Component lazy loading
+- [ ] Heavy calculation memoization
+- [ ] Render optimization
+- [ ] Data caching
 
 ### Testing
 
-- [ ] Unit tests para componentes
+- [ ] Unit tests for components
 - [ ] Integration tests
-- [ ] E2E tests con Cypress
+- [ ] E2E tests with Cypress
 - [ ] Performance testing
 
 ### Deployment
@@ -169,42 +169,42 @@
 - [ ] CI/CD pipeline
 - [ ] Docker containerization
 - [ ] Environment-specific configs
-- [ ] Monitoring y logging
+- [ ] Monitoring and logging
 
-## 📅 Timeline Sugerido
+## 📅 Suggested Timeline
 
-### Fase 1 (1-2 semanas)
+### Phase 1 (1-2 weeks)
 
-- Auto-refresh de datos
-- Filtros básicos
-- Métricas de riesgo básicas
+- Data auto-refresh
+- Basic filters
+- Basic risk metrics
 
-### Fase 2 (2-3 semanas)
+### Phase 2 (2-3 weeks)
 
-- Gráficos avanzados
-- Alertas en tiempo real
+- Advanced charts
+- Real-time alerts
 - WebSocket integration
 
-### Fase 3 (3-4 semanas)
+### Phase 3 (3-4 weeks)
 
-- Dashboard personalizable
-- Análisis de patrones
-- Exportación de datos
+- Customizable dashboard
+- Pattern analysis
+- Data export
 
-### Fase 4 (4+ semanas)
+### Phase 4 (4+ weeks)
 
-- Multi-usuario
-- Integraciones externas
-- Optimizaciones avanzadas
+- Multi-user
+- External integrations
+- Advanced optimizations
 
-## 🎯 Métricas de Éxito
+## 🎯 Success Metrics
 
-- **Performance**: Tiempo de carga < 2 segundos
-- **Usabilidad**: 90% de tareas completadas sin ayuda
-- **Estabilidad**: 99.9% uptime
-- **Adopción**: Uso diario del dashboard
+- **Performance**: Load time < 2 seconds
+- **Usability**: 90% of tasks completed without help
+- **Stability**: 99.9% uptime
+- **Adoption**: Daily dashboard usage
 
 ---
 
-_Última actualización: [Fecha actual]_
-_Versión: 1.0.0_
+_Last updated: July 24, 2025_
+_Version: 1.0.0_
