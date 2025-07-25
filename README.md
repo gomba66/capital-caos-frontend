@@ -1,5 +1,7 @@
 # Capital Caos Frontend - Trading Dashboard
 
+> **Note:** This repository is intentionally public as it contains only the frontend (UI) code for the Capital Caos trading system. No sensitive data, API keys, or backend logic are present here. All backend and trading logic remain private and secure in the main repository.
+
 A visual dashboard for the Capital Caos algorithmic trading system. It allows you to view statistics, trades, equity charts, drawdown, winrate, and more, connecting to the backend via API.
 
 ---
