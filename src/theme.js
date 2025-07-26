@@ -60,13 +60,25 @@ const theme = createTheme({
       styleOverrides: {
         body: {
           background: "linear-gradient(135deg, #181c2f 0%, #2a174e 100%)",
+          backgroundAttachment: "fixed",
+          backgroundSize: "cover",
           minHeight: "100vh",
           padding: 0,
           margin: 0,
+          overflowX: "hidden",
+        },
+        html: {
+          height: "100%",
+          margin: 0,
+          padding: 0,
         },
         "#root": {
           padding: 0,
           margin: 0,
+          minHeight: "100vh",
+          background: "linear-gradient(135deg, #181c2f 0%, #2a174e 100%)",
+          backgroundAttachment: "fixed",
+          backgroundSize: "cover",
         },
       },
     },

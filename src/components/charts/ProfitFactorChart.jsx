@@ -14,12 +14,12 @@ export default function ProfitFactorChart({
 
   return (
     <Box
-      width={{ xs: "100%", sm: 350, md: 360 }}
+      // width="100%"
       mb={4}
       display="flex"
       justifyContent="center"
     >
-      <Box>
+      <Box sx={{ width: "100%", maxWidth: 400 }}>
         <Typography
           variant="h6"
           gutterBottom
@@ -27,6 +27,7 @@ export default function ProfitFactorChart({
             color: "#2de2e6",
             fontWeight: 700,
             textShadow: "0 0 8px #2de2e6",
+            textAlign: "left",
           }}
         >
           Profit Factor
@@ -35,7 +36,12 @@ export default function ProfitFactorChart({
           <Typography
             variant="caption"
             color="secondary"
-            sx={{ mb: 2, display: "block", color: "#2de2e6" }}
+            sx={{
+              mb: 2,
+              display: "block",
+              color: "#2de2e6",
+              textAlign: "left",
+            }}
           >
             Profit factor is the ratio between gross profits and gross losses. A
             value greater than 1 indicates a profitable system.
@@ -49,7 +55,7 @@ export default function ProfitFactorChart({
             boxShadow: "0 0 24px #2de2e633",
           }}
         >
-          <Grid container spacing={1} direction="column">
+          <Grid container spacing={2} direction="column">
             {/* Fila 1: Profit Factor Total */}
             <Grid item>
               <Box
@@ -61,7 +67,7 @@ export default function ProfitFactorChart({
                 }}
               >
                 <Typography variant="subtitle2" color="textSecondary">
-                  Profit Factor (Total)
+                  Total
                 </Typography>
                 <Typography
                   variant="h3"
@@ -80,10 +86,9 @@ export default function ProfitFactorChart({
               container
               spacing={1}
               direction="row"
-              alignItems="center"
               justifyContent="space-between"
             >
-              <Grid item xs={6} sx={{ width: "48.5%" }}>
+              <Grid item xs={6} sx={{ width: "47%" }}>
                 <Box
                   sx={{
                     background: "#2de2a6" + "22",
@@ -98,7 +103,7 @@ export default function ProfitFactorChart({
                   }}
                 >
                   <Typography variant="subtitle2" color="textSecondary">
-                    Profit Factor (Longs)
+                    Longs
                   </Typography>
                   <Typography
                     variant="h4"
@@ -112,7 +117,7 @@ export default function ProfitFactorChart({
                   </Typography>
                 </Box>
               </Grid>
-              <Grid item xs={6} sx={{ width: "48.5%" }}>
+              <Grid item xs={6} sx={{ width: "47%" }}>
                 <Box
                   sx={{
                     background: "#ff2e63" + "22",
@@ -127,7 +132,7 @@ export default function ProfitFactorChart({
                   }}
                 >
                   <Typography variant="subtitle2" color="textSecondary">
-                    Profit Factor (Shorts)
+                    Shorts
                   </Typography>
                   <Typography
                     variant="h4"

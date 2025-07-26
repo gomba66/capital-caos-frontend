@@ -157,8 +157,18 @@ export default function EquityChart({ operations, showDrawdown = true }) {
               labelStyle={{ color: "#2de2e6", fontWeight: 700 }}
               itemStyle={{ color: "#fff" }}
               formatter={(value, name) => [
-                value,
-                name === "equity" ? "Equity" : "Drawdown (%)",
+                name === "equity"
+                  ? `$${Number(value).toLocaleString(undefined, {
+                      maximumFractionDigits: 2,
+                    })}`
+                  : name === "drawdown"
+                  ? `${Number(value).toFixed(2)}%`
+                  : value,
+                name === "equity"
+                  ? "Equity"
+                  : name === "drawdown"
+                  ? "Drawdown (%)"
+                  : name,
               ]}
               labelFormatter={(d) => `Date: ${new Date(d).toLocaleString()}`}
               cursor={false}

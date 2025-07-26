@@ -36,9 +36,9 @@ function formatVolume(volume) {
 }
 
 export default function MomentumPairsTable({ pairs, title, openTrades = [] }) {
-  // Crear un set de símbolos que están en open trades para búsqueda rápida
-  const openTradeSymbols = new Set(
-    openTrades.map((trade) => trade.symbol?.toUpperCase())
+  // Crear un mapa de símbolos que están en open trades para búsqueda rápida
+  const openTradeMap = new Map(
+    openTrades.map((trade) => [trade.symbol?.toUpperCase(), trade])
   );
 
   return (
@@ -46,8 +46,8 @@ export default function MomentumPairsTable({ pairs, title, openTrades = [] }) {
       <Typography variant="h6" gutterBottom>
         {title}
       </Typography>
-      <TableContainer component={Paper} sx={{ mb: 4 }}>
-        <Table size="small">
+      <TableContainer component={Paper} sx={{ mb: 4, overflowX: "auto" }}>
+        <Table size="small" sx={{ minWidth: 500 }}>
           <TableHead>
             <TableRow>
               <TableCell>Symbol</TableCell>
@@ -60,9 +60,8 @@ export default function MomentumPairsTable({ pairs, title, openTrades = [] }) {
           <TableBody>
             {pairs && pairs.length > 0 ? (
               pairs.map((pair, idx) => {
-                const isOpenTrade = openTradeSymbols.has(
-                  pair.symbol?.toUpperCase()
-                );
+                const openTrade = openTradeMap.get(pair.symbol?.toUpperCase());
+                const isOpenTrade = !!openTrade;
                 return (
                   <TableRow
                     key={idx}
@@ -84,8 +83,18 @@ export default function MomentumPairsTable({ pairs, title, openTrades = [] }) {
                         color: isOpenTrade ? "#ffe156" : "inherit",
                       }}
                     >
-                      {pair.symbol || "-"}
-                      {isOpenTrade && " 🔥"}
+                      {pair.symbol + " " || "-"}
+                      {isOpenTrade && (
+                        <>
+                          🔥
+                          {openTrade.positionSide
+                            ?.toLowerCase()
+                            .includes("long") && " 📈"}
+                          {openTrade.positionSide
+                            ?.toLowerCase()
+                            .includes("short") && " 📉"}
+                        </>
+                      )}
                     </TableCell>
                     <TableCell>
                       {pair.change_30m !== undefined
