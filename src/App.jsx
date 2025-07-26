@@ -9,9 +9,25 @@ import { Box } from "@mui/material";
 function App() {
   return (
     <Router>
-      <Box display="flex">
+      <Box
+        display="flex"
+        minHeight="100vh"
+        sx={{
+          background: "linear-gradient(135deg, #181c2f 0%, #2a174e 100%)",
+          backgroundAttachment: "fixed",
+          backgroundSize: "cover",
+        }}
+      >
         <Sidebar />
-        <Box flex={1} minHeight="100vh" bgcolor="background.default">
+        <Box
+          flex={1}
+          minHeight="100vh"
+          sx={{
+            background: "linear-gradient(135deg, #181c2f 0%, #2a174e 100%)",
+            backgroundAttachment: "fixed",
+            backgroundSize: "cover",
+          }}
+        >
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/charts" element={<Charts />} />

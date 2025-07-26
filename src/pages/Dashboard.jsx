@@ -112,7 +112,7 @@ export default function Dashboard() {
   }
 
   return (
-    <Box p={4}>
+    <Box p={{ xs: 2, sm: 3, md: 4 }}>
       <Typography
         variant="h4"
         gutterBottom
@@ -121,6 +121,7 @@ export default function Dashboard() {
           fontWeight: 700,
           textShadow: "0 0 8px #2de2e6",
           letterSpacing: 1,
+          fontSize: { xs: "1.5rem", sm: "2rem", md: "2.125rem" },
         }}
       >
         Trading Dashboard
@@ -130,18 +131,23 @@ export default function Dashboard() {
         color="secondary"
         sx={{ mb: 2, display: "block" }}
       >
-        Última actualización:{" "}
-        {lastUpdate ? lastUpdate.toLocaleTimeString() : "-"}
+        Last update: {lastUpdate ? lastUpdate.toLocaleTimeString() : "-"}
         {refreshing && <span style={{ marginLeft: 8 }}>Actualizando...</span>}
       </Typography>
-      <Grid container spacing={3} mb={4}>
+      <Grid container spacing={3} mb={4} justifyContent="center">
         {Object.entries(statLabels).map(([key, label]) => {
           // Colores para los valores destacados
           let valueColor = "#fff";
           let displayValue = stats[key] !== undefined ? stats[key] : "-";
           let textShadow = undefined;
-          if (key === "winrate" || key === "wins" || key === "average_pnl")
+          if (key === "winrate" || key === "wins") valueColor = "#2de2e6";
+          if (key === "average_pnl") {
             valueColor = "#2de2e6";
+            const avgPnl = Number(stats[key]);
+            if (!isNaN(avgPnl)) {
+              displayValue = `$${avgPnl.toFixed(2)}`;
+            }
+          }
           if (key === "losses" || key === "max_loss_streak")
             valueColor = "#ff2e63";
           if (key === "total_pnl") {
@@ -158,7 +164,7 @@ export default function Dashboard() {
             textShadow = `0 0 12px ${valueColor}`;
           }
           return (
-            <Grid item xs={12} sm={6} md={3} key={key}>
+            <Grid item xs={12} sm={6} md={4} lg={3} key={key}>
               <Box
                 sx={{
                   background: "rgba(24,28,47,0.95)",
@@ -167,6 +173,7 @@ export default function Dashboard() {
                   p: 3,
                   textAlign: "center",
                   minHeight: 110,
+                  minWidth: 125,
                   display: "flex",
                   flexDirection: "column",
                   justifyContent: "center",
@@ -206,15 +213,21 @@ export default function Dashboard() {
           );
         })}
       </Grid>
-      <Grid container spacing={2} direction="row">
-        <Grid item sx={{ minWidth: "66%", maxWidth: "78%" }}>
+      <Grid
+        container
+        spacing={2}
+        direction="row"
+        justifyContent="space-between"
+      >
+        <Grid item sx={{ minWidth: "65%", maxWidth: "100%" }}>
           <EquityChart operations={closedTrades} showDrawdown={false} />
         </Grid>
+
         <Grid
           item
           sx={{
-            minWidth: "32%",
-            maxWidth: "32%",
+            minWidth: "30%",
+            maxWidth: "100%",
           }}
         >
           <ProfitFactorChart operations={closedTrades} hideDescription />

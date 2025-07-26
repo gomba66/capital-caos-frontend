@@ -150,8 +150,8 @@ export default function OperationsTable({ operations, title }) {
       <Typography variant="h6" gutterBottom>
         {title}
       </Typography>
-      <TableContainer component={Paper} sx={{ mb: 4 }}>
-        <Table size="small">
+      <TableContainer component={Paper} sx={{ mb: 4, overflowX: "auto" }}>
+        <Table size="small" sx={{ minWidth: 650 }}>
           <TableHead>
             <TableRow>
               <TableCell
@@ -178,12 +178,7 @@ export default function OperationsTable({ operations, title }) {
               >
                 {isOpenTrades ? "Unrealized PnL" : "PnL"}
               </TableCell>
-              <TableCell
-                onClick={() => handleSort(isOpenTrades ? "leverage" : "status")}
-                style={{ cursor: "pointer" }}
-              >
-                {isOpenTrades ? "Leverage" : "Status"}
-              </TableCell>
+
               <TableCell
                 onClick={() =>
                   handleSort(isOpenTrades ? "updateTime" : "timestamp")
@@ -203,7 +198,7 @@ export default function OperationsTable({ operations, title }) {
                   onClick={() => handleSort("pnl")}
                   style={{ cursor: "pointer" }}
                 >
-                  Resultado
+                  Result
                 </TableCell>
               )}
               {isOpenTrades && <TableCell>TP Target</TableCell>}
@@ -230,9 +225,7 @@ export default function OperationsTable({ operations, title }) {
                       ? formatUnrealizedProfit(op.unrealizedProfit)
                       : formatClosedPnL(op.pnl)}
                   </TableCell>
-                  <TableCell>
-                    {isOpenTrades ? op.leverage || "-" : op.status || "-"}
-                  </TableCell>
+
                   <TableCell>
                     {isOpenTrades
                       ? getDurationString(op.updateTime)
