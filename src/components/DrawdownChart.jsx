@@ -9,6 +9,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Typography, Box, Paper } from "@mui/material";
+import { DateTime } from "luxon";
 
 function buildDrawdownData(operations) {
   let equity = 0;
@@ -32,6 +33,16 @@ function buildDrawdownData(operations) {
     });
 }
 
+function formatDateLuxon(date) {
+  if (!date) return "-";
+  let dt = DateTime.fromISO(date, { zone: "utc" });
+  if (!dt.isValid) {
+    dt = DateTime.fromFormat(date, "yyyy-MM-dd HH:mm:ss", { zone: "utc" });
+  }
+  if (!dt.isValid) return date;
+  return dt.toLocaleString(DateTime.DATETIME_MED_WITH_SECONDS);
+}
+
 export default function DrawdownChart({ operations }) {
   const data = buildDrawdownData(operations);
   if (!data.length) {
@@ -51,7 +62,7 @@ export default function DrawdownChart({ operations }) {
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis
               dataKey="date"
-              tickFormatter={(d) => new Date(d).toLocaleDateString()}
+              tickFormatter={formatDateLuxon}
               minTickGap={20}
             />
             <YAxis domain={["auto", 0]} />
@@ -60,7 +71,7 @@ export default function DrawdownChart({ operations }) {
                 value,
                 name === "drawdown" ? "Drawdown (%)" : "Equity",
               ]}
-              labelFormatter={(d) => `Date: ${new Date(d).toLocaleString()}`}
+              labelFormatter={(d) => `Date: ${formatDateLuxon(d)}`}
               cursor={false}
             />
             <Line

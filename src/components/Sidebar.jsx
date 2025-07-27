@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useContext } from "react";
 import {
   Drawer,
   List,
@@ -12,7 +12,9 @@ import {
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import SettingsIcon from "@mui/icons-material/Settings";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import { Link, useLocation } from "react-router-dom";
+import { TimeZoneContext } from "../App";
 
 const drawerWidth = 220;
 
@@ -24,6 +26,7 @@ const navItems = [
 
 export default function Sidebar() {
   const location = useLocation();
+  const { timeZone } = useContext(TimeZoneContext);
   return (
     <Drawer
       variant="permanent"
@@ -81,6 +84,32 @@ export default function Sidebar() {
         >
           Trading Dashboard
         </Typography>
+        <Box
+          sx={{
+            mt: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            bgcolor: "rgba(45,226,230,0.07)",
+            borderRadius: 2,
+            px: 1.2,
+            py: 0.5,
+          }}
+        >
+          <AccessTimeIcon sx={{ fontSize: 17, color: "#2de2e6", mr: 0.7 }} />
+          <Typography
+            variant="caption"
+            color="#2de2e6"
+            sx={{
+              fontWeight: 600,
+              fontFamily: "monospace",
+              fontSize: 13,
+              letterSpacing: 0.5,
+            }}
+          >
+            {timeZone}
+          </Typography>
+        </Box>
       </Box>
       <List sx={{ mt: 4 }}>
         {navItems.map((item) => (

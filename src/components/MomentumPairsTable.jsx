@@ -9,16 +9,21 @@ import {
   Paper,
   Typography,
 } from "@mui/material";
+import { DateTime } from "luxon";
 
-function formatTime(time) {
+function formatTime(time, timeZone) {
   if (!time) return "-";
-  if (typeof time === "number") {
-    return new Date(time).toLocaleString();
+  let dt;
+  // Intentar ISO 8601 primero
+  dt = DateTime.fromISO(time, { zone: "utc" });
+  if (!dt.isValid) {
+    // Intentar formato antiguo 'YYYY-MM-DD HH:MM:SS' asumiendo UTC
+    dt = DateTime.fromFormat(time, "yyyy-MM-dd HH:mm:ss", { zone: "utc" });
   }
-  if (typeof time === "string" && !isNaN(Date.parse(time))) {
-    return new Date(time).toLocaleString();
-  }
-  return time;
+  if (!dt.isValid) return time;
+  return dt
+    .setZone(timeZone)
+    .toLocaleString(DateTime.DATETIME_MED_WITH_SECONDS);
 }
 
 function formatVolume(volume) {
@@ -35,7 +40,12 @@ function formatVolume(volume) {
   }
 }
 
-export default function MomentumPairsTable({ pairs, title, openTrades = [] }) {
+export default function MomentumPairsTable({
+  pairs,
+  title,
+  openTrades = [],
+  timeZone,
+}) {
   // Crear un mapa de símbolos que están en open trades para búsqueda rápida
   const openTradeMap = new Map(
     openTrades.map((trade) => [trade.symbol?.toUpperCase(), trade])
@@ -112,7 +122,7 @@ export default function MomentumPairsTable({ pairs, title, openTrades = [] }) {
                       {pair.type ||
                         (pair.change_2m !== undefined ? "FAST" : "30m")}
                     </TableCell>
-                    <TableCell>{formatTime(pair.time)}</TableCell>
+                    <TableCell>{formatTime(pair.time, timeZone)}</TableCell>
                   </TableRow>
                 );
               })

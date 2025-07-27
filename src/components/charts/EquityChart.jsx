@@ -20,6 +20,7 @@ import {
   FormControlLabel,
   Checkbox,
 } from "@mui/material";
+import { DateTime } from "luxon";
 
 function buildEquityDrawdownData(operations) {
   let equity = 0;
@@ -43,6 +44,16 @@ function buildEquityDrawdownData(operations) {
         symbol: op.symbol,
       };
     });
+}
+
+function formatDateLuxon(date) {
+  if (!date) return "-";
+  let dt = DateTime.fromISO(date, { zone: "utc" });
+  if (!dt.isValid) {
+    dt = DateTime.fromFormat(date, "yyyy-MM-dd HH:mm:ss", { zone: "utc" });
+  }
+  if (!dt.isValid) return date;
+  return dt.toLocaleString(DateTime.DATETIME_MED_WITH_SECONDS);
 }
 
 const axisStyle = { fill: "#fff", fontWeight: 600 };
@@ -113,7 +124,7 @@ export default function EquityChart({ operations, showDrawdown = true }) {
             <CartesianGrid strokeDasharray="3 3" stroke="#444" />
             <XAxis
               dataKey="date"
-              tickFormatter={(d) => new Date(d).toLocaleDateString()}
+              tickFormatter={formatDateLuxon}
               minTickGap={20}
               tick={axisStyle}
               axisLine={{ stroke: "#2de2e6" }}
@@ -170,7 +181,7 @@ export default function EquityChart({ operations, showDrawdown = true }) {
                   ? "Drawdown (%)"
                   : name,
               ]}
-              labelFormatter={(d) => `Date: ${new Date(d).toLocaleString()}`}
+              labelFormatter={(d) => `Date: ${formatDateLuxon(d)}`}
               cursor={false}
             />
             <Legend
