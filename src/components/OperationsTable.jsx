@@ -10,17 +10,24 @@ import {
   Typography,
   Box,
 } from "@mui/material";
+import { DateTime } from "luxon";
 
-function formatDate(date) {
+function formatDate(date, timeZone) {
   if (!date) return "-";
   if (typeof date === "number") {
     // ms timestamp
-    return new Date(date).toLocaleString();
+    return DateTime.fromMillis(date)
+      .setZone(timeZone)
+      .toLocaleString(DateTime.DATETIME_MED_WITH_SECONDS);
   }
-  if (typeof date === "string" && !isNaN(Date.parse(date))) {
-    return new Date(date).toLocaleString();
+  let dt = DateTime.fromISO(date, { zone: "utc" });
+  if (!dt.isValid) {
+    dt = DateTime.fromFormat(date, "yyyy-MM-dd HH:mm:ss", { zone: "utc" });
   }
-  return date;
+  if (!dt.isValid) return date;
+  return dt
+    .setZone(timeZone)
+    .toLocaleString(DateTime.DATETIME_MED_WITH_SECONDS);
 }
 
 function formatNumber(val, decimals = 4) {
@@ -92,7 +99,7 @@ function getWinLoss(pnl) {
   return <span style={{ color: "#aaa", fontWeight: 700 }}>FLAT</span>;
 }
 
-export default function OperationsTable({ operations, title }) {
+export default function OperationsTable({ operations, title, timeZone }) {
   // Detect if open_trades format (Binance) or closed trades (tracker)
   const isOpenTrades =
     operations &&
@@ -229,12 +236,12 @@ export default function OperationsTable({ operations, title }) {
                   <TableCell>
                     {isOpenTrades
                       ? getDurationString(op.updateTime)
-                      : formatDate(op.timestamp || op.openTime)}
+                      : formatDate(op.timestamp || op.openTime, timeZone)}
                   </TableCell>
                   <TableCell>
                     {isOpenTrades
                       ? ""
-                      : formatDate(op.closed_at || op.closeTime)}
+                      : formatDate(op.closed_at || op.closeTime, timeZone)}
                   </TableCell>
                   {!isOpenTrades && <TableCell>{getWinLoss(op.pnl)}</TableCell>}
                   {isOpenTrades && (

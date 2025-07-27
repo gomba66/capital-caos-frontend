@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import { getStats } from "../api/stats";
 import { getOperations } from "../api/operations";
 import { getOpenTrades } from "../api/openTrades";
@@ -13,12 +13,18 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import OperationsTable from "../components/OperationsTable";
 import MomentumPairsTable from "../components/MomentumPairsTable";
 import EquityChart from "../components/charts/EquityChart";
 import ProfitFactorChart from "../components/charts/ProfitFactorChart";
+import { DateTime } from "luxon";
+import { TimeZoneContext } from "../App";
 
 const statLabels = {
   winrate: "Winrate (%)",
@@ -31,6 +37,18 @@ const statLabels = {
   max_loss_streak: "Max Loss Streak",
 };
 
+const commonTimeZones = [
+  "UTC",
+  "America/Bogota",
+  "America/Mexico_City",
+  "America/New_York",
+  "Europe/Madrid",
+  "Europe/London",
+  "Asia/Tokyo",
+  "Asia/Shanghai",
+  "America/Argentina/Buenos_Aires",
+];
+
 export default function Dashboard() {
   const [stats, setStats] = useState(null);
   const [openTrades, setOpenTrades] = useState([]);
@@ -40,6 +58,8 @@ export default function Dashboard() {
   const [lastUpdate, setLastUpdate] = useState(null);
   const [prevOpenTrades, setPrevOpenTrades] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
+  const localZone = DateTime.local().zoneName;
+  const { timeZone } = useContext(TimeZoneContext);
 
   // Fetch global (stats, closed, momentum)
   const fetchAll = async () => {
@@ -134,6 +154,7 @@ export default function Dashboard() {
         Last update: {lastUpdate ? lastUpdate.toLocaleTimeString() : "-"}
         {refreshing && <span style={{ marginLeft: 8 }}>Actualizando...</span>}
       </Typography>
+      {/* Eliminar el selector de zona horaria aquí */}
       <Grid container spacing={3} mb={4} justifyContent="center">
         {Object.entries(statLabels).map(([key, label]) => {
           // Colores para los valores destacados
@@ -233,19 +254,28 @@ export default function Dashboard() {
           <ProfitFactorChart operations={closedTrades} hideDescription />
         </Grid>
       </Grid>
-      <OperationsTable operations={openTrades} title="Open Trades" />
+      <OperationsTable
+        operations={openTrades}
+        title="Open Trades"
+        timeZone={timeZone}
+      />
       <Accordion sx={{ mb: 2 }}>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
           <Typography>Show Closed Trades</Typography>
         </AccordionSummary>
         <AccordionDetails>
-          <OperationsTable operations={closedTrades} title="Closed Trades" />
+          <OperationsTable
+            operations={closedTrades}
+            title="Closed Trades"
+            timeZone={timeZone}
+          />
         </AccordionDetails>
       </Accordion>
       <MomentumPairsTable
         pairs={momentumPairs}
         title="Momentum Pairs"
         openTrades={openTrades}
+        timeZone={timeZone}
       />
     </Box>
   );
