@@ -3,6 +3,13 @@
 CHANGELOG_FILE="CHANGELOG.md"
 UNRELEASED_SECTION="## [Unreleased]"
 
+echo "[DEBUG] Ruta actual: $(pwd)"
+echo "[DEBUG] Archivos en el directorio:"
+ls -l
+
+echo "[DEBUG] Primeras 10 líneas de $CHANGELOG_FILE:"
+head -10 "$CHANGELOG_FILE"
+
 # Get all staged files
 STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM)
 

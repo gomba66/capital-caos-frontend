@@ -2,21 +2,6 @@
 
 ## [Unreleased]
 
-### ✨ Added
-
-### 🐛 Fixed
-
-### 🎨 Enhanced
-
-### 🔧 Technical
-
-- **Test: Add simple comment to App.jsx to verify pre-commit and changelog workflow**
-
-
-### 📱 Mobile Features
-
-### 🖥️ Desktop Features
-
 ## [v1.0.0] - 2025-07-28 - Responsive Sidebar
 
 ### ✨ Added
@@ -37,6 +22,7 @@
 - **Desktop UX**: Option for complete or minimalist sidebar based on user preference
 - **Visual Feedback**: Collapse button with ChevronLeft/ChevronRight icons
 - **Consistent Styling**: Tooltips with dark theme and cyan borders
+- **Dynamic Layout**: Main content automatically adjusts to sidebar width
 
 ### 🔧 Technical
 
@@ -81,13 +67,3 @@
   - Block commits when significant files are staged without CHANGELOG updates
   - Show staged files that require documentation
   - Provide clear guidance on how to update CHANGELOG
-  - Allow commits if [Unreleased] section is empty (for changelog release)
-  - Add changelog release enforcement workflow
-  - Add strict verification that staged files are documented in CHANGELOG
-  - Block commits when significant files are staged without CHANGELOG updates
-  - Show staged files that require documentation
-  - Provide clear guidance on how to update CHANGELOG
-
-### 📱 Mobile Features
-
-### 🖥️ Desktop Features

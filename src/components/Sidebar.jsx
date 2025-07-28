@@ -1,4 +1,5 @@
 // Comentario de prueba para flujo de PR y changelog
+// Segundo comentario de prueba para validar pre-commit hook
 import React, { useContext, useState } from "react";
 import {
   Drawer,
