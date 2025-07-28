@@ -53,4 +53,18 @@
 
 ### 🛠️ Technical
 
+
 - **Add changelog release enforcement workflow**: Add GitHub Actions workflow to block PRs to main if changelog is not released.
+### 🎨 Enhanced
+
+### 🔧 Technical
+
+- **Improved Pre-commit Hook**: Enhanced CHANGELOG enforcement for better documentation
+  - Add strict verification that staged files are documented in CHANGELOG
+  - Block commits when significant files are staged without CHANGELOG updates
+  - Show staged files that require documentation
+  - Provide clear guidance on how to update CHANGELOG
+
+### 📱 Mobile Features
+
+### 🖥️ Desktop Features
