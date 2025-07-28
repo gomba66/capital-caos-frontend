@@ -25,6 +25,7 @@
 - **Visual Feedback**: Collapse button with ChevronLeft/ChevronRight icons
 - **Consistent Styling**: Tooltips with dark theme and cyan borders
 - **Dynamic Layout**: Main content automatically adjusts to sidebar width
+- **Improve hooks installation script to work from any location**
 
 ### 🔧 Technical
 
