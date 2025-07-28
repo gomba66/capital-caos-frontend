@@ -51,14 +51,6 @@
 
 ## [Unreleased]
 
-### ✨ Added
+### 🛠️ Technical
 
-### 🐛 Fixed
-
-### 🎨 Enhanced
-
-### 🔧 Technical
-
-### 📱 Mobile Features
-
-### 🖥️ Desktop Features
+- **Add changelog release enforcement workflow**: Add GitHub Actions workflow to block PRs to main if changelog is not released.
