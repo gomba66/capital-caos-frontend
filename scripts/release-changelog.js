@@ -47,9 +47,22 @@ function releaseChangelog(version) {
       `## [${version}] - ${currentDate}`
     );
 
-    // Add new [Unreleased] section at the end
-    changelog +=
+    // Add new [Unreleased] section at the beginning, after # Changelog
+    const newUnreleasedSection =
       "\n## [Unreleased]\n\n### ✨ Added\n\n### 🐛 Fixed\n\n### 🎨 Enhanced\n\n### 🔧 Technical\n\n### 📱 Mobile Features\n\n### 🖥️ Desktop Features\n\n";
+
+    // Insert after the first line (# Changelog)
+    const lines = changelog.split("\n");
+    const newLines = [];
+
+    for (let i = 0; i < lines.length; i++) {
+      newLines.push(lines[i]);
+      if (lines[i] === "# Changelog") {
+        newLines.push(newUnreleasedSection);
+      }
+    }
+
+    changelog = newLines.join("\n");
 
     // Write the updated CHANGELOG
     fs.writeFileSync(CHANGELOG_PATH, changelog);

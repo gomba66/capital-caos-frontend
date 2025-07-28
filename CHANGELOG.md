@@ -1,5 +1,7 @@
 # Changelog
 
+## [Unreleased]
+
 ## [v1.0.2] - 2025-07-28
 
 ## [v1.0.0] - 2025-07-28 - Responsive Sidebar
@@ -67,18 +69,3 @@
   - Block commits when significant files are staged without CHANGELOG updates
   - Show staged files that require documentation
   - Provide clear guidance on how to update CHANGELOG
-
-## [Unreleased]
-
-### ✨ Added
-
-### 🐛 Fixed
-
-### 🎨 Enhanced
-
-### 🔧 Technical
-
-### 📱 Mobile Features
-
-### 🖥️ Desktop Features
-
