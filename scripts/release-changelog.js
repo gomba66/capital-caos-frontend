@@ -1,10 +1,9 @@
 #!/usr/bin/env node
 
 /**
- * Script to make CHANGELOG release
- * Usage: node scripts/release-changelog.js [version]
- *
- * Example: node scripts/release-changelog.js v1.2.3
+ * Script to release the changelog by creating a new version
+ * Usage: node scripts/release-changelog.js [version] [date]
+ * Example: node scripts/release-changelog.js v1.0.3 2025-07-28
  */
 
 import fs from "fs";
@@ -16,69 +15,98 @@ const __dirname = path.dirname(__filename);
 
 const CHANGELOG_PATH = path.join(__dirname, "../CHANGELOG.md");
 
-function releaseChangelog(version) {
-  if (!version) {
-    console.error("❌ Version required");
-    console.log("Usage: node scripts/release-changelog.js [version]");
-    console.log("Example: node scripts/release-changelog.js v1.2.3");
+function releaseChangelog(version, date) {
+  if (!version || !date) {
+    console.error("❌ Version and date required");
+    console.log("Usage: node scripts/release-changelog.js [version] [date]");
+    console.log("Example: node scripts/release-changelog.js v1.0.3 2025-07-28");
     process.exit(1);
   }
 
-  if (!version.startsWith("v")) {
-    version = `v${version}`;
+  // Validate version format
+  if (!version.match(/^v\d+\.\d+\.\d+$/)) {
+    console.error("❌ Invalid version format. Use format: v1.0.0");
+    process.exit(1);
+  }
+
+  // Validate date format
+  if (!date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+    console.error("❌ Invalid date format. Use format: YYYY-MM-DD");
+    process.exit(1);
   }
 
   try {
-    // Leer el CHANGELOG actual
     let changelog = fs.readFileSync(CHANGELOG_PATH, "utf8");
 
-    // Verify that [Unreleased] section exists
-    if (!changelog.includes("## [Unreleased]")) {
+    // Find [Unreleased] section
+    const unreleasedIndex = changelog.indexOf("## [Unreleased]");
+    if (unreleasedIndex === -1) {
       console.error("❌ [Unreleased] section not found");
       process.exit(1);
     }
 
-    // Get current date
-    const currentDate = new Date().toISOString().split("T")[0];
-
-    // Replace [Unreleased] with version and date
-    changelog = changelog.replace(
-      "## [Unreleased]",
-      `## [${version}] - ${currentDate}`
+    // Extract [Unreleased] content
+    const nextSectionIndex = changelog.indexOf("\n## ", unreleasedIndex + 1);
+    const unreleasedEnd =
+      nextSectionIndex !== -1 ? nextSectionIndex : changelog.length;
+    const unreleasedContent = changelog.substring(
+      unreleasedIndex,
+      unreleasedEnd
     );
 
-    // Add new [Unreleased] section at the beginning, after # Changelog
-    const newUnreleasedSection =
-      "\n## [Unreleased]\n\n### ✨ Added\n\n### 🐛 Fixed\n\n### 🎨 Enhanced\n\n### 🔧 Technical\n\n### 📱 Mobile Features\n\n### 🖥️ Desktop Features\n\n";
+    // Check if [Unreleased] has any entries
+    const hasEntries = unreleasedContent.match(/^\s*[-*]\s+\*\*/gm);
 
-    // Insert after the first line (# Changelog)
-    const lines = changelog.split("\n");
-    const newLines = [];
-
-    for (let i = 0; i < lines.length; i++) {
-      newLines.push(lines[i]);
-      if (lines[i] === "# Changelog") {
-        newLines.push(newUnreleasedSection);
-      }
+    if (!hasEntries || hasEntries.length === 0) {
+      console.log("ℹ️  [Unreleased] section is empty. No entries to release.");
+      return;
     }
 
-    changelog = newLines.join("\n");
+    // Create new version section
+    const newVersionSection = `## [${version}] - ${date}\n\n${unreleasedContent.substring(
+      unreleasedContent.indexOf("\n") + 1
+    )}`;
+
+    // Replace [Unreleased] with new version and empty [Unreleased]
+    const emptyUnreleased = `## [Unreleased]
+
+### ✨ Added
+
+### 🐛 Fixed
+
+### 🎨 Enhanced
+
+### 🔧 Technical
+
+### 📱 Mobile Features
+
+### 🖥️ Desktop Features
+
+`;
+
+    changelog =
+      changelog.substring(0, unreleasedIndex) +
+      emptyUnreleased +
+      newVersionSection +
+      changelog.substring(unreleasedEnd);
 
     // Write the updated CHANGELOG
     fs.writeFileSync(CHANGELOG_PATH, changelog);
 
-    console.log(`✅ Release created: ${version} - ${currentDate}`);
-    console.log("📝 New [Unreleased] section added for upcoming changes");
+    console.log(`✅ Changelog released: ${version} (${date})`);
+    console.log(
+      `📝 Moved ${hasEntries.length} entries from [Unreleased] to ${version}`
+    );
   } catch (error) {
-    console.error("❌ Error making release:", error.message);
+    console.error("❌ Error releasing changelog:", error.message);
     process.exit(1);
   }
 }
 
 // Execute if called directly
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const [, , version] = process.argv;
-  releaseChangelog(version);
+  const [, , version, date] = process.argv;
+  releaseChangelog(version, date);
 }
 
 export { releaseChangelog };

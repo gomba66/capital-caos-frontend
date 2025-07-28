@@ -24,10 +24,19 @@ jobs:
           sed -n '/## \[Unreleased\]/,/^## /p' CHANGELOG.md | cat -vet
           echo ""
           echo "=== Checking for entries ==="
-          UNRELEASED=$(sed -n '/## \[Unreleased\]/,/^## /p' CHANGELOG.md | grep -E '^\s*[-*]' || true)
-          echo "UNRELEASED content: '$UNRELEASED'"
-          if [ -n "$UNRELEASED" ]; then
+
+          # Extract [Unreleased] section content
+          UNRELEASED_SECTION=$(sed -n '/## \[Unreleased\]/,/^## /p' CHANGELOG.md)
+
+          # Check for actual entries (lines starting with - or *)
+          UNRELEASED_ENTRIES=$(echo "$UNRELEASED_SECTION" | grep -E '^\s*[-*]\s+\*\*' || true)
+
+          echo "UNRELEASED_ENTRIES content: '$UNRELEASED_ENTRIES'"
+
+          if [ -n "$UNRELEASED_ENTRIES" ]; then
             echo "❌ The [Unreleased] section still contains entries. Please release the changelog before merging."
+            echo "Found entries:"
+            echo "$UNRELEASED_ENTRIES"
             exit 1
           fi
 
