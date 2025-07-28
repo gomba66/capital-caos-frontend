@@ -49,11 +49,11 @@
 - **Clean Design**: No floating elements or extra buttons
 - **Adaptability**: Perfectly adjusts to different screen sizes
 
-## [Unreleased]
+## [v1.0.1] - 2025-07-28
 
-### ✨ Added
+### 🛠️ Technical
 
-### 🐛 Fixed
+- **Add changelog release enforcement workflow**: Add GitHub Actions workflow to block PRs to main if changelog is not released.
 
 ### 🎨 Enhanced
 
@@ -64,6 +64,26 @@
   - Block commits when significant files are staged without CHANGELOG updates
   - Show staged files that require documentation
   - Provide clear guidance on how to update CHANGELOG
+  - Allow commits if [Unreleased] section is empty (for changelog release)
+  - Add changelog release enforcement workflow
+  - Add strict verification that staged files are documented in CHANGELOG
+  - Block commits when significant files are staged without CHANGELOG updates
+  - Show staged files that require documentation
+  - Provide clear guidance on how to update CHANGELOG
+
+### 📱 Mobile Features
+
+### 🖥️ Desktop Features
+
+## [Unreleased]
+
+### ✨ Added
+
+### 🐛 Fixed
+
+### 🎨 Enhanced
+
+### 🔧 Technical
 
 ### 📱 Mobile Features
 

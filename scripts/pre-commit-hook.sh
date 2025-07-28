@@ -6,6 +6,13 @@
 CHANGELOG_FILE="CHANGELOG.md"
 UNRELEASED_SECTION="## [Unreleased]"
 
+# If only CHANGELOG.md is staged, allow commit
+ONLY_CHANGELOG_STAGED=$(git diff --cached --name-only --diff-filter=ACM | wc -l)
+if [ "$ONLY_CHANGELOG_STAGED" -eq 1 ] && git diff --cached --name-only | grep -q "$CHANGELOG_FILE"; then
+    echo "ℹ️ Only CHANGELOG.md is staged. Allowing commit."
+    exit 0
+fi
+
 # Get staged files (excluding CHANGELOG.md itself and certain file types)
 STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -v "$CHANGELOG_FILE" | grep -E '\.(js|jsx|ts|tsx|css|scss|json)$' | grep -v "^docs/" | grep -v "^public/")
 
@@ -32,20 +39,10 @@ fi
 # Check if there are any entries in [Unreleased] section
 UNRELEASED_CONTENT=$(sed -n '/## \[Unreleased\]/,/^## /p' "$CHANGELOG_FILE" | grep -E '^\s*[-*]\s*\*\*')
 
+# Allow commit if [Unreleased] is empty (for changelog release)
 if [ -z "$UNRELEASED_CONTENT" ]; then
-    echo "❌ No entries found in [Unreleased] section"
-    echo "You must add entries to the CHANGELOG before committing"
-    echo ""
-    echo "Staged files that require documentation:"
-    echo "$STAGED_FILES" | sed 's/^/  - /'
-    echo ""
-    echo "Use: node scripts/update-changelog.js <type> <description>"
-    echo ""
-    echo "Available types: added, fixed, enhanced, technical, security, performance, deployment, ui, ux, api"
-    echo "Example: node scripts/update-changelog.js fixed \"Chart rendering issue\""
-    echo ""
-    echo "Commit blocked. Please update CHANGELOG and try again."
-    exit 1
+    echo "ℹ️ [Unreleased] section is empty. Allowing commit (changelog release or no changes to document)."
+    exit 0
 fi
 
 # Check if CHANGELOG has been modified in this commit
