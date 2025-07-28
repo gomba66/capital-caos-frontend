@@ -42,11 +42,26 @@ function buildMonthlyPerformanceData(
     // Show all 12 months with single letter labels of current year using FIRST LETTER OF MONTH
     monthsToShow = Array.from({ length: 12 }, (_, i) => i);
     monthLabels = monthsToShow.map((monthIndex) => {
+      const allMonthNames = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+      ];
       const month = DateTime.fromObject({
         year: currentYear,
         month: monthIndex + 1,
       }).toFormat("MMM");
-      return month.charAt(0) + (monthIndex + 1).toString();
+
+      return month.charAt(0) + allMonthNames.indexOf(month).toString();
     });
   } else {
     // Show 3 months before, current, and 1 month after (5 months total)
@@ -169,10 +184,13 @@ const CustomTooltip = ({ active, payload, label, filterType }) => {
       "December",
     ];
 
+    // Get month name from monthIndex for consistency
+    const monthName = allMonthNamesComplete[data.monthIndex];
+
     return (
       <div style={tooltipStyle}>
         <p style={{ color: "#2de2e6", fontWeight: 700, margin: "0 0 8px 0" }}>
-          {allMonthNamesComplete[data.monthIndex]}
+          {monthName}
         </p>
         <p style={{ color: "#666", margin: "0 0 8px 0", fontSize: "12px" }}>
           {filterText}
@@ -220,12 +238,7 @@ export default function MonthlyPerformanceChart({
     filterType,
     timeZone,
     showAllMonths
-  ).map((entry) => {
-    return {
-      ...entry,
-      month: !showAllMonths ? entry.month : entry.month.charAt(0),
-    };
-  });
+  );
 
   // Check if there are any operations at all
   const hasAnyOperations = operations && operations.length > 0;
@@ -301,6 +314,13 @@ export default function MonthlyPerformanceChart({
               <CartesianGrid strokeDasharray="3 3" stroke="#444" />
               <XAxis
                 dataKey="month"
+                tickFormatter={(value) => {
+                  if (showAllMonths) {
+                    return value[0];
+                  } else {
+                    return value;
+                  }
+                }}
                 tick={axisStyle}
                 axisLine={{ stroke: "#2de2e6" }}
               />
