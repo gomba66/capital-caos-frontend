@@ -13,8 +13,12 @@
  * - desktop: Desktop feature
  */
 
-const fs = require("fs");
-const path = require("path");
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const CHANGELOG_PATH = path.join(__dirname, "../CHANGELOG.md");
 
@@ -99,12 +103,12 @@ function updateChangelog(type, description) {
   }
 }
 
-// Ejecutar si se llama directamente
-if (require.main === module) {
+// Execute if called directly
+if (import.meta.url === `file://${process.argv[1]}`) {
   const [, , type, ...descriptionParts] = process.argv;
   const description = descriptionParts.join(" ");
 
   updateChangelog(type, description);
 }
 
-module.exports = { updateChangelog };
+export { updateChangelog };

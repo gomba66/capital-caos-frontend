@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "changelog:add": "node scripts/update-changelog.js",
-    "changelog:check": "node scripts/pre-commit-hook.sh",
+    "changelog:check": "sh scripts/pre-commit-hook.sh",
     "changelog:release": "node scripts/release-changelog.js"
   },
   "dependencies": {

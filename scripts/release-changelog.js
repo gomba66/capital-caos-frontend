@@ -7,8 +7,12 @@
  * Example: node scripts/release-changelog.js v1.2.3
  */
 
-const fs = require("fs");
-const path = require("path");
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const CHANGELOG_PATH = path.join(__dirname, "../CHANGELOG.md");
 
@@ -58,10 +62,10 @@ function releaseChangelog(version) {
   }
 }
 
-// Ejecutar si se llama directamente
-if (require.main === module) {
+// Execute if called directly
+if (import.meta.url === `file://${process.argv[1]}`) {
   const [, , version] = process.argv;
   releaseChangelog(version);
 }
 
-module.exports = { releaseChangelog };
+export { releaseChangelog };

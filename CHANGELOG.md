@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased] - Responsive Sidebar
+## [v1.0.0] - 2025-07-28 - Responsive Sidebar
 
 ### ✨ Added
 
@@ -13,6 +13,7 @@
   - Timezone visible when hovering over clock icon when collapsed
   - Page names visible when hovering over navigation icons
 - **Dynamic Layout**: Main content automatically adjusts to sidebar width
+- **Test entry for documentation**
 
 ### 🎨 Enhanced
 
@@ -48,3 +49,18 @@
 - **Accessible Information**: Tooltips provide context when needed
 - **Clean Design**: No floating elements or extra buttons
 - **Adaptability**: Perfectly adjusts to different screen sizes
+
+## [Unreleased]
+
+### ✨ Added
+
+### 🐛 Fixed
+
+### 🎨 Enhanced
+
+### 🔧 Technical
+
+### 📱 Mobile Features
+
+### 🖥️ Desktop Features
+
