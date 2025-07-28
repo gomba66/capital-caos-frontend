@@ -2,6 +2,32 @@
 
 ## [Unreleased]
 
+### ✨ Added
+
+### 🐛 Fixed
+
+### 🎨 Enhanced
+
+### 🔧 Technical
+
+### 📱 Mobile Features
+
+### 🖥️ Desktop Features
+
+## [v1.0.4] - 2025-07-28
+
+### ✨ Added
+
+### 🐛 Fixed
+
+### 🎨 Enhanced
+
+### 🔧 Technical
+
+### 📱 Mobile Features
+
+### 🖥️ Desktop Features
+
 ## [v1.0.2] - 2025-07-28
 
 ## [v1.0.0] - 2025-07-28 - Responsive Sidebar
