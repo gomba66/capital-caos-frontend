@@ -1,50 +1,50 @@
 # Changelog
 
-## [Unreleased] - Sidebar Responsive
+## [Unreleased] - Responsive Sidebar
 
 ### ✨ Added
 
-- **Sidebar Responsive**: Implementación de sidebar que se adapta automáticamente al tamaño de pantalla
-- **Modo Colapsado**: Sidebar de 80px con solo iconos para maximizar espacio de contenido
-- **Modo Expandido**: Sidebar de 220px con texto completo y toda la información
-- **Botón de Colapsar**: Permite alternar entre modos en desktop (solo iconos vs texto completo)
-- **Animaciones Suaves**: Transiciones de 0.3s para cambios de ancho y contenido
-- **Tooltips Informativos**:
-  - Timezone visible al hacer hover sobre icono de reloj cuando colapsado
-  - Nombres de páginas visibles al hacer hover sobre iconos de navegación
-- **Layout Dinámico**: El contenido principal se ajusta automáticamente al ancho del sidebar
+- **Responsive Sidebar**: Implementation of sidebar that automatically adapts to screen size
+- **Collapsed Mode**: 80px sidebar with icons only to maximize content space
+- **Expanded Mode**: 220px sidebar with complete text and all information
+- **Collapse Button**: Allows toggling between modes on desktop (icons only vs complete text)
+- **Smooth Animations**: 0.3s transitions for width and content changes
+- **Informative Tooltips**:
+  - Timezone visible when hovering over clock icon when collapsed
+  - Page names visible when hovering over navigation icons
+- **Dynamic Layout**: Main content automatically adjusts to sidebar width
 
 ### 🎨 Enhanced
 
-- **UX Mobile**: Sidebar siempre visible de 80px en móviles
-- **UX Desktop**: Opción de sidebar completo o minimalista según preferencia del usuario
-- **Feedback Visual**: Botón de colapsar con iconos ChevronLeft/ChevronRight
-- **Estilo Consistente**: Tooltips con tema oscuro y bordes cyan
+- **Mobile UX**: Sidebar always visible at 80px on mobile devices
+- **Desktop UX**: Option for complete or minimalist sidebar based on user preference
+- **Visual Feedback**: Collapse button with ChevronLeft/ChevronRight icons
+- **Consistent Styling**: Tooltips with dark theme and cyan borders
 
 ### 🔧 Technical
 
-- **Context API**: SidebarContext para compartir ancho del sidebar con App.jsx
-- **Responsive Design**: Uso de useMediaQuery para detectar tamaño de pantalla
-- **CSS Transitions**: Animaciones suaves para width, left, opacity y transform
-- **Conditional Rendering**: Elementos se muestran/ocultan según estado colapsado
+- **Context API**: SidebarContext to share sidebar width with App.jsx
+- **Responsive Design**: Use of useMediaQuery to detect screen size
+- **CSS Transitions**: Smooth animations for width, left, opacity and transform
+- **Conditional Rendering**: Elements show/hide based on collapsed state
 
 ### 📱 Mobile Features
 
-- **Sidebar Fijo**: 80px siempre visible, sin botón flotante
-- **Navegación Minimalista**: Solo iconos centrados
-- **Logo Compacto**: 50x50px sin texto
-- **Tooltips**: Información disponible al hacer hover
+- **Fixed Sidebar**: 80px always visible, no floating button
+- **Minimalist Navigation**: Icons only, centered
+- **Compact Logo**: 50x50px without text
+- **Tooltips**: Information available on hover
 
 ### 🖥️ Desktop Features
 
-- **Flexibilidad**: Usuario puede elegir entre más espacio o más información
-- **Transición Suave**: Cambio instantáneo entre modos con animaciones
-- **Estado Persistente**: El modo colapsado se mantiene durante la sesión
-- **Espacio Eficiente**: 140px más de espacio cuando está colapsado
+- **Flexibility**: User can choose between more space or more information
+- **Smooth Transition**: Instant change between modes with animations
+- **Persistent State**: Collapsed mode maintained during session
+- **Efficient Space**: 140px more space when collapsed
 
 ### 🎯 User Experience
 
-- **Navegación Inmediata**: No hay que abrir/cerrar nada
-- **Información Accesible**: Tooltips proporcionan contexto cuando es necesario
-- **Diseño Limpio**: Sin elementos flotantes o botones extra
-- **Adaptabilidad**: Se ajusta perfectamente a diferentes tamaños de pantalla
+- **Immediate Navigation**: No need to open/close anything
+- **Accessible Information**: Tooltips provide context when needed
+- **Clean Design**: No floating elements or extra buttons
+- **Adaptability**: Perfectly adjusts to different screen sizes
