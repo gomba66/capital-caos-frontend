@@ -7,7 +7,10 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "changelog:add": "node scripts/update-changelog.js",
+    "changelog:check": "sh scripts/pre-commit-hook.sh",
+    "changelog:release": "node scripts/release-changelog.js"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

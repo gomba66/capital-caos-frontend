@@ -47,9 +47,9 @@ export default function PnLHistogram({ operations }) {
   }
   return (
     <Box mb={4} display="flex" justifyContent="center">
-      <Box width="100%" maxWidth={600}>
+      <Box width={{ xs: "100%", sm: 280, md: 320 }}>
         <Typography variant="h6" gutterBottom>
-          PnL Distribution (Histogram)
+          PnL Distribution
         </Typography>
         <Typography
           variant="caption"
@@ -57,16 +57,15 @@ export default function PnLHistogram({ operations }) {
           sx={{
             mb: 1,
             display: "block",
-            whiteSpace: "normal",
-            wordBreak: "break-word",
+            height: 40,
+            lineHeight: "20px",
           }}
         >
-          This histogram shows how your closed trades are distributed by profit
-          and loss (PnL) ranges. Cyan bars represent profitable trades, fuchsia
-          bars represent losing trades.
+          Distribution of trades by PnL ranges. Cyan = profits, fuchsia =
+          losses.
         </Typography>
         <Paper sx={{ p: 2, background: "#181c2f" }}>
-          <ResponsiveContainer width="100%" height={250}>
+          <ResponsiveContainer width="100%" minWidth={220} height={250}>
             <BarChart
               data={data}
               margin={{ top: 20, right: 30, left: 0, bottom: 0 }}

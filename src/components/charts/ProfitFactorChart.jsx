@@ -19,7 +19,7 @@ export default function ProfitFactorChart({
       display="flex"
       justifyContent="center"
     >
-      <Box sx={{ width: "100%", maxWidth: 400 }}>
+      <Box width={{ xs: "100%", sm: 280, md: 320 }}>
         <Typography
           variant="h6"
           gutterBottom

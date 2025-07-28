@@ -67,7 +67,7 @@ export default function LongShortWinLossChart({ operations }) {
 
   return (
     <Box mb={4} display="flex" justifyContent="center">
-      <Box width={{ xs: "100%", sm: 350, md: 400 }}>
+      <Box width={{ xs: "100%", sm: 280, md: 320 }}>
         <Typography variant="h6" gutterBottom>
           Long vs Short Win/Loss
         </Typography>
@@ -80,7 +80,7 @@ export default function LongShortWinLossChart({ operations }) {
           trade type (Long/Short).
         </Typography>
         <Paper sx={{ p: 2, background: "#181c2f" }}>
-          <ResponsiveContainer width="100%" minWidth={250} height={250}>
+          <ResponsiveContainer width="100%" minWidth={220} height={250}>
             <BarChart
               data={data}
               margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
