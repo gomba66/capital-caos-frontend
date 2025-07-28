@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 CHANGELOG_FILE="CHANGELOG.md"
 UNRELEASED_SECTION="## [Unreleased]"
@@ -20,9 +20,11 @@ if [ "$ONLY_CHANGELOG_STAGED" -eq 1 ] && echo "$STAGED_FILES" | grep -q "$CHANGE
     exit 0
 fi
 
-# Check if [Unreleased] section exists
-if ! grep -q "$UNRELEASED_SECTION" "$CHANGELOG_FILE"; then
-    echo "❌ [Unreleased] section not found in $CHANGELOG_FILE"
+# Check if [Unreleased] section exists (tolerante a espacios y mayúsculas)
+if ! grep -i -E "^[[:space:]]*##[[:space:]]*\\[Unreleased\\][[:space:]]*$" "$CHANGELOG_FILE" > /dev/null; then
+    echo "❌ [Unreleased] section not found in $CHANGELOG_FILE (modo tolerante)"
+    echo "[DEBUG] Coincidencias encontradas con 'Unreleased':"
+    grep -i "Unreleased" "$CHANGELOG_FILE"
     exit 1
 fi
 
