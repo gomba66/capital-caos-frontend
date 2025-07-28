@@ -13,7 +13,6 @@
   - Timezone visible when hovering over clock icon when collapsed
   - Page names visible when hovering over navigation icons
 - **Dynamic Layout**: Main content automatically adjusts to sidebar width
-- **Test entry for documentation**
 
 ### 🎨 Enhanced
 
@@ -63,4 +62,3 @@
 ### 📱 Mobile Features
 
 ### 🖥️ Desktop Features
-
