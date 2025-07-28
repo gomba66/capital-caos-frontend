@@ -24,7 +24,7 @@ jobs:
           sed -n '/## \[Unreleased\]/,/^## /p' CHANGELOG.md | cat -vet
           echo ""
           echo "=== Checking for entries ==="
-          UNRELEASED=$(sed -n '/## \[Unreleased\]/,/^## /p' CHANGELOG.md | grep -E '^\s*[-*]')
+          UNRELEASED=$(sed -n '/## \[Unreleased\]/,/^## /p' CHANGELOG.md | grep -E '^\s*[-*]' || true)
           echo "UNRELEASED content: '$UNRELEASED'"
           if [ -n "$UNRELEASED" ]; then
             echo "❌ The [Unreleased] section still contains entries. Please release the changelog before merging."
