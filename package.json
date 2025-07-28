@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "changelog:add": "node scripts/update-changelog.js",
     "changelog:check": "sh scripts/pre-commit-hook.sh",
-    "changelog:release": "node scripts/release-changelog.js"
+    "changelog:release": "node scripts/release-changelog.js",
+    "hooks:install": "./scripts/install-hooks.sh"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
