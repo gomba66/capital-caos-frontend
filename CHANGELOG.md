@@ -53,8 +53,8 @@
 
 ### 🛠️ Technical
 
-
 - **Add changelog release enforcement workflow**: Add GitHub Actions workflow to block PRs to main if changelog is not released.
+
 ### 🎨 Enhanced
 
 ### 🔧 Technical
@@ -78,9 +78,8 @@
 ### 🎨 Enhanced
 
 ### 🔧 Technical
-- **Github workflows**
+- **Pre commit Hook fixed**
 
 ### 📱 Mobile Features
 
 ### 🖥️ Desktop Features
-
