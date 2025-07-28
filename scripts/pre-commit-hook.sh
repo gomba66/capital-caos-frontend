@@ -6,6 +6,13 @@
 CHANGELOG_FILE="CHANGELOG.md"
 UNRELEASED_SECTION="## [Unreleased]"
 
+# If only CHANGELOG.md is staged, allow commit
+ONLY_CHANGELOG_STAGED=$(git diff --cached --name-only --diff-filter=ACM | wc -l)
+if [ "$ONLY_CHANGELOG_STAGED" -eq 1 ] && git diff --cached --name-only | grep -q "$CHANGELOG_FILE"; then
+    echo "ℹ️ Only CHANGELOG.md is staged. Allowing commit."
+    exit 0
+fi
+
 # Get staged files (excluding CHANGELOG.md itself and certain file types)
 STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -v "$CHANGELOG_FILE" | grep -E '\.(js|jsx|ts|tsx|css|scss|json)$' | grep -v "^docs/" | grep -v "^public/")
 
