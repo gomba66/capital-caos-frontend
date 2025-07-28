@@ -9,6 +9,7 @@
 ### 🎨 Enhanced
 
 ### 🔧 Technical
+- **Test: Add simple comment to App.jsx to verify pre-commit and changelog workflow**
 
 ### 📱 Mobile Features
 
