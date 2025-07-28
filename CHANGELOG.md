@@ -49,7 +49,7 @@
 - **Clean Design**: No floating elements or extra buttons
 - **Adaptability**: Perfectly adjusts to different screen sizes
 
-## [Unreleased]
+## [v1.0.1] - 2025-07-28
 
 ### 🛠️ Technical
 
@@ -68,3 +68,19 @@
 ### 📱 Mobile Features
 
 ### 🖥️ Desktop Features
+
+## [Unreleased]
+
+### ✨ Added
+
+### 🐛 Fixed
+
+### 🎨 Enhanced
+
+### 🔧 Technical
+- **Github workflows**
+
+### 📱 Mobile Features
+
+### 🖥️ Desktop Features
+
