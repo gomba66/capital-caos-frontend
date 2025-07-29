@@ -4,9 +4,14 @@
 
 ### ✨ Added
 
+- **Aggregations Expander Component**: New component to display and expand aggregation information in the operations table
+- **Enhanced Operations Table**: Improved table with aggregation details and expandable rows
+
 ### 🐛 Fixed
 
 ### 🎨 Enhanced
+
+- **Dashboard Updates**: Improved dashboard layout and functionality with new aggregations component
 
 ### 🔧 Technical
 
@@ -14,7 +19,7 @@
 
 ### 🖥️ Desktop Features
 
-## [v1.0.4] - 2025-07-28
+## [v0.0.4] - 2025-07-28
 
 ### ✨ Added
 
@@ -28,9 +33,9 @@
 
 ### 🖥️ Desktop Features
 
-## [v1.0.2] - 2025-07-28
+## [v0.0.3] - 2025-07-28
 
-## [v1.0.0] - 2025-07-28 - Responsive Sidebar
+## [v0.0.2] - 2025-07-28 - Responsive Sidebar
 
 ### ✨ Added
 
@@ -82,7 +87,7 @@
 - **Clean Design**: No floating elements or extra buttons
 - **Adaptability**: Perfectly adjusts to different screen sizes
 
-## [v1.0.1] - 2025-07-28
+## [v0.0.1] - 2025-07-28
 
 ### 🛠️ Technical
 
