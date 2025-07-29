@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [v0.0.5] - 2025-07-29
+
 ### ✨ Added
 
 - **Aggregations Expander Component**: New component to display and expand aggregation information in the operations table
