@@ -11,6 +11,7 @@ import {
   Box,
 } from "@mui/material";
 import { DateTime } from "luxon";
+import AggregationsExpander from "./AggregationsExpander";
 
 function formatDate(date, timeZone) {
   if (!date) return "-";
@@ -104,7 +105,8 @@ export default function OperationsTable({ operations, title, timeZone }) {
   const isOpenTrades =
     operations &&
     operations.length > 0 &&
-    operations[0].positionAmt !== undefined;
+    (operations[0].positionAmt !== undefined ||
+      operations[0].status === "open");
 
   // Estado para ordenamiento
   const [orderBy, setOrderBy] = useState(null);
@@ -126,8 +128,12 @@ export default function OperationsTable({ operations, title, timeZone }) {
       let bVal = b[col];
       // Si es PnL, usar unrealizedProfit o pnl
       if (col === "pnl") {
-        aVal = isOpenTrades ? Number(a.unrealizedProfit) : Number(a.pnl);
-        bVal = isOpenTrades ? Number(b.unrealizedProfit) : Number(b.pnl);
+        aVal = isOpenTrades
+          ? Number(a.unrealizedProfit || a.unRealizedProfit)
+          : Number(a.pnl);
+        bVal = isOpenTrades
+          ? Number(b.unrealizedProfit || b.unRealizedProfit)
+          : Number(b.pnl);
       }
       if (aVal === undefined || aVal === null) return 1;
       if (bVal === undefined || bVal === null) return -1;
@@ -147,7 +153,8 @@ export default function OperationsTable({ operations, title, timeZone }) {
   // Sumatoria de PnL para open trades
   const totalPnL = isOpenTrades
     ? operations.reduce(
-        (acc, op) => acc + (Number(op.unrealizedProfit) || 0),
+        (acc, op) =>
+          acc + (Number(op.unrealizedProfit || op.unRealizedProfit) || 0),
         0
       )
     : null;
@@ -209,83 +216,116 @@ export default function OperationsTable({ operations, title, timeZone }) {
                 </TableCell>
               )}
               {isOpenTrades && <TableCell>TP Target</TableCell>}
+              {isOpenTrades && <TableCell>Aggregations</TableCell>}
             </TableRow>
           </TableHead>
           <TableBody>
             {sortedOps && sortedOps.length > 0 ? (
               sortedOps.map((op, idx) => (
-                <TableRow key={idx}>
-                  <TableCell>{op.symbol || "-"}</TableCell>
-                  <TableCell style={getSideStyle(op.side || op.positionSide)}>
-                    {op.side || op.positionSide || "-"}
-                    {op.protected && (
-                      <span title="Protected" style={{ marginLeft: 6 }}>
-                        🔒
-                      </span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {formatNumber(op.entry || op.entryPrice)}
-                  </TableCell>
-                  <TableCell>
-                    {isOpenTrades
-                      ? formatUnrealizedProfit(op.unrealizedProfit)
-                      : formatClosedPnL(op.pnl)}
-                  </TableCell>
-
-                  <TableCell>
-                    {isOpenTrades
-                      ? getDurationString(op.updateTime)
-                      : formatDate(op.timestamp || op.openTime, timeZone)}
-                  </TableCell>
-                  <TableCell>
-                    {isOpenTrades
-                      ? ""
-                      : formatDate(op.closed_at || op.closeTime, timeZone)}
-                  </TableCell>
-                  {!isOpenTrades && <TableCell>{getWinLoss(op.pnl)}</TableCell>}
-                  {isOpenTrades && (
+                <React.Fragment key={idx}>
+                  <TableRow>
+                    <TableCell>{op.symbol || "-"}</TableCell>
+                    <TableCell style={getSideStyle(op.side || op.positionSide)}>
+                      {op.side || op.positionSide || "-"}
+                      {op.protected && (
+                        <span title="Protected" style={{ marginLeft: 6 }}>
+                          🔒
+                        </span>
+                      )}
+                    </TableCell>
                     <TableCell>
-                      {op.take_profit_target ? (
-                        typeof op.take_profit_target === "object" ? (
-                          <Box>
+                      {formatNumber(op.entry || op.entryPrice)}
+                    </TableCell>
+                    <TableCell>
+                      {isOpenTrades
+                        ? formatUnrealizedProfit(
+                            op.unrealizedProfit || op.unRealizedProfit
+                          )
+                        : formatClosedPnL(op.pnl)}
+                    </TableCell>
+
+                    <TableCell>
+                      {isOpenTrades
+                        ? getDurationString(op.updateTime)
+                        : formatDate(op.timestamp || op.openTime, timeZone)}
+                    </TableCell>
+                    <TableCell>
+                      {isOpenTrades
+                        ? ""
+                        : formatDate(op.closed_at || op.closeTime, timeZone)}
+                    </TableCell>
+                    {!isOpenTrades && (
+                      <TableCell>{getWinLoss(op.pnl)}</TableCell>
+                    )}
+                    {isOpenTrades && (
+                      <TableCell>
+                        {op.take_profit_target ? (
+                          typeof op.take_profit_target === "object" ? (
+                            <Box>
+                              <Typography
+                                variant="body2"
+                                sx={{ fontWeight: 600, color: "#2de2e6" }}
+                              >
+                                {Number(op.take_profit_target.ratio).toFixed(2)}
+                                x{" "}
+                              </Typography>
+                              {op.take_profit_target.value_usd && (
+                                <Typography
+                                  variant="caption"
+                                  style={{ color: "#2de2a6" }}
+                                >
+                                  (~$
+                                  {Number(
+                                    op.take_profit_target.value_usd
+                                  ).toFixed(2)}
+                                  )
+                                </Typography>
+                              )}
+                            </Box>
+                          ) : (
                             <Typography
                               variant="body2"
                               sx={{ fontWeight: 600, color: "#2de2e6" }}
                             >
-                              {Number(op.take_profit_target.ratio).toFixed(2)}x{" "}
+                              {Number(op.take_profit_target).toFixed(2)}x{" "}
                             </Typography>
-                            {op.take_profit_target.value_usd && (
-                              <Typography
-                                variant="caption"
-                                style={{ color: "#2de2a6" }}
-                              >
-                                (~$
-                                {Number(
-                                  op.take_profit_target.value_usd
-                                ).toFixed(2)}
-                                )
-                              </Typography>
-                            )}
-                          </Box>
+                          )
                         ) : (
-                          <Typography
-                            variant="body2"
-                            sx={{ fontWeight: 600, color: "#2de2e6" }}
-                          >
-                            {Number(op.take_profit_target).toFixed(2)}x{" "}
-                          </Typography>
-                        )
-                      ) : (
-                        "-"
-                      )}
-                    </TableCell>
-                  )}
-                </TableRow>
+                          "-"
+                        )}
+                      </TableCell>
+                    )}
+                    {isOpenTrades && (
+                      <TableCell>
+                        <AggregationsExpander
+                          aggregations={op.aggregations}
+                          timeZone={timeZone}
+                        />
+                      </TableCell>
+                    )}
+                  </TableRow>
+                  {/* Row for aggregations expander */}
+                  {isOpenTrades &&
+                    op.aggregations &&
+                    op.aggregations.length > 0 && (
+                      <TableRow>
+                        <TableCell
+                          colSpan={isOpenTrades ? 8 : 7}
+                          style={{ padding: 0 }}
+                        >
+                          <AggregationsExpander
+                            aggregations={op.aggregations}
+                            timeZone={timeZone}
+                            showButton={false}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    )}
+                </React.Fragment>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={9} align="center">
+                <TableCell colSpan={isOpenTrades ? 8 : 7} align="center">
                   No operations found.
                 </TableCell>
               </TableRow>
@@ -310,7 +350,7 @@ export default function OperationsTable({ operations, title, timeZone }) {
                   Total: {totalPnL > 0 ? "+" : totalPnL < 0 ? "-" : ""}$
                   {Math.abs(totalPnL).toFixed(2)}
                 </TableCell>
-                <TableCell colSpan={5} />
+                <TableCell colSpan={6} />
               </TableRow>
             </tfoot>
           )}
