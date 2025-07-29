@@ -83,7 +83,7 @@ export default function Dashboard() {
   useEffect(() => {
     setLoading(true);
     fetchAll().then(() => setLoading(false));
-    // eslint-disable-next-line
+     
   }, []);
 
   // Auto-refresh solo de open trades cada 10s
@@ -111,7 +111,7 @@ export default function Dashboard() {
       isMounted = false;
       clearInterval(id);
     };
-    // eslint-disable-next-line
+     
   }, [prevOpenTrades]);
 
   if (loading) {

@@ -52,6 +52,7 @@
 - **Consistent Styling**: Tooltips with dark theme and cyan borders
 - **Dynamic Layout**: Main content automatically adjusts to sidebar width
 - **Improve hooks installation script to work from any location**
+- **Add aggregations expander to open trades table**
 
 ### 🔧 Technical
 
