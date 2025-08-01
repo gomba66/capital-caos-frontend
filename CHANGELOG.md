@@ -9,6 +9,7 @@
 ### 🎨 Enhanced
 
 ### 🔧 Technical
+- **Update package-lock.json to sync with testing dependencies**
 - **Fix working directory in GitHub Actions workflow**
 - **Fix GitHub Actions cache paths for working directory**
 - **Fix GitHub Actions workflow to run on all PRs and pushes**
