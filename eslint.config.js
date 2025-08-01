@@ -5,6 +5,7 @@ export default [
   js.configs.recommended,
   {
     files: ["**/*.{js,jsx}"],
+    ignores: ["dist/**", "node_modules/**"],
     languageOptions: {
       ecmaVersion: 2020,
       globals: {

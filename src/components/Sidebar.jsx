@@ -35,7 +35,7 @@ const navItems = [
 export default function Sidebar() {
   const location = useLocation();
   const { timeZone } = useContext(TimeZoneContext);
-  const { sidebarWidth, setSidebarWidth } = useContext(SidebarContext);
+  const { setSidebarWidth } = useContext(SidebarContext);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [collapsed, setCollapsed] = useState(false);
