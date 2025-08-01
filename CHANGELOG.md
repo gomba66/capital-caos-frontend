@@ -7,6 +7,21 @@
 ### 🐛 Fixed
 
 ### 🎨 Enhanced
+
+### 🔧 Technical
+
+### 📱 Mobile Features
+
+### 🖥️ Desktop Features
+
+## [v0.0.7] - 2025-08-01
+
+
+### ✨ Added
+
+### 🐛 Fixed
+
+### 🎨 Enhanced
 - **improve test coverage to 92.5% with comprehensive testing system**
 
 ### 🔧 Technical
