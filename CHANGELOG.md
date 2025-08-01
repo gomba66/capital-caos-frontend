@@ -9,6 +9,7 @@
 ### 🎨 Enhanced
 
 ### 🔧 Technical
+- **Add coverage directory to .gitignore**
 - **Exclude coverage directory from linting to avoid warnings**
 - **Add @vitest/coverage-v8 dependency for test coverage**
 - **Update package-lock.json to sync with testing dependencies**
