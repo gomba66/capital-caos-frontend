@@ -9,6 +9,7 @@
 ### 🎨 Enhanced
 
 ### 🔧 Technical
+- **Fix deprecated button attribute warning in Sidebar component**
 - **Fix linting errors for pre-push validation**
 - **All frontend tests now passing (12/12) with Node.js 20**
 - **Configure Node.js 20 enforcement with automatic version switching**
