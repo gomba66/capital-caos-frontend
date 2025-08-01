@@ -16,20 +16,73 @@ function buildHistogramData(operations, binSize = 5) {
     .map((op) => Number(op.pnl || 0))
     .filter((x) => !isNaN(x));
   if (!pnls.length) return [];
-  const min = Math.floor(Math.min(...pnls));
-  const max = Math.ceil(Math.max(...pnls));
+
+  // Calcular estadísticas para determinar el rango apropiado
+  const min = Math.min(...pnls);
+  const max = Math.max(...pnls);
+  const range = max - min;
+
+  // Si el rango es muy grande, usar percentiles para limitar los bins
+  let effectiveMin = min;
+  let effectiveMax = max;
+
+  if (range > 1000) {
+    // Usar percentiles para evitar demasiados bins
+    const sortedPnls = pnls.sort((a, b) => a - b);
+    const p10 = sortedPnls[Math.floor(sortedPnls.length * 0.1)];
+    const p90 = sortedPnls[Math.floor(sortedPnls.length * 0.9)];
+    effectiveMin = Math.floor(p10);
+    effectiveMax = Math.ceil(p90);
+  }
+
+  // Limitar a máximo 50 bins para evitar problemas de rendimiento
+  const maxBins = 50;
+  const adjustedBinSize = Math.max(
+    binSize,
+    Math.ceil((effectiveMax - effectiveMin) / maxBins)
+  );
+
   const bins = [];
-  for (let b = min; b < max; b += binSize) {
+  for (let b = effectiveMin; b < effectiveMax; b += adjustedBinSize) {
+    // Formatear labels según el tamaño de los números
+    const formatNumber = (num) => {
+      const absNum = Math.abs(num);
+      if (absNum >= 1_000_000_000) {
+        return "$" + (num / 1_000_000_000).toFixed(1) + "B"; // Billones
+      } else if (absNum >= 1_000_000) {
+        return "$" + (num / 1_000_000).toFixed(1) + "M"; // Millones
+      } else if (absNum >= 1_000) {
+        return "$" + (num / 1_000).toFixed(1) + "K"; // Miles
+      } else {
+        return "$" + num.toFixed(1); // Con 1 decimal para números pequeños
+      }
+    };
+
     bins.push({
-      range: `${b} to ${b + binSize}`,
+      range: `${b} to ${b + adjustedBinSize}`,
+      rangeShort: `${formatNumber(b)}-${formatNumber(b + adjustedBinSize)}`,
       count: 0,
-      isPositive: b + binSize > 0,
+      totalPnL: 0, // Para calcular el promedio del bin
+      isPositive: b + adjustedBinSize > 0,
     });
   }
+
+  // Asignar trades a bins
   pnls.forEach((pnl) => {
-    const idx = Math.floor((pnl - min) / binSize);
-    if (bins[idx]) bins[idx].count += 1;
+    const idx = Math.floor((pnl - effectiveMin) / adjustedBinSize);
+    if (idx >= 0 && idx < bins.length) {
+      bins[idx].count += 1;
+      bins[idx].totalPnL += pnl;
+    }
   });
+
+  // Calcular si cada bin es positivo basado en el promedio de PnL
+  bins.forEach((bin) => {
+    if (bin.count > 0) {
+      bin.isPositive = bin.totalPnL / bin.count > 0;
+    }
+  });
+
   return bins;
 }
 
@@ -61,8 +114,7 @@ export default function PnLHistogram({ operations }) {
             lineHeight: "20px",
           }}
         >
-          Distribution of trades by PnL ranges. Cyan = profits, fuchsia =
-          losses.
+          Distribution of trades by PnL ranges. Cyan = profits, red = losses.
         </Typography>
         <Paper sx={{ p: 2, background: "#181c2f" }}>
           <ResponsiveContainer width="100%" minWidth={220} height={250}>
@@ -72,11 +124,11 @@ export default function PnLHistogram({ operations }) {
             >
               <CartesianGrid strokeDasharray="3 3" stroke="#444" />
               <XAxis
-                dataKey="range"
-                angle={-30}
+                dataKey="rangeShort"
+                angle={-45}
                 textAnchor="end"
-                interval={0}
-                height={60}
+                interval="preserveStartEnd"
+                height={80}
                 tick={axisStyle}
                 axisLine={{ stroke: "#2de2e6" }}
               />
