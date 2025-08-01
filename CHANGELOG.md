@@ -16,15 +16,18 @@
 
 ## [v0.0.7] - 2025-08-01
 
-
 ### ✨ Added
 
 ### 🐛 Fixed
 
+- **fix auto-switch-node script to work in production without nvm**
+
 ### 🎨 Enhanced
+
 - **improve test coverage to 92.5% with comprehensive testing system**
 
 ### 🔧 Technical
+
 - **Add coverage directory to .gitignore**
 - **Exclude coverage directory from linting to avoid warnings**
 - **Add @vitest/coverage-v8 dependency for test coverage**
@@ -47,17 +50,19 @@
 
 ## [v0.0.6] - 2025-08-01
 
-
 ### ✨ Added
 
 ### 🐛 Fixed
+
 - **Fix PnLHistogram crash and improve charts performance**
 
 ### 🎨 Enhanced
+
 - **Fix weekly performance chart to start on Monday**
 - **Improve histogram design and number formatting**
 
 ### 🔧 Technical
+
 - **Configure Vite to properly load environment variables**
 
 ### 📱 Mobile Features

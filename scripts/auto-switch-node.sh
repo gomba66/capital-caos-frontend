@@ -46,7 +46,24 @@ if command -v nvm &> /dev/null; then
     echo "💡 Nota: El cambio se aplicó, pero necesitas reiniciar tu terminal o ejecutar 'source ~/.bashrc' para que tome efecto"
     exit 0
 else
-    echo "❌ nvm no está disponible"
-    echo "💡 Cambia manualmente a Node.js $REQUIRED_VERSION"
-    exit 1
+    echo "⚠️  nvm no está disponible"
+    echo "📋 Verificando si la versión actual es compatible..."
+    
+    # Verificar si la versión actual es compatible (mayor o igual a 20)
+    if [ -n "$CURRENT_VERSION" ]; then
+        MAJOR_VERSION=$(echo $CURRENT_VERSION | cut -d. -f1)
+        if [ "$MAJOR_VERSION" -ge 20 ]; then
+            echo "✅ La versión actual (Node.js $CURRENT_VERSION) es compatible"
+            echo "💡 nvm no es necesario en este entorno"
+            exit 0
+        else
+            echo "❌ La versión actual (Node.js $CURRENT_VERSION) no es compatible"
+            echo "💡 Se requiere Node.js 20 o superior"
+            exit 1
+        fi
+    else
+        echo "❌ No se pudo determinar la versión de Node.js"
+        echo "💡 Verifica que Node.js esté instalado"
+        exit 1
+    fi
 fi 
