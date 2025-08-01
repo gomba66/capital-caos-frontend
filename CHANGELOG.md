@@ -7,6 +7,21 @@
 ### 🐛 Fixed
 
 ### 🎨 Enhanced
+
+### 🔧 Technical
+
+### 📱 Mobile Features
+
+### 🖥️ Desktop Features
+
+## [v0.0.8] - 2025-08-01
+
+
+### ✨ Added
+
+### 🐛 Fixed
+
+### 🎨 Enhanced
 - **improve dashboard visual effects and color consistency**
 
 ### 🔧 Technical
