@@ -5,6 +5,7 @@
 ### ✨ Added
 
 ### 🐛 Fixed
+- **fix auto-switch-node script to work in production without nvm**
 
 ### 🎨 Enhanced
 
