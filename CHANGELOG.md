@@ -9,6 +9,7 @@
 ### 🎨 Enhanced
 
 ### 🔧 Technical
+- **Exclude coverage directory from linting to avoid warnings**
 - **Add @vitest/coverage-v8 dependency for test coverage**
 - **Update package-lock.json to sync with testing dependencies**
 - **Fix working directory in GitHub Actions workflow**
