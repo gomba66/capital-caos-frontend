@@ -5,6 +5,21 @@
 ### ✨ Added
 
 ### 🐛 Fixed
+
+### 🎨 Enhanced
+
+### 🔧 Technical
+
+### 📱 Mobile Features
+
+### 🖥️ Desktop Features
+
+## [v0.0.6] - 2025-08-01
+
+
+### ✨ Added
+
+### 🐛 Fixed
 - **Fix PnLHistogram crash and improve charts performance**
 
 ### 🎨 Enhanced
