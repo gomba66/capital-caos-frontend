@@ -14,7 +14,7 @@
 
 ### 🖥️ Desktop Features
 
-## [v0.0.7] - 2025-08-01
+## [v0.0.8] - 2025-08-01
 
 ### ✨ Added
 
@@ -24,6 +24,7 @@
 
 ### 🎨 Enhanced
 
+- **improve dashboard visual effects and color consistency**
 - **improve test coverage to 92.5% with comprehensive testing system**
 
 ### 🔧 Technical
