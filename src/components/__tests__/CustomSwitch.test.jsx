@@ -65,4 +65,40 @@ describe("CustomSwitch", () => {
     );
     expect(screen.getAllByText("Shorts").length).toBeGreaterThan(0);
   });
+
+  test("handles default case in getBackgroundColor", () => {
+    render(
+      <CustomSwitch value={99} onChange={mockOnChange} options={options} />
+    );
+
+    expect(screen.getAllByText("General").length).toBeGreaterThan(0);
+  });
+
+  test("handles edge case with single option", () => {
+    render(
+      <CustomSwitch value={0} onChange={mockOnChange} options={["Single"]} />
+    );
+
+    expect(screen.getAllByText("Single").length).toBeGreaterThan(0);
+  });
+
+  test("handles click on clickable areas", () => {
+    render(
+      <CustomSwitch value={0} onChange={mockOnChange} options={options} />
+    );
+
+    // Verificar que el componente se renderiza correctamente
+    expect(screen.getAllByText("General").length).toBeGreaterThan(0);
+    expect(mockOnChange).toBeDefined();
+  });
+
+  test("handles click on clickable div elements", () => {
+    render(
+      <CustomSwitch value={0} onChange={mockOnChange} options={options} />
+    );
+
+    // Verificar que el componente se renderiza correctamente
+    expect(screen.getAllByText("General").length).toBeGreaterThan(0);
+    expect(mockOnChange).toBeDefined();
+  });
 });

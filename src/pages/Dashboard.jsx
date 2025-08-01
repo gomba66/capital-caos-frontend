@@ -183,7 +183,17 @@ export default function Dashboard() {
             textShadow = `0 0 12px ${valueColor}`;
           }
           return (
-            <Grid item xs={12} sm={6} md={4} lg={3} key={key}>
+            <Grid
+              sx={{
+                width: {
+                  xs: "100%",
+                  sm: "50%",
+                  md: "33.333%",
+                  lg: "25%",
+                },
+              }}
+              key={key}
+            >
               <Box
                 sx={{
                   background: "rgba(24,28,47,0.95)",
@@ -238,12 +248,11 @@ export default function Dashboard() {
         direction="row"
         justifyContent="space-between"
       >
-        <Grid item sx={{ minWidth: "65%", maxWidth: "100%" }}>
+        <Grid sx={{ minWidth: "65%", maxWidth: "100%" }}>
           <EquityChart operations={closedTrades} showDrawdown={false} />
         </Grid>
 
         <Grid
-          item
           sx={{
             minWidth: "30%",
             maxWidth: "100%",
