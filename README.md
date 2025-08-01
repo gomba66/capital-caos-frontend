@@ -162,3 +162,4 @@ This will install the required git hooks for the frontend.
 - The pre-commit hook enforces changelog discipline and documentation.
 
 **All collaborators must run this script to ensure code quality and workflow discipline.**
+# Test hook
