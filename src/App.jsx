@@ -1,4 +1,4 @@
-import React, { useState, useMemo, createContext, useContext } from "react";
+import React, { useState, useMemo, createContext } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import Charts from "./pages/Charts";

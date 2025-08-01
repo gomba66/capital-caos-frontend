@@ -19,19 +19,70 @@ A visual dashboard for the Capital Caos algorithmic trading system. It allows yo
 
 ## 🖥️ How to Run the Frontend Locally (Development)
 
+### Prerequisites
+
+- **Node.js 20** (required)
+- **nvm** (Node Version Manager) - [Installation guide](https://github.com/nvm-sh/nvm#installing-and-updating)
+
+### Quick Setup
+
 1. Enter the frontend folder:
    ```bash
    cd frontend
    ```
-2. Install dependencies:
+2. Run the setup script (automatically configures Node.js 20 and installs dependencies):
    ```bash
-   npm install
+   ./scripts/setup-frontend.sh
    ```
 3. Start the development server:
    ```bash
    npm run dev
    ```
 4. Open your browser at the URL shown in the console (usually http://localhost:5173).
+
+### Manual Setup
+
+If you prefer to set up manually:
+
+1. Enter the frontend folder:
+   ```bash
+   cd frontend
+   ```
+2. Switch to Node.js 20 (automatically):
+   ```bash
+   npm run node:switch
+   ```
+   Or manually:
+   ```bash
+   nvm use 20
+   ```
+3. Install dependencies:
+   ```bash
+   npm install
+   ```
+4. Install git hooks:
+   ```bash
+   npm run hooks:install
+   ```
+5. Start the development server:
+   ```bash
+   npm run dev
+   ```
+
+### Node.js Version Management
+
+The frontend requires Node.js 20. Use these commands to manage the Node.js version:
+
+```bash
+# Check current Node.js version
+npm run node:check
+
+# Automatically switch to Node.js 20 (if nvm is available)
+npm run node:switch
+
+# Manual switch with nvm
+nvm use 20
+```
 
 - The frontend will automatically reload on file changes.
 - Make sure the backend is running and accessible from the frontend (adjust API URLs if needed).
@@ -47,6 +98,40 @@ A visual dashboard for the Capital Caos algorithmic trading system. It allows yo
 - `vite.config.js` - Vite configuration
 
 ---
+
+## 🧪 Testing
+
+The frontend includes a comprehensive testing setup with Vitest and React Testing Library.
+
+### Running Tests
+
+```bash
+# Run tests in watch mode
+npm run test
+
+# Run tests once
+npm run test:run
+
+# Run tests with coverage
+npm run test:coverage
+
+# Run tests with UI
+npm run test:ui
+```
+
+### Test Structure
+
+- **Component Tests**: `src/components/__tests__/`
+- **Utility Tests**: `src/utils/__tests__/`
+- **Test Setup**: `src/test/setup.js`
+
+### Pre-commit Validation
+
+All commits automatically run:
+
+- ✅ Linting (ESLint)
+- ✅ Tests (Vitest)
+- ✅ CHANGELOG validation
 
 ## 🗺️ Roadmap
 

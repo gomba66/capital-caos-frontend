@@ -26,8 +26,6 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { Link, useLocation } from "react-router-dom";
 import { TimeZoneContext, SidebarContext } from "../App";
 
-const drawerWidth = 220;
-
 const navItems = [
   { text: "Dashboard", icon: <DashboardIcon />, path: "/" },
   { text: "Charts", icon: <BarChartIcon />, path: "/charts" },

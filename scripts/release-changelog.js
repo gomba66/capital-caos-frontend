@@ -2,8 +2,8 @@
 
 /**
  * Script to release the changelog by creating a new version
- * Usage: node scripts/release-changelog.js [version] [date]
- * Example: node scripts/release-changelog.js v1.0.3 2025-07-28
+ * Usage: node scripts/release-changelog.js [version]
+ * Example: node scripts/release-changelog.js v1.0.3
  */
 
 import fs from "fs";
@@ -15,11 +15,11 @@ const __dirname = path.dirname(__filename);
 
 const CHANGELOG_PATH = path.join(__dirname, "../CHANGELOG.md");
 
-function releaseChangelog(version, date) {
-  if (!version || !date) {
-    console.error("❌ Version and date required");
-    console.log("Usage: node scripts/release-changelog.js [version] [date]");
-    console.log("Example: node scripts/release-changelog.js v1.0.3 2025-07-28");
+function releaseChangelog(version) {
+  if (!version) {
+    console.error("❌ Version required");
+    console.log("Usage: node scripts/release-changelog.js [version]");
+    console.log("Example: node scripts/release-changelog.js v1.0.3");
     process.exit(1);
   }
 
@@ -29,11 +29,8 @@ function releaseChangelog(version, date) {
     process.exit(1);
   }
 
-  // Validate date format
-  if (!date.match(/^\d{4}-\d{2}-\d{2}$/)) {
-    console.error("❌ Invalid date format. Use format: YYYY-MM-DD");
-    process.exit(1);
-  }
+  // Generate current date
+  const currentDate = new Date().toISOString().split("T")[0];
 
   try {
     let changelog = fs.readFileSync(CHANGELOG_PATH, "utf8");
@@ -63,7 +60,7 @@ function releaseChangelog(version, date) {
     }
 
     // Create new version section
-    const newVersionSection = `## [${version}] - ${date}\n\n${unreleasedContent.substring(
+    const newVersionSection = `## [${version}] - ${currentDate}\n\n${unreleasedContent.substring(
       unreleasedContent.indexOf("\n") + 1
     )}`;
 
@@ -93,7 +90,7 @@ function releaseChangelog(version, date) {
     // Write the updated CHANGELOG
     fs.writeFileSync(CHANGELOG_PATH, changelog);
 
-    console.log(`✅ Changelog released: ${version} (${date})`);
+    console.log(`✅ Changelog released: ${version} (${currentDate})`);
     console.log(
       `📝 Moved ${hasEntries.length} entries from [Unreleased] to ${version}`
     );
@@ -105,8 +102,8 @@ function releaseChangelog(version, date) {
 
 // Execute if called directly
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const [, , version, date] = process.argv;
-  releaseChangelog(version, date);
+  const [, , version] = process.argv;
+  releaseChangelog(version);
 }
 
 export { releaseChangelog };
