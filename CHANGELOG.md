@@ -9,6 +9,7 @@
 ### 🎨 Enhanced
 
 ### 🔧 Technical
+- **Fix GitHub Actions workflow to run on all PRs and pushes**
 - **Fix deprecated button attribute warning in Sidebar component**
 - **Fix linting errors for pre-push validation**
 - **All frontend tests now passing (12/12) with Node.js 20**
