@@ -7,6 +7,7 @@
 ### 🐛 Fixed
 
 ### 🎨 Enhanced
+- **improve dashboard visual effects and color consistency**
 
 ### 🔧 Technical
 

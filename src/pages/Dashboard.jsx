@@ -28,13 +28,13 @@ import { TimeZoneContext } from "../App";
 
 const statLabels = {
   winrate: "Winrate (%)",
-  total_trades: "Total Trades",
-  wins: "Wins",
-  losses: "Losses",
   total_pnl: "Total PnL",
+  total_trades: "Total Trades",
   average_pnl: "Average PnL",
   max_win_streak: "Max Win Streak",
   max_loss_streak: "Max Loss Streak",
+  wins: "Wins",
+  losses: "Losses",
 };
 
 // const commonTimeZones = [
@@ -160,6 +160,8 @@ export default function Dashboard() {
           let displayValue = stats[key] !== undefined ? stats[key] : "-";
           let textShadow = undefined;
           if (key === "winrate" || key === "wins") valueColor = "#2de2e6";
+          if (key === "total_trades") valueColor = "#ffa726"; // Naranja para total trades
+          if (key === "max_win_streak") valueColor = "#27ff7e"; // Verde neón para max win streak
           if (key === "average_pnl") {
             valueColor = "#2de2e6";
             const avgPnl = Number(stats[key]);
@@ -189,7 +191,7 @@ export default function Dashboard() {
                   xs: "100%",
                   sm: "50%",
                   md: "33.333%",
-                  lg: "25%",
+                  lg: "20%",
                 },
               }}
               key={key}

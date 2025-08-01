@@ -50,9 +50,13 @@ export default function ProfitFactorChart({
         <Paper
           sx={{
             p: 3,
-            background: "#181c2f",
+            background: "rgba(24,28,47,0.95)",
             borderRadius: 4,
             boxShadow: "0 0 24px #2de2e633",
+            transition: "box-shadow 0.3s ease",
+            "&:hover": {
+              boxShadow: "0 0 32px #2de2e666",
+            },
           }}
         >
           <Grid container spacing={2} direction="column">
@@ -61,12 +65,26 @@ export default function ProfitFactorChart({
               <Box
                 sx={{
                   background: "#2de2e6" + "22",
-                  borderRadius: 2,
+                  borderRadius: 3,
                   p: 2,
                   textAlign: "center",
+                  transition: "all 0.3s ease",
+                  "&:hover": {
+                    background: "#2de2e6" + "33",
+                    boxShadow: "0 8px 24px #2de2e644",
+                  },
                 }}
               >
-                <Typography variant="subtitle2" color="textSecondary">
+                <Typography
+                  variant="subtitle2"
+                  sx={{
+                    color: "#aaa",
+                    letterSpacing: 1,
+                    textTransform: "uppercase",
+                    fontWeight: 600,
+                    mb: 1,
+                  }}
+                >
                   Total
                 </Typography>
                 <Typography
@@ -74,7 +92,9 @@ export default function ProfitFactorChart({
                   sx={{
                     color: "#2de2e6",
                     fontWeight: 700,
-                    textShadow: `0 0 8px #2de2e6`,
+                    textShadow: `0 0 12px #2de2e6`,
+                    fontSize: "2.5rem",
+                    lineHeight: 1.1,
                   }}
                 >
                   {total !== null ? total : "-"}
@@ -92,7 +112,7 @@ export default function ProfitFactorChart({
                 <Box
                   sx={{
                     background: "#2de2a6" + "22",
-                    borderRadius: 2,
+                    borderRadius: 3,
                     p: 2,
                     textAlign: "center",
                     width: "100%",
@@ -100,9 +120,23 @@ export default function ProfitFactorChart({
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "center",
+                    transition: "all 0.3s ease",
+                    "&:hover": {
+                      background: "#2de2a6" + "33",
+                      boxShadow: "0 8px 24px #2de2a644",
+                    },
                   }}
                 >
-                  <Typography variant="subtitle2" color="textSecondary">
+                  <Typography
+                    variant="subtitle2"
+                    sx={{
+                      color: "#aaa",
+                      letterSpacing: 1,
+                      textTransform: "uppercase",
+                      fontWeight: 600,
+                      mb: 1,
+                    }}
+                  >
                     Longs
                   </Typography>
                   <Typography
@@ -110,7 +144,9 @@ export default function ProfitFactorChart({
                     sx={{
                       color: "#2de2a6",
                       fontWeight: 700,
-                      textShadow: `0 0 8px #2de2a6`,
+                      textShadow: `0 0 12px #2de2a6`,
+                      fontSize: "2rem",
+                      lineHeight: 1.1,
                     }}
                   >
                     {long !== null ? long : "-"}
@@ -121,7 +157,7 @@ export default function ProfitFactorChart({
                 <Box
                   sx={{
                     background: "#ff2e63" + "22",
-                    borderRadius: 2,
+                    borderRadius: 3,
                     p: 2,
                     textAlign: "center",
                     width: "100%",
@@ -129,9 +165,23 @@ export default function ProfitFactorChart({
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "center",
+                    transition: "all 0.3s ease",
+                    "&:hover": {
+                      background: "#ff2e63" + "33",
+                      boxShadow: "0 8px 24px #ff2e6344",
+                    },
                   }}
                 >
-                  <Typography variant="subtitle2" color="textSecondary">
+                  <Typography
+                    variant="subtitle2"
+                    sx={{
+                      color: "#aaa",
+                      letterSpacing: 1,
+                      textTransform: "uppercase",
+                      fontWeight: 600,
+                      mb: 1,
+                    }}
+                  >
                     Shorts
                   </Typography>
                   <Typography
@@ -139,7 +189,9 @@ export default function ProfitFactorChart({
                     sx={{
                       color: "#ff2e63",
                       fontWeight: 700,
-                      textShadow: `0 0 8px #ff2e63`,
+                      textShadow: `0 0 12px #ff2e63`,
+                      fontSize: "2rem",
+                      lineHeight: 1.1,
                     }}
                   >
                     {short !== null ? short : "-"}
