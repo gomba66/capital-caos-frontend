@@ -2,6 +2,37 @@
 
 ## [Unreleased]
 
+### ✨ Added
+
+### 🐛 Fixed
+
+### 🎨 Enhanced
+
+### 🔧 Technical
+
+### 📱 Mobile Features
+
+### 🖥️ Desktop Features
+
+## [v0.0.6] - 2025-08-01
+
+
+### ✨ Added
+
+### 🐛 Fixed
+- **Fix PnLHistogram crash and improve charts performance**
+
+### 🎨 Enhanced
+- **Fix weekly performance chart to start on Monday**
+- **Improve histogram design and number formatting**
+
+### 🔧 Technical
+- **Configure Vite to properly load environment variables**
+
+### 📱 Mobile Features
+
+### 🖥️ Desktop Features
+
 ## [v0.0.5] - 2025-07-29
 
 ### ✨ Added

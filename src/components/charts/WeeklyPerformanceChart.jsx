@@ -23,7 +23,7 @@ function buildWeeklyPerformanceData(
     return [];
   }
 
-  const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const daysOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
   // Inicializar datos para cada día de la semana
   const weeklyData = daysOfWeek.map((day, index) => ({
@@ -59,7 +59,7 @@ function buildWeeklyPerformanceData(
 
       // Convert to user's timezone
       const closeDate = dt.setZone(timeZone);
-      const dayIndex = closeDate.weekday % 7; // 1 = Monday, convert to 0 = Sunday
+      const dayIndex = closeDate.weekday - 1; // 1 = Monday, convert to 0 = Monday
 
       weeklyData[dayIndex].pnl += parseFloat(op.pnl || 0);
       weeklyData[dayIndex].trades += 1;
