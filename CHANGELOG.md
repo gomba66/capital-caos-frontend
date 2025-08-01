@@ -9,6 +9,7 @@
 ### 🎨 Enhanced
 
 ### 🔧 Technical
+- **Fix working directory in GitHub Actions workflow**
 - **Fix GitHub Actions cache paths for working directory**
 - **Fix GitHub Actions workflow to run on all PRs and pushes**
 - **Fix deprecated button attribute warning in Sidebar component**

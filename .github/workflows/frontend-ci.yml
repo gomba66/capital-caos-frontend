@@ -12,7 +12,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: ./frontend
+        working-directory: .
 
     # Solo ejecutar si estamos en el directorio frontend
     if: contains(github.repository, 'capital-caos-frontend')
@@ -57,7 +57,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: ./frontend
+        working-directory: .
 
     steps:
       - name: Checkout code
