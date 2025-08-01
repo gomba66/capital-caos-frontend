@@ -57,7 +57,7 @@ export default function ProfitFactorChart({
         >
           <Grid container spacing={2} direction="column">
             {/* Fila 1: Profit Factor Total */}
-            <Grid item>
+            <Grid>
               <Box
                 sx={{
                   background: "#2de2e6" + "22",
@@ -88,7 +88,7 @@ export default function ProfitFactorChart({
               direction="row"
               justifyContent="space-between"
             >
-              <Grid item xs={6} sx={{ width: "47%" }}>
+              <Grid sx={{ width: "47%" }}>
                 <Box
                   sx={{
                     background: "#2de2a6" + "22",
@@ -117,7 +117,7 @@ export default function ProfitFactorChart({
                   </Typography>
                 </Box>
               </Grid>
-              <Grid item xs={6} sx={{ width: "47%" }}>
+              <Grid sx={{ width: "47%" }}>
                 <Box
                   sx={{
                     background: "#ff2e63" + "22",

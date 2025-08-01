@@ -37,17 +37,17 @@ const statLabels = {
   max_loss_streak: "Max Loss Streak",
 };
 
-const commonTimeZones = [
-  "UTC",
-  "America/Bogota",
-  "America/Mexico_City",
-  "America/New_York",
-  "Europe/Madrid",
-  "Europe/London",
-  "Asia/Tokyo",
-  "Asia/Shanghai",
-  "America/Argentina/Buenos_Aires",
-];
+// const commonTimeZones = [
+//   "UTC",
+//   "America/Bogota",
+//   "America/Mexico_City",
+//   "America/New_York",
+//   "Europe/Madrid",
+//   "Europe/London",
+//   "Asia/Tokyo",
+//   "Asia/Shanghai",
+//   "America/Argentina/Buenos_Aires",
+// ];
 
 export default function Dashboard() {
   const [stats, setStats] = useState(null);
@@ -58,7 +58,7 @@ export default function Dashboard() {
   const [lastUpdate, setLastUpdate] = useState(null);
   const [prevOpenTrades, setPrevOpenTrades] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
-  const localZone = DateTime.local().zoneName;
+  // const localZone = DateTime.local().zoneName;
   const { timeZone } = useContext(TimeZoneContext);
 
   // Fetch global (stats, closed, momentum)
@@ -83,7 +83,6 @@ export default function Dashboard() {
   useEffect(() => {
     setLoading(true);
     fetchAll().then(() => setLoading(false));
-     
   }, []);
 
   // Auto-refresh solo de open trades cada 10s
@@ -111,7 +110,6 @@ export default function Dashboard() {
       isMounted = false;
       clearInterval(id);
     };
-     
   }, [prevOpenTrades]);
 
   if (loading) {
@@ -185,7 +183,17 @@ export default function Dashboard() {
             textShadow = `0 0 12px ${valueColor}`;
           }
           return (
-            <Grid item xs={12} sm={6} md={4} lg={3} key={key}>
+            <Grid
+              sx={{
+                width: {
+                  xs: "100%",
+                  sm: "50%",
+                  md: "33.333%",
+                  lg: "25%",
+                },
+              }}
+              key={key}
+            >
               <Box
                 sx={{
                   background: "rgba(24,28,47,0.95)",
@@ -240,12 +248,11 @@ export default function Dashboard() {
         direction="row"
         justifyContent="space-between"
       >
-        <Grid item sx={{ minWidth: "65%", maxWidth: "100%" }}>
+        <Grid sx={{ minWidth: "65%", maxWidth: "100%" }}>
           <EquityChart operations={closedTrades} showDrawdown={false} />
         </Grid>
 
         <Grid
-          item
           sx={{
             minWidth: "30%",
             maxWidth: "100%",

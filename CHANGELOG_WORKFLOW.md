@@ -28,13 +28,13 @@ node scripts/update-changelog.js added "Nueva funcionalidad de sidebar responsiv
 ### 2. Liberar Changelog
 
 ```bash
-node scripts/release-changelog.js [version] [date]
+node scripts/release-changelog.js [version]
 ```
 
 **Ejemplo:**
 
 ```bash
-node scripts/release-changelog.js v1.0.5 2025-07-28
+node scripts/release-changelog.js v1.0.5
 ```
 
 ### 3. Probar Workflow
@@ -127,7 +127,7 @@ El workflow `changelog-release.yml` verifica automáticamente:
 1. **Liberar versión**:
 
    ```bash
-   node scripts/release-changelog.js v1.0.5 2025-07-28
+   node scripts/release-changelog.js v1.0.5
    ```
 
 2. **Verificar que `[Unreleased]` esté vacío**:
