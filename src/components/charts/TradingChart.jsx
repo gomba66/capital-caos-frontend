@@ -303,52 +303,55 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
     return () => clearTimeout(timer);
   }, [height, timeZone]);
 
-  const loadPriceData = useCallback(async (symbol, interval) => {
-    try {
-      setLoading(true);
-      setError(null);
+  const loadPriceData = useCallback(
+    async (symbol, interval) => {
+      try {
+        setLoading(true);
+        setError(null);
 
-      const data = await getPriceHistory(symbol, interval, 200);
+        const data = await getPriceHistory(symbol, interval, 200);
 
-      if (
-        data &&
-        data.data &&
-        Array.isArray(data.data) &&
-        data.data.length > 0
-      ) {
-        if (candlestickSeriesRef.current) {
-          setPriceData(data);
-          candlestickSeriesRef.current.setData(data.data);
+        if (
+          data &&
+          data.data &&
+          Array.isArray(data.data) &&
+          data.data.length > 0
+        ) {
+          if (candlestickSeriesRef.current) {
+            setPriceData(data);
+            candlestickSeriesRef.current.setData(data.data);
+          } else {
+            setPriceData(data);
+          }
         } else {
-          setPriceData(data);
-        }
-      } else {
-        const errorMsg = !data
-          ? "No data received from server"
-          : !data.data
-          ? "Server response without data"
-          : !Array.isArray(data.data)
-          ? "Invalid data format"
-          : "No historical data available";
+          const errorMsg = !data
+            ? "No data received from server"
+            : !data.data
+            ? "Server response without data"
+            : !Array.isArray(data.data)
+            ? "Invalid data format"
+            : "No historical data available";
 
+          setError(errorMsg);
+          console.error("❌ Data validation failed:", {
+            hasData: !!data,
+            hasDataArray: !!(data && data.data),
+            isArray: !!(data && Array.isArray(data.data)),
+            dataLength: data?.data?.length,
+            hasChart: !!candlestickSeriesRef.current,
+          });
+        }
+      } catch (err) {
+        const errorMsg =
+          "Error loading price data: " + (err.message || "Unknown error");
         setError(errorMsg);
-        console.error("❌ Data validation failed:", {
-          hasData: !!data,
-          hasDataArray: !!(data && data.data),
-          isArray: !!(data && Array.isArray(data.data)),
-          dataLength: data?.data?.length,
-          hasChart: !!candlestickSeriesRef.current,
-        });
+        console.error("❌ Exception loading price data:", err);
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      const errorMsg =
-        "Error loading price data: " + (err.message || "Unknown error");
-      setError(errorMsg);
-      console.error("❌ Exception loading price data:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    [candlestickSeriesRef, setPriceData, setError, setLoading]
+  );
 
   const loadTradeData = useCallback(
     async (symbol) => {
@@ -421,336 +424,361 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
         // Don't show error if no active operation
       }
     },
-    [priceData]
+    [priceData, addTradeLines, setTradeData]
   );
 
-  const addTradeLines = useCallback((tradeData, priceData) => {
-    if (!candlestickSeriesRef.current || !tradeData) return;
+  const addTradeLines = useCallback(
+    (tradeData, priceData) => {
+      if (!candlestickSeriesRef.current || !tradeData) return;
 
-    // Update current_price with closing price of most recent candle
-    if (priceData && priceData.data && priceData.data.length > 0) {
-      const latestCandle = priceData.data[priceData.data.length - 1];
-      tradeData.current_price = latestCandle.close;
-    }
-
-    // Clear previous lines
-    if (entryLineRef.current) {
-      chartRef.current.removeSeries(entryLineRef.current);
-      entryLineRef.current = null;
-    }
-
-    if (stopLossLineRef.current) {
-      chartRef.current.removeSeries(stopLossLineRef.current);
-      stopLossLineRef.current = null;
-    }
-    if (takeProfitLineRef.current) {
-      chartRef.current.removeSeries(takeProfitLineRef.current);
-      takeProfitLineRef.current = null;
-    }
-    if (entryStopAreaRef.current) {
-      if (Array.isArray(entryStopAreaRef.current)) {
-        // If it's an array of lines, remove each one
-        entryStopAreaRef.current.forEach((line) => {
-          chartRef.current.removeSeries(line);
-        });
-      } else {
-        // If it's a single series
-        chartRef.current.removeSeries(entryStopAreaRef.current);
-      }
-      entryStopAreaRef.current = null;
-    }
-    if (entryTpAreaRef.current) {
-      if (Array.isArray(entryTpAreaRef.current)) {
-        // If it's an array of lines, remove each one
-        entryTpAreaRef.current.forEach((line) => {
-          chartRef.current.removeSeries(line);
-        });
-      } else {
-        // If it's a single series
-        chartRef.current.removeSeries(entryTpAreaRef.current);
-      }
-      entryTpAreaRef.current = null;
-    }
-    if (upperAreaRef.current) {
-      chartRef.current.removeSeries(upperAreaRef.current);
-      upperAreaRef.current = null;
-    }
-
-    // Get precision for formatting prices
-    const precision = tradeData.precision || 2;
-    // const formatPrice = (price) => price.toFixed(precision);
-
-    // Calculate time range based on candles and entry date
-    let startTime, endTime;
-
-    if (priceData && priceData.data && priceData.data.length > 0) {
-      // Find entry candle index (closest to entry date)
-      // entry_time can be in milliseconds or seconds, we need to normalize it
-      let entryTimestamp = tradeData.entry_time;
-
-      // If timestamp is very large (> year 2100), assume it's in milliseconds
-      if (entryTimestamp > 4102444800) {
-        // 2100-01-01 in seconds
-        entryTimestamp = Math.floor(entryTimestamp / 1000);
+      // Update current_price with closing price of most recent candle
+      if (priceData && priceData.data && priceData.data.length > 0) {
+        const latestCandle = priceData.data[priceData.data.length - 1];
+        tradeData.current_price = latestCandle.close;
       }
 
-      let entryCandleIndex = 0;
-      let minDiff = Infinity;
+      // Clear previous lines
+      if (entryLineRef.current) {
+        chartRef.current.removeSeries(entryLineRef.current);
+        entryLineRef.current = null;
+      }
 
-      priceData.data.forEach((candle, index) => {
-        const candleTime = candle.time;
-        const diff = Math.abs(candleTime - entryTimestamp);
-        if (diff < minDiff) {
-          minDiff = diff;
-          entryCandleIndex = index;
+      if (stopLossLineRef.current) {
+        chartRef.current.removeSeries(stopLossLineRef.current);
+        stopLossLineRef.current = null;
+      }
+      if (takeProfitLineRef.current) {
+        chartRef.current.removeSeries(takeProfitLineRef.current);
+        takeProfitLineRef.current = null;
+      }
+      if (entryStopAreaRef.current) {
+        if (Array.isArray(entryStopAreaRef.current)) {
+          // If it's an array of lines, remove each one
+          entryStopAreaRef.current.forEach((line) => {
+            chartRef.current.removeSeries(line);
+          });
+        } else {
+          // If it's a single series
+          chartRef.current.removeSeries(entryStopAreaRef.current);
         }
-      });
-
-      // Calculate start: 2 candles before entry
-      const startIndex = Math.max(0, entryCandleIndex - 2);
-      startTime = priceData.data[startIndex].time;
-
-      // Calculate end: 2 candles after the most recent candle
-      const lastCandleIndex = priceData.data.length - 1;
-      const endIndex = Math.min(lastCandleIndex + 2, priceData.data.length - 1);
-      endTime = priceData.data[endIndex].time;
-
-      // If we want to extend beyond available data, calculate future time
-      if (endIndex === lastCandleIndex && priceData.data.length > 1) {
-        // Calculate interval between candles to extend 2 more candles
-        const timeInterval = priceData.data[1].time - priceData.data[0].time;
-        endTime = priceData.data[lastCandleIndex].time + timeInterval * 2;
+        entryStopAreaRef.current = null;
       }
-    } else {
-      // Fallback if no candle data
-      const timeRange = chartRef.current.timeScale().getVisibleRange();
-      startTime =
-        timeRange?.from || Math.floor(Date.now() / 1000) - 24 * 60 * 60;
-      endTime = timeRange?.to || Math.floor(Date.now() / 1000) + 24 * 60 * 60;
-    }
-
-    // Create data for lines (points at start and end of visible range)
-    const createLineData = (price) => [
-      { time: startTime, value: price },
-      { time: endTime, value: price },
-    ];
-
-    // Entry line
-    if (tradeData.entry_price) {
-      // Calculate PnL for entry line tooltip
-      const pnlUsd = tradeData.current_pnl_usd;
-      const isProfit = pnlUsd > 0;
-      const pnlSign = isProfit ? "+" : "";
-      const pnlColor = isProfit ? "#4caf50" : "#f44336";
-
-      const entryTitle = `PnL: ${
-        pnlUsd ? `${pnlSign}$${pnlUsd.toFixed(2)}` : "N/A"
-      }`;
-
-      entryLineRef.current = chartRef.current.addSeries(LineSeries, {
-        color: pnlColor, // Use color based on PnL
-        lineWidth: 2,
-        lineStyle: 0, // Solid
-        title: entryTitle,
-        priceLineVisible: false,
-        lastValueVisible: true, // Show last value
-        crosshairMarkerVisible: true, // Show crosshair marker
-        priceFormat: {
-          type: "price",
-          precision: 6,
-          minMove: 0.000001,
-        },
-      });
-      entryLineRef.current.setData(createLineData(tradeData.entry_price));
-    }
-
-    // Stop loss line
-    if (tradeData.stop_loss) {
-      // Calculate total loss using value_usd / ratio if available
-      let totalLossFormatted;
-      if (tradeData.take_profit_value_usd && tradeData.stop_loss_ratio) {
-        const totalLoss =
-          tradeData.take_profit_value_usd / tradeData.stop_loss_ratio;
-        totalLossFormatted = totalLoss.toFixed(2);
-      } else {
-        // Fallback: calculate price difference
-        const totalLoss = Math.abs(tradeData.entry_price - tradeData.stop_loss);
-        totalLossFormatted = totalLoss.toFixed(precision);
+      if (entryTpAreaRef.current) {
+        if (Array.isArray(entryTpAreaRef.current)) {
+          // If it's an array of lines, remove each one
+          entryTpAreaRef.current.forEach((line) => {
+            chartRef.current.removeSeries(line);
+          });
+        } else {
+          // If it's a single series
+          chartRef.current.removeSeries(entryTpAreaRef.current);
+        }
+        entryTpAreaRef.current = null;
+      }
+      if (upperAreaRef.current) {
+        chartRef.current.removeSeries(upperAreaRef.current);
+        upperAreaRef.current = null;
       }
 
-      stopLossLineRef.current = chartRef.current.addSeries(LineSeries, {
-        color: "#f44336",
-        lineWidth: 2,
-        lineStyle: 1, // Punteada
-        title: `SL $${totalLossFormatted}`,
-        priceLineVisible: false,
-        lastValueVisible: false,
-        crosshairMarkerVisible: false, // Disable crosshair marker
-        priceFormat: {
-          type: "price",
-          precision: 6,
-          minMove: 0.000001,
-        },
-      });
-      stopLossLineRef.current.setData(createLineData(tradeData.stop_loss));
-    }
+      // Get precision for formatting prices
+      const precision = tradeData.precision || 2;
+      // const formatPrice = (price) => price.toFixed(precision);
 
-    // Línea de take profit
-    if (tradeData.take_profit) {
-      // Use USD value of take profit if available, otherwise calculate difference
-      let totalRewardFormatted;
-      if (tradeData.take_profit_value_usd) {
-        totalRewardFormatted = tradeData.take_profit_value_usd.toFixed(2);
+      // Calculate time range based on candles and entry date
+      let startTime, endTime;
+
+      if (priceData && priceData.data && priceData.data.length > 0) {
+        // Find entry candle index (closest to entry date)
+        // entry_time can be in milliseconds or seconds, we need to normalize it
+        let entryTimestamp = tradeData.entry_time;
+
+        // If timestamp is very large (> year 2100), assume it's in milliseconds
+        if (entryTimestamp > 4102444800) {
+          // 2100-01-01 in seconds
+          entryTimestamp = Math.floor(entryTimestamp / 1000);
+        }
+
+        let entryCandleIndex = 0;
+        let minDiff = Infinity;
+
+        priceData.data.forEach((candle, index) => {
+          const candleTime = candle.time;
+          const diff = Math.abs(candleTime - entryTimestamp);
+          if (diff < minDiff) {
+            minDiff = diff;
+            entryCandleIndex = index;
+          }
+        });
+
+        // Calculate start: 2 candles before entry
+        const startIndex = Math.max(0, entryCandleIndex - 2);
+        startTime = priceData.data[startIndex].time;
+
+        // Calculate end: 2 candles after the most recent candle
+        const lastCandleIndex = priceData.data.length - 1;
+        const endIndex = Math.min(
+          lastCandleIndex + 2,
+          priceData.data.length - 1
+        );
+        endTime = priceData.data[endIndex].time;
+
+        // If we want to extend beyond available data, calculate future time
+        if (endIndex === lastCandleIndex && priceData.data.length > 1) {
+          // Calculate interval between candles to extend 2 more candles
+          const timeInterval = priceData.data[1].time - priceData.data[0].time;
+          endTime = priceData.data[lastCandleIndex].time + timeInterval * 2;
+        }
       } else {
-        // Fallback: calculate price difference
-        const totalReward = Math.abs(
+        // Fallback if no candle data
+        const timeRange = chartRef.current.timeScale().getVisibleRange();
+        startTime =
+          timeRange?.from || Math.floor(Date.now() / 1000) - 24 * 60 * 60;
+        endTime = timeRange?.to || Math.floor(Date.now() / 1000) + 24 * 60 * 60;
+      }
+
+      // Create data for lines (points at start and end of visible range)
+      const createLineData = (price) => [
+        { time: startTime, value: price },
+        { time: endTime, value: price },
+      ];
+
+      // Entry line
+      if (tradeData.entry_price) {
+        // Calculate PnL for entry line tooltip
+        const pnlUsd = tradeData.current_pnl_usd;
+        const isProfit = pnlUsd > 0;
+        const pnlSign = isProfit ? "+" : "";
+        const pnlColor = isProfit ? "#4caf50" : "#f44336";
+
+        const entryTitle = `PnL: ${
+          pnlUsd ? `${pnlSign}$${pnlUsd.toFixed(2)}` : "N/A"
+        }`;
+
+        entryLineRef.current = chartRef.current.addSeries(LineSeries, {
+          color: pnlColor, // Use color based on PnL
+          lineWidth: 2,
+          lineStyle: 0, // Solid
+          title: entryTitle,
+          priceLineVisible: false,
+          lastValueVisible: true, // Show last value
+          crosshairMarkerVisible: true, // Show crosshair marker
+          priceFormat: {
+            type: "price",
+            precision: 6,
+            minMove: 0.000001,
+          },
+        });
+        entryLineRef.current.setData(createLineData(tradeData.entry_price));
+      }
+
+      // Stop loss line
+      if (tradeData.stop_loss) {
+        // Calculate total loss using value_usd / ratio if available
+        let totalLossFormatted;
+        if (tradeData.take_profit_value_usd && tradeData.stop_loss_ratio) {
+          const totalLoss =
+            tradeData.take_profit_value_usd / tradeData.stop_loss_ratio;
+          totalLossFormatted = totalLoss.toFixed(2);
+        } else {
+          // Fallback: calculate price difference
+          const totalLoss = Math.abs(
+            tradeData.entry_price - tradeData.stop_loss
+          );
+          totalLossFormatted = totalLoss.toFixed(precision);
+        }
+
+        stopLossLineRef.current = chartRef.current.addSeries(LineSeries, {
+          color: "#f44336",
+          lineWidth: 2,
+          lineStyle: 1, // Punteada
+          title: `SL $${totalLossFormatted}`,
+          priceLineVisible: false,
+          lastValueVisible: false,
+          crosshairMarkerVisible: false, // Disable crosshair marker
+          priceFormat: {
+            type: "price",
+            precision: 6,
+            minMove: 0.000001,
+          },
+        });
+        stopLossLineRef.current.setData(createLineData(tradeData.stop_loss));
+      }
+
+      // Línea de take profit
+      if (tradeData.take_profit) {
+        // Use USD value of take profit if available, otherwise calculate difference
+        let totalRewardFormatted;
+        if (tradeData.take_profit_value_usd) {
+          totalRewardFormatted = tradeData.take_profit_value_usd.toFixed(2);
+        } else {
+          // Fallback: calculate price difference
+          const totalReward = Math.abs(
+            tradeData.entry_price - tradeData.take_profit
+          );
+          totalRewardFormatted = totalReward.toFixed(precision);
+        }
+
+        takeProfitLineRef.current = chartRef.current.addSeries(LineSeries, {
+          color: "#4caf50",
+          lineWidth: 2,
+          lineStyle: 1, // Punteada
+          title: `TP $${totalRewardFormatted}`,
+          priceLineVisible: false,
+          lastValueVisible: false,
+          crosshairMarkerVisible: false, // Disable crosshair marker
+          priceFormat: {
+            type: "price",
+            precision: 6,
+            minMove: 0.000001,
+          },
+        });
+        takeProfitLineRef.current.setData(
+          createLineData(tradeData.take_profit)
+        );
+      }
+
+      // Create colored area between entry and stop loss
+      if (tradeData.entry_price && tradeData.stop_loss) {
+        // Red color for area in both cases (LONG and SHORT)
+        const areaColor = "rgba(244, 67, 54, 0.1)"; // Light red for both cases
+
+        // Determine which price is higher to create area correctly
+        // const higherPrice = Math.max(tradeData.entry_price, tradeData.stop_loss);
+        const lowerPrice = Math.min(tradeData.entry_price, tradeData.stop_loss);
+
+        // Create colored area using multiple lines very close together
+        // Calculate how many lines we need based on price difference
+        const areaHeight = Math.abs(
+          tradeData.entry_price - tradeData.stop_loss
+        );
+        const numLines = Math.max(Math.floor(areaHeight * 5000), 200); // Many more lines for solid area
+        const stepSize = areaHeight / numLines;
+
+        // Create multiple lines to fill the area
+        const lines = [];
+        for (let i = 0; i <= numLines; i++) {
+          const currentPrice = lowerPrice + stepSize * i;
+
+          // Check if this line is between entry price and current price
+          const entryPrice = tradeData.entry_price;
+          const currentMarketPrice = tradeData.current_price || entryPrice;
+          // Simplify logic: lines between min and max of entry/current
+          const minPrice = Math.min(entryPrice, currentMarketPrice);
+          const maxPrice = Math.max(entryPrice, currentMarketPrice);
+          const isInCurrentZone =
+            currentPrice >= minPrice && currentPrice <= maxPrice;
+
+          // Use higher opacity for lines between entry and current price (covered zone)
+          const lineOpacity = isInCurrentZone ? "0.3" : "0.1";
+
+          const lineData = [
+            { time: startTime, value: currentPrice },
+            { time: endTime, value: currentPrice },
+          ];
+
+          const line = chartRef.current.addSeries(LineSeries, {
+            color: areaColor.replace("0.1", lineOpacity), // Variable opacity based on zone
+            lineWidth: 1, // Thin lines
+            lineStyle: 0, // Solid
+            priceLineVisible: false,
+            lastValueVisible: false,
+            crosshairMarkerVisible: false, // Disable crosshair marker
+            priceFormat: {
+              type: "price",
+              precision: 6,
+              minMove: 0.000001,
+            },
+          });
+
+          line.setData(lineData);
+          lines.push(line);
+        }
+
+        // Save reference to all lines to clean them later
+        entryStopAreaRef.current = lines;
+        upperAreaRef.current = null;
+      }
+
+      // Create colored area between entry and take profit
+      if (tradeData.entry_price && tradeData.take_profit) {
+        // Green color for take profit area
+        const tpAreaColor = "rgba(76, 175, 80, 0.1)"; // Light green for gains
+
+        // Determine which price is higher to create area correctly
+        // const higherPrice = Math.max(
+        //   tradeData.entry_price,
+        //   tradeData.take_profit
+        // );
+        const lowerPrice = Math.min(
+          tradeData.entry_price,
+          tradeData.take_profit
+        );
+
+        // Create colored area using multiple lines very close together
+        const areaHeight = Math.abs(
           tradeData.entry_price - tradeData.take_profit
         );
-        totalRewardFormatted = totalReward.toFixed(precision);
+        const numLines = Math.max(Math.floor(areaHeight * 5000), 200); // Many lines for solid area
+        const stepSize = areaHeight / numLines;
+
+        // Create multiple lines to fill the area
+        const lines = [];
+        for (let i = 0; i <= numLines; i++) {
+          const currentPrice = lowerPrice + stepSize * i;
+
+          // Check if this line is between entry price and current price
+          const entryPrice = tradeData.entry_price;
+          const currentMarketPrice = tradeData.current_price || entryPrice;
+          // Simplify logic: lines between min and max of entry/current
+          const minPrice = Math.min(entryPrice, currentMarketPrice);
+          const maxPrice = Math.max(entryPrice, currentMarketPrice);
+          const isInCurrentZone =
+            currentPrice >= minPrice && currentPrice <= maxPrice;
+
+          // Use higher opacity for lines between entry and current price (covered zone)
+          const lineOpacity = isInCurrentZone ? "0.3" : "0.1";
+
+          // Debug: log para las primeras líneas
+
+          const lineData = [
+            { time: startTime, value: currentPrice },
+            { time: endTime, value: currentPrice },
+          ];
+
+          const line = chartRef.current.addSeries(LineSeries, {
+            color: tpAreaColor.replace("0.1", lineOpacity), // Variable opacity based on zone
+            lineWidth: 1, // Thin lines
+            lineStyle: 0, // Solid
+            priceLineVisible: false,
+            lastValueVisible: false,
+            crosshairMarkerVisible: false, // Disable crosshair marker
+            priceFormat: {
+              type: "price",
+              precision: 6,
+              minMove: 0.000001,
+            },
+          });
+
+          line.setData(lineData);
+          lines.push(line);
+        }
+
+        // Save lines to clean them later
+        entryTpAreaRef.current = lines;
       }
-
-      takeProfitLineRef.current = chartRef.current.addSeries(LineSeries, {
-        color: "#4caf50",
-        lineWidth: 2,
-        lineStyle: 1, // Punteada
-        title: `TP $${totalRewardFormatted}`,
-        priceLineVisible: false,
-        lastValueVisible: false,
-        crosshairMarkerVisible: false, // Disable crosshair marker
-        priceFormat: {
-          type: "price",
-          precision: 6,
-          minMove: 0.000001,
-        },
-      });
-      takeProfitLineRef.current.setData(createLineData(tradeData.take_profit));
-    }
-
-    // Create colored area between entry and stop loss
-    if (tradeData.entry_price && tradeData.stop_loss) {
-      // Red color for area in both cases (LONG and SHORT)
-      const areaColor = "rgba(244, 67, 54, 0.1)"; // Light red for both cases
-
-      // Determine which price is higher to create area correctly
-      // const higherPrice = Math.max(tradeData.entry_price, tradeData.stop_loss);
-      const lowerPrice = Math.min(tradeData.entry_price, tradeData.stop_loss);
-
-      // Create colored area using multiple lines very close together
-      // Calculate how many lines we need based on price difference
-      const areaHeight = Math.abs(tradeData.entry_price - tradeData.stop_loss);
-      const numLines = Math.max(Math.floor(areaHeight * 5000), 200); // Many more lines for solid area
-      const stepSize = areaHeight / numLines;
-
-      // Create multiple lines to fill the area
-      const lines = [];
-      for (let i = 0; i <= numLines; i++) {
-        const currentPrice = lowerPrice + stepSize * i;
-
-        // Check if this line is between entry price and current price
-        const entryPrice = tradeData.entry_price;
-        const currentMarketPrice = tradeData.current_price || entryPrice;
-        // Simplify logic: lines between min and max of entry/current
-        const minPrice = Math.min(entryPrice, currentMarketPrice);
-        const maxPrice = Math.max(entryPrice, currentMarketPrice);
-        const isInCurrentZone =
-          currentPrice >= minPrice && currentPrice <= maxPrice;
-
-        // Use higher opacity for lines between entry and current price (covered zone)
-        const lineOpacity = isInCurrentZone ? "0.3" : "0.1";
-
-        const lineData = [
-          { time: startTime, value: currentPrice },
-          { time: endTime, value: currentPrice },
-        ];
-
-        const line = chartRef.current.addSeries(LineSeries, {
-          color: areaColor.replace("0.1", lineOpacity), // Variable opacity based on zone
-          lineWidth: 1, // Thin lines
-          lineStyle: 0, // Solid
-          priceLineVisible: false,
-          lastValueVisible: false,
-          crosshairMarkerVisible: false, // Disable crosshair marker
-          priceFormat: {
-            type: "price",
-            precision: 6,
-            minMove: 0.000001,
-          },
-        });
-
-        line.setData(lineData);
-        lines.push(line);
-      }
-
-      // Save reference to all lines to clean them later
-      entryStopAreaRef.current = lines;
-      upperAreaRef.current = null;
-    }
-
-    // Create colored area between entry and take profit
-    if (tradeData.entry_price && tradeData.take_profit) {
-      // Green color for take profit area
-      const tpAreaColor = "rgba(76, 175, 80, 0.1)"; // Light green for gains
-
-      // Determine which price is higher to create area correctly
-      // const higherPrice = Math.max(
-      //   tradeData.entry_price,
-      //   tradeData.take_profit
-      // );
-      const lowerPrice = Math.min(tradeData.entry_price, tradeData.take_profit);
-
-      // Create colored area using multiple lines very close together
-      const areaHeight = Math.abs(
-        tradeData.entry_price - tradeData.take_profit
-      );
-      const numLines = Math.max(Math.floor(areaHeight * 5000), 200); // Many lines for solid area
-      const stepSize = areaHeight / numLines;
-
-      // Create multiple lines to fill the area
-      const lines = [];
-      for (let i = 0; i <= numLines; i++) {
-        const currentPrice = lowerPrice + stepSize * i;
-
-        // Check if this line is between entry price and current price
-        const entryPrice = tradeData.entry_price;
-        const currentMarketPrice = tradeData.current_price || entryPrice;
-        // Simplify logic: lines between min and max of entry/current
-        const minPrice = Math.min(entryPrice, currentMarketPrice);
-        const maxPrice = Math.max(entryPrice, currentMarketPrice);
-        const isInCurrentZone =
-          currentPrice >= minPrice && currentPrice <= maxPrice;
-
-        // Use higher opacity for lines between entry and current price (covered zone)
-        const lineOpacity = isInCurrentZone ? "0.3" : "0.1";
-
-        // Debug: log para las primeras líneas
-
-        const lineData = [
-          { time: startTime, value: currentPrice },
-          { time: endTime, value: currentPrice },
-        ];
-
-        const line = chartRef.current.addSeries(LineSeries, {
-          color: tpAreaColor.replace("0.1", lineOpacity), // Variable opacity based on zone
-          lineWidth: 1, // Thin lines
-          lineStyle: 0, // Solid
-          priceLineVisible: false,
-          lastValueVisible: false,
-          crosshairMarkerVisible: false, // Disable crosshair marker
-          priceFormat: {
-            type: "price",
-            precision: 6,
-            minMove: 0.000001,
-          },
-        });
-
-        line.setData(lineData);
-        lines.push(line);
-      }
-
-      // Save lines to clean them later
-      entryTpAreaRef.current = lines;
-    }
-  }, []);
+    },
+    [
+      chartRef,
+      candlestickSeriesRef,
+      entryLineRef,
+      stopLossLineRef,
+      takeProfitLineRef,
+      entryStopAreaRef,
+      entryTpAreaRef,
+      upperAreaRef,
+      formatPriceAuto,
+    ]
+  );
 
   // Load data when chart is ready
   useEffect(() => {
