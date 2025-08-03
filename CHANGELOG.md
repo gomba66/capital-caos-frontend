@@ -3,6 +3,21 @@
 ## [Unreleased]
 
 ### ✨ Added
+
+### 🐛 Fixed
+
+### 🎨 Enhanced
+
+### 🔧 Technical
+
+### 📱 Mobile Features
+
+### 🖥️ Desktop Features
+
+## [v0.0.9] - 2025-08-03
+
+
+### ✨ Added
 - **add development banner to TradingChart page and implement chart functionality**
 
 ### 🐛 Fixed
