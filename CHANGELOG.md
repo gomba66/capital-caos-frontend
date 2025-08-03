@@ -10,6 +10,7 @@
 ### 🎨 Enhanced
 
 ### 🔧 Technical
+- **resolve all React hooks warnings and linting issues**
 - **update page imports to use contexts from separate file**
 - **fix test files to use contexts from separate file**
 - **move React contexts to separate file to fix react-refresh errors**

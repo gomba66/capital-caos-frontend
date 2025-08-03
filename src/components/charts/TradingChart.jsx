@@ -48,7 +48,7 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [tradeData, setTradeData] = useState(null);
-  const [interval, setInterval] = useState("1m");
+  // const [interval, setInterval] = useState("1m");
   const [timeframe, setTimeframe] = useState("1m"); // Separate timeframe from real-time interval
   const [priceData, setPriceData] = useState(null);
   const [isRealTimeEnabled, setIsRealTimeEnabled] = useState(false);
@@ -64,10 +64,10 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
   };
 
   // Function to format prices with automatic precision
-  const formatPriceAuto = (price) => {
+  const formatPriceAuto = useCallback((price) => {
     const autoPrecision = getAutoPrecision(price);
     return price.toFixed(autoPrecision);
-  };
+  }, []);
 
   // Use global timezone context
   const { timeZone } = useContext(TimeZoneContext);
@@ -109,7 +109,7 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
     if (priceData && priceData.data && priceData.data.length > 0 && tradeData) {
       addTradeLines(tradeData, priceData);
     }
-  }, [priceData, tradeData]); // Runs when data changes
+  }, [priceData, tradeData, addTradeLines]); // Runs when data changes
 
   // Function to determine price precision based on symbol
   const getPricePrecision = (symbol) => {
@@ -298,7 +298,7 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
     }, 100); // Small delay to ensure DOM is ready
 
     return () => clearTimeout(timer);
-  }, [height]);
+  }, [height, timeZone]);
 
   // Load data when chart is ready
   useEffect(() => {
@@ -306,7 +306,7 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
       loadPriceData(symbol, timeframe);
       loadTradeData(symbol);
     }
-  }, [chartRef.current, candlestickSeriesRef.current, symbol, interval]);
+  }, [symbol, timeframe, loadPriceData, loadTradeData]);
 
   // Load data when chart is ready and we have a symbol
   useEffect(() => {
@@ -321,9 +321,9 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
 
     loadPriceData(symbol, timeframe);
     loadTradeData(symbol);
-  }, [symbol, timeframe]);
+  }, [symbol, timeframe, loadPriceData, loadTradeData]);
 
-  const loadPriceData = async (symbol, interval) => {
+  const loadPriceData = useCallback(async (symbol, interval) => {
     try {
       setLoading(true);
       setError(null);
@@ -368,80 +368,83 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const loadTradeData = async (symbol) => {
-    try {
-      // Load real data from open operations
-      const response = await fetch("/api/open_trades");
-      const tradesData = await response.json();
+  const loadTradeData = useCallback(
+    async (symbol) => {
+      try {
+        // Load real data from open operations
+        const response = await fetch("/api/open_trades");
+        const tradesData = await response.json();
 
-      // Find specific operation for this symbol
-      const trade = tradesData.open_trades?.find((t) => t.symbol === symbol);
+        // Find specific operation for this symbol
+        const trade = tradesData.open_trades?.find((t) => t.symbol === symbol);
 
-      if (trade) {
-        // Map operation data
-        const tradeData = {
-          symbol: trade.symbol,
-          side: determinePositionSide(trade), // Determine based on positionAmt and positionSide
-          entry_price: parseFloat(trade.entryPrice),
-          current_price: parseFloat(trade.breakEvenPrice), // Use breakEvenPrice as approximation
-          stop_loss: trade.take_profit_target?.initial_stop
-            ? parseFloat(trade.take_profit_target.initial_stop)
-            : null,
-          take_profit: trade.take_profit_target?.tp_price
-            ? parseFloat(trade.take_profit_target.tp_price)
-            : null,
-          take_profit_value_usd: trade.take_profit_target?.value_usd
-            ? parseFloat(trade.take_profit_target.value_usd)
-            : null,
-          stop_loss_ratio: trade.take_profit_target?.ratio
-            ? parseFloat(trade.take_profit_target.ratio)
-            : null,
-          current_pnl_usd: trade.unrealizedProfit
-            ? parseFloat(trade.unrealizedProfit)
-            : null,
-          entry_time: trade.updateTime ? trade.updateTime : Date.now(),
-          unrealized_pnl: parseFloat(trade.unrealizedProfit),
-          // Determine precision based on symbol
-          precision: getPricePrecision(trade.symbol),
-        };
+        if (trade) {
+          // Map operation data
+          const tradeData = {
+            symbol: trade.symbol,
+            side: determinePositionSide(trade), // Determine based on positionAmt and positionSide
+            entry_price: parseFloat(trade.entryPrice),
+            current_price: parseFloat(trade.breakEvenPrice), // Use breakEvenPrice as approximation
+            stop_loss: trade.take_profit_target?.initial_stop
+              ? parseFloat(trade.take_profit_target.initial_stop)
+              : null,
+            take_profit: trade.take_profit_target?.tp_price
+              ? parseFloat(trade.take_profit_target.tp_price)
+              : null,
+            take_profit_value_usd: trade.take_profit_target?.value_usd
+              ? parseFloat(trade.take_profit_target.value_usd)
+              : null,
+            stop_loss_ratio: trade.take_profit_target?.ratio
+              ? parseFloat(trade.take_profit_target.ratio)
+              : null,
+            current_pnl_usd: trade.unrealizedProfit
+              ? parseFloat(trade.unrealizedProfit)
+              : null,
+            entry_time: trade.updateTime ? trade.updateTime : Date.now(),
+            unrealized_pnl: parseFloat(trade.unrealizedProfit),
+            // Determine precision based on symbol
+            precision: getPricePrecision(trade.symbol),
+          };
 
-        setTradeData(tradeData);
+          setTradeData(tradeData);
 
-        // Only add lines if priceData is available
-        if (priceData && priceData.data && priceData.data.length > 0) {
-          addTradeLines(tradeData, priceData);
+          // Only add lines if priceData is available
+          if (priceData && priceData.data && priceData.data.length > 0) {
+            addTradeLines(tradeData, priceData);
+          }
+        } else {
+          // Example data if no real operation
+          const mockTradeData = {
+            symbol: symbol,
+            side: "LONG",
+            entry_price: 45000,
+            current_price: 46000,
+            stop_loss: 44000,
+            take_profit: 47000,
+            take_profit_value_usd: 2000, // Example value in USD
+            stop_loss_ratio: 3, // Example ratio (3:1)
+            current_pnl_usd: 250.5, // Current PnL example in USD
+            entry_time: Date.now() - 24 * 60 * 60 * 1000, // 1 day ago
+          };
+
+          setTradeData(mockTradeData);
+
+          // Only add lines if priceData is available
+          if (priceData && priceData.data && priceData.data.length > 0) {
+            addTradeLines(mockTradeData, priceData);
+          }
         }
-      } else {
-        // Example data if no real operation
-        const mockTradeData = {
-          symbol: symbol,
-          side: "LONG",
-          entry_price: 45000,
-          current_price: 46000,
-          stop_loss: 44000,
-          take_profit: 47000,
-          take_profit_value_usd: 2000, // Example value in USD
-          stop_loss_ratio: 3, // Example ratio (3:1)
-          current_pnl_usd: 250.5, // Current PnL example in USD
-          entry_time: Date.now() - 24 * 60 * 60 * 1000, // 1 day ago
-        };
-
-        setTradeData(mockTradeData);
-
-        // Only add lines if priceData is available
-        if (priceData && priceData.data && priceData.data.length > 0) {
-          addTradeLines(mockTradeData, priceData);
-        }
+      } catch (err) {
+        console.error("Error loading trade data:", err);
+        // Don't show error if no active operation
       }
-    } catch (err) {
-      console.error("Error loading trade data:", err);
-      // Don't show error if no active operation
-    }
-  };
+    },
+    [priceData, addTradeLines]
+  );
 
-  const addTradeLines = (tradeData, priceData) => {
+  const addTradeLines = useCallback((tradeData, priceData) => {
     if (!candlestickSeriesRef.current || !tradeData) return;
 
     // Update current_price with closing price of most recent candle
@@ -767,7 +770,7 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
       // Save lines to clean them later
       entryTpAreaRef.current = lines;
     }
-  };
+  }, []);
 
   const handleIntervalChange = (newTimeframe) => {
     setTimeframe(newTimeframe);
@@ -796,7 +799,7 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
         title: entryTitle,
       });
     },
-    [tradeData]
+    [tradeData, formatPriceAuto]
   );
 
   // Function to update only the last candle without reloading everything
@@ -875,7 +878,13 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
         realTimeIntervalRef.current = null;
       }
     };
-  }, [isRealTimeEnabled]); // Only depend on isRealTimeEnabled
+  }, [
+    isRealTimeEnabled,
+    symbol,
+    timeframe,
+    priceData?.data?.length,
+    updateLastCandle,
+  ]); // Add missing dependencies
 
   // Clear interval when unmounting component
   useEffect(() => {
@@ -896,7 +905,7 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
       }
       setIsRealTimeEnabled(false);
     }
-  }, [symbol, timeframe]); // Remover isRealTimeEnabled de las dependencias
+  }, [symbol, timeframe, isRealTimeEnabled]); // Add missing dependency
 
   const handleRefresh = () => {
     loadPriceData(symbol, timeframe);

@@ -3,7 +3,6 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig(({ mode }) => {
   // Cargar variables de entorno
-  // eslint-disable-next-line no-undef
   const env = loadEnv(mode, process.cwd(), "");
 
   // Lee la variable de entorno para la base de la API
