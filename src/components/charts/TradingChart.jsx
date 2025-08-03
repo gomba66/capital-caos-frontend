@@ -858,40 +858,48 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
 
   // useEffect to handle interval based on state
   useEffect(() => {
+    console.log("🔄 Real-time useEffect triggered:", {
+      isRealTimeEnabled,
+      symbol,
+      timeframe,
+    });
+
     // Clear existing interval
     if (realTimeIntervalRef.current) {
+      console.log("🔄 Clearing existing interval");
       window.clearInterval(realTimeIntervalRef.current);
       realTimeIntervalRef.current = null;
     }
 
     if (isRealTimeEnabled && symbol && timeframe && priceData?.data?.length) {
+      console.log("🔄 Starting real-time updates");
       // First immediate update
       updateLastCandle();
 
       // Set up interval
       try {
         realTimeIntervalRef.current = window.setInterval(() => {
+          console.log("🔄 Real-time update triggered");
           updateLastCandle();
         }, 7000);
+        console.log("🔄 Interval set successfully");
       } catch (error) {
         console.error("❌ Error creating interval:", error);
         realTimeIntervalRef.current = null;
       }
+    } else {
+      console.log("🔄 Real-time disabled or missing data");
     }
 
     // Cleanup function
     return () => {
       if (realTimeIntervalRef.current) {
+        console.log("🔄 Cleanup: clearing interval");
         window.clearInterval(realTimeIntervalRef.current);
         realTimeIntervalRef.current = null;
       }
     };
-  }, [
-    isRealTimeEnabled,
-    symbol,
-    timeframe,
-    priceData?.data?.length,
-  ]); // Remove updateLastCandle from dependencies
+  }, [isRealTimeEnabled]); // Only depend on isRealTimeEnabled
 
   // Clear interval when unmounting component
   useEffect(() => {
@@ -902,17 +910,7 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
     };
   }, []);
 
-  // Stop real time when symbol or timeframe changes
-  useEffect(() => {
-    if (isRealTimeEnabled) {
-      // Only stop if symbol or timeframe really changed, not the interval
-      if (realTimeIntervalRef.current) {
-        window.clearInterval(realTimeIntervalRef.current);
-        realTimeIntervalRef.current = null;
-      }
-      setIsRealTimeEnabled(false);
-    }
-  }, [symbol, timeframe, isRealTimeEnabled]); // Add missing dependency
+
 
   const handleRefresh = () => {
     loadPriceData(symbol, timeframe);

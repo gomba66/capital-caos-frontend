@@ -6,6 +6,7 @@
 - **add development banner to TradingChart page and implement chart functionality**
 
 ### 🐛 Fixed
+- **simplify TradingChart real-time useEffect to fix interval issues**
 - **fix TradingChart real-time button by converting updateLastCandle to regular function**
 - **fix TradingChart useEffect to wait for chart initialization before loading data**
 - **convert TradingChart functions from useCallback to regular functions to fix loading issues**
