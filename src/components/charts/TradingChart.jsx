@@ -811,7 +811,7 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
   );
 
   // Function to update only the last candle without reloading everything
-  const updateLastCandle = useCallback(async () => {
+  const updateLastCandle = async () => {
     if (!symbol || !timeframe || !priceData?.data?.length) {
       return;
     }
@@ -849,7 +849,7 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
     } catch (err) {
       console.error("❌ Error updating last candle:", err);
     }
-  }, [symbol, timeframe, priceData, tradeData, updateEntryMarkerPnL]);
+  };
 
   // Simple function to toggle state
   const toggleRealTime = () => {
@@ -891,8 +891,7 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
     symbol,
     timeframe,
     priceData?.data?.length,
-    updateLastCandle,
-  ]); // Add missing dependencies
+  ]); // Remove updateLastCandle from dependencies
 
   // Clear interval when unmounting component
   useEffect(() => {
