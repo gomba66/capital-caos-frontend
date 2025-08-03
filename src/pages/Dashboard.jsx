@@ -28,13 +28,13 @@ import { TimeZoneContext } from "../App";
 
 const statLabels = {
   winrate: "Winrate (%)",
-  total_trades: "Total Trades",
-  wins: "Wins",
-  losses: "Losses",
   total_pnl: "Total PnL",
+  total_trades: "Total Trades",
   average_pnl: "Average PnL",
   max_win_streak: "Max Win Streak",
   max_loss_streak: "Max Loss Streak",
+  wins: "Wins",
+  losses: "Losses",
 };
 
 // const commonTimeZones = [
@@ -160,6 +160,8 @@ export default function Dashboard() {
           let displayValue = stats[key] !== undefined ? stats[key] : "-";
           let textShadow = undefined;
           if (key === "winrate" || key === "wins") valueColor = "#2de2e6";
+          if (key === "total_trades") valueColor = "#ffa726"; // Naranja para total trades
+          if (key === "max_win_streak") valueColor = "#27ff7e"; // Verde neón para max win streak
           if (key === "average_pnl") {
             valueColor = "#2de2e6";
             const avgPnl = Number(stats[key]);
@@ -183,7 +185,17 @@ export default function Dashboard() {
             textShadow = `0 0 12px ${valueColor}`;
           }
           return (
-            <Grid item xs={12} sm={6} md={4} lg={3} key={key}>
+            <Grid
+              sx={{
+                width: {
+                  xs: "100%",
+                  sm: "50%",
+                  md: "33.333%",
+                  lg: "20%",
+                },
+              }}
+              key={key}
+            >
               <Box
                 sx={{
                   background: "rgba(24,28,47,0.95)",
@@ -238,12 +250,11 @@ export default function Dashboard() {
         direction="row"
         justifyContent="space-between"
       >
-        <Grid item sx={{ minWidth: "65%", maxWidth: "100%" }}>
+        <Grid sx={{ minWidth: "65%", maxWidth: "100%" }}>
           <EquityChart operations={closedTrades} showDrawdown={false} />
         </Grid>
 
         <Grid
-          item
           sx={{
             minWidth: "30%",
             maxWidth: "100%",

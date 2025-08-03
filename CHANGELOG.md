@@ -18,19 +18,56 @@
 
 ### 🖥️ Desktop Features
 
-## [v0.0.6] - 2025-08-01
-
+## [v0.0.8] - 2025-08-01
 
 ### ✨ Added
 
 ### 🐛 Fixed
+
+- **fix auto-switch-node script to work in production without nvm**
+
+### 🎨 Enhanced
+
+- **improve dashboard visual effects and color consistency**
+- **improve test coverage to 92.5% with comprehensive testing system**
+
+### 🔧 Technical
+
+- **Add coverage directory to .gitignore**
+- **Exclude coverage directory from linting to avoid warnings**
+- **Add @vitest/coverage-v8 dependency for test coverage**
+- **Update package-lock.json to sync with testing dependencies**
+- **Fix working directory in GitHub Actions workflow**
+- **Fix GitHub Actions cache paths for working directory**
+- **Fix GitHub Actions workflow to run on all PRs and pushes**
+- **Fix deprecated button attribute warning in Sidebar component**
+- **Fix linting errors for pre-push validation**
+- **All frontend tests now passing (12/12) with Node.js 20**
+- **Configure Node.js 20 enforcement with automatic version switching**
+- **Add GitHub Actions CI workflow for frontend validation**
+- **Add pre-push hooks for linting and testing validation**
+- **Add comprehensive testing setup with Vitest, React Testing Library, and Node.js 20 enforcement**
+- **Update release script to match backend structure - only version parameter required**
+
+### 📱 Mobile Features
+
+### 🖥️ Desktop Features
+
+## [v0.0.6] - 2025-08-01
+
+### ✨ Added
+
+### 🐛 Fixed
+
 - **Fix PnLHistogram crash and improve charts performance**
 
 ### 🎨 Enhanced
+
 - **Fix weekly performance chart to start on Monday**
 - **Improve histogram design and number formatting**
 
 ### 🔧 Technical
+
 - **Configure Vite to properly load environment variables**
 
 ### 📱 Mobile Features

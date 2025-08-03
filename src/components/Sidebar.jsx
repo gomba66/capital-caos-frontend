@@ -29,7 +29,6 @@ import { Link, useLocation } from "react-router-dom";
 import { TimeZoneContext, SidebarContext } from "../contexts/AppContexts";
 
 // const drawerWidth = 220;
-
 const navItems = [
   { text: "Dashboard", icon: <DashboardIcon />, path: "/" },
   { text: "Charts", icon: <BarChartIcon />, path: "/charts" },

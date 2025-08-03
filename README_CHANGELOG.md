@@ -59,7 +59,7 @@ npm run changelog:check
 ### **3. When Making Release**
 
 ```bash
-# Create new version
+# Create new version (date is automatically generated)
 npm run changelog:release v1.2.3
 ```
 
@@ -132,11 +132,11 @@ npm run changelog:release v1.2.3
 
 ## 📅 Update Frequency
 
-| Frequency       | Action             | Command                     |
-| --------------- | ------------------ | --------------------------- |
-| **Daily**       | Document changes   | `npm run changelog:add`     |
-| **Weekly**      | Review and clean   | Manual review               |
-| **Per Release** | Create new version | `npm run changelog:release` |
+| Frequency       | Action                         | Command                     |
+| --------------- | ------------------------------ | --------------------------- |
+| **Daily**       | Document changes               | `npm run changelog:add`     |
+| **Weekly**      | Review and clean               | Manual review               |
+| **Per Release** | Create new version (auto date) | `npm run changelog:release` |
 
 ## 🚨 Troubleshooting
 
