@@ -812,12 +812,18 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
 
   // Function to update only the last candle without reloading everything
   const updateLastCandle = async () => {
-    if (!symbol || !timeframe || !priceData?.data?.length) {
+    // Get current values to avoid stale closure issues
+    const currentSymbol = symbol;
+    const currentTimeframe = timeframe;
+    
+    if (!currentSymbol || !currentTimeframe || !priceData?.data?.length) {
+      console.log("🔄 updateLastCandle: missing data", { currentSymbol, currentTimeframe });
       return;
     }
 
     try {
-      const data = await getPriceHistory(symbol, timeframe, 2);
+      console.log("🔄 updateLastCandle: fetching data for", { currentSymbol, currentTimeframe });
+      const data = await getPriceHistory(currentSymbol, currentTimeframe, 2);
 
       if (data && data.data && data.data.length > 0) {
         const newCandle = data.data[data.data.length - 1]; // Last candle
@@ -901,6 +907,16 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
     };
   }, [isRealTimeEnabled]); // Only depend on isRealTimeEnabled
 
+  // Stop real-time when symbol or timeframe changes
+  useEffect(() => {
+    if (isRealTimeEnabled && realTimeIntervalRef.current) {
+      console.log("🔄 Symbol/timeframe changed, stopping real-time");
+      window.clearInterval(realTimeIntervalRef.current);
+      realTimeIntervalRef.current = null;
+      setIsRealTimeEnabled(false);
+    }
+  }, [symbol, timeframe]);
+
   // Clear interval when unmounting component
   useEffect(() => {
     return () => {
@@ -909,8 +925,6 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
       }
     };
   }, []);
-
-
 
   const handleRefresh = () => {
     loadPriceData(symbol, timeframe);
