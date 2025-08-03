@@ -9,7 +9,7 @@ import ProfitFactorChart from "../components/charts/ProfitFactorChart";
 import WeeklyPerformanceChart from "../components/charts/WeeklyPerformanceChart";
 import MonthlyPerformanceChart from "../components/charts/MonthlyPerformanceChart";
 import WeeklyMonthlyPerformanceChart from "../components/charts/WeeklyMonthlyPerformanceChart";
-import { TimeZoneContext } from "../App";
+import { TimeZoneContext } from "../contexts/AppContexts";
 
 export default function Charts() {
   const [closedTrades, setClosedTrades] = useState([]);

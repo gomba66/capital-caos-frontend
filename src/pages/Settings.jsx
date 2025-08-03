@@ -7,7 +7,7 @@ import {
   Select,
   MenuItem,
 } from "@mui/material";
-import { TimeZoneContext } from "../App";
+import { TimeZoneContext } from "../contexts/AppContexts";
 import { DateTime } from "luxon";
 
 const commonTimeZones = [
