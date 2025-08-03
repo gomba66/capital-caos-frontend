@@ -28,7 +28,7 @@ import {
 } from "@mui/material";
 // import { getTradeDetails } from "../../api/operations";
 import { getPriceHistory } from "../../api/priceHistory";
-import { TimeZoneContext } from "../../App";
+import { TimeZoneContext } from "../../contexts/AppContexts";
 
 /**
  * Trading chart component using Lightweight Charts

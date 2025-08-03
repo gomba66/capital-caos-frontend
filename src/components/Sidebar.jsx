@@ -26,7 +26,7 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import ShowChartIcon from "@mui/icons-material/ShowChart";
 
 import { Link, useLocation } from "react-router-dom";
-import { TimeZoneContext, SidebarContext } from "../App";
+import { TimeZoneContext, SidebarContext } from "../contexts/AppContexts";
 
 // const drawerWidth = 220;
 
