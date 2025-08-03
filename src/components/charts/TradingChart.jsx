@@ -350,7 +350,7 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
         setLoading(false);
       }
     },
-    [candlestickSeriesRef, setPriceData, setError, setLoading]
+    [setPriceData, setError, setLoading]
   );
 
   const loadTradeData = useCallback(
@@ -393,13 +393,7 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
 
           setTradeData(tradeData);
 
-          // Only add lines if priceData is available
-          if (priceData && priceData.data && priceData.data.length > 0) {
-            // Call addTradeLines function directly if it exists
-            if (addTradeLines) {
-              addTradeLines(tradeData, priceData);
-            }
-          }
+          // Don't call addTradeLines here, it will be handled by a separate useEffect
         } else {
           // Example data if no real operation
           const mockTradeData = {
@@ -417,20 +411,14 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
 
           setTradeData(mockTradeData);
 
-          // Only add lines if priceData is available
-          if (priceData && priceData.data && priceData.data.length > 0) {
-            // Call addTradeLines function directly if it exists
-            if (addTradeLines) {
-              addTradeLines(mockTradeData, priceData);
-            }
-          }
+          // Don't call addTradeLines here, it will be handled by a separate useEffect
         }
       } catch (err) {
         console.error("Error loading trade data:", err);
         // Don't show error if no active operation
       }
     },
-    [priceData, setTradeData]
+    [setTradeData]
   );
 
   const addTradeLines = useCallback(
@@ -774,25 +762,9 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
       }
     },
     [
-      chartRef,
-      candlestickSeriesRef,
-      entryLineRef,
-      stopLossLineRef,
-      takeProfitLineRef,
-      entryStopAreaRef,
-      entryTpAreaRef,
-      upperAreaRef,
       formatPriceAuto,
     ]
   );
-
-  // Load data when chart is ready
-  useEffect(() => {
-    if (chartRef.current && candlestickSeriesRef.current && symbol) {
-      loadPriceData(symbol, timeframe);
-      loadTradeData(symbol);
-    }
-  }, [symbol, timeframe, loadPriceData, loadTradeData]);
 
   // Load data when chart is ready and we have a symbol
   useEffect(() => {
@@ -808,6 +780,13 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
     loadPriceData(symbol, timeframe);
     loadTradeData(symbol);
   }, [symbol, timeframe, loadPriceData, loadTradeData]);
+
+  // Add trade lines when both priceData and tradeData are available
+  useEffect(() => {
+    if (priceData && priceData.data && priceData.data.length > 0 && tradeData && addTradeLines) {
+      addTradeLines(tradeData, priceData);
+    }
+  }, [priceData, tradeData, addTradeLines]);
 
   const handleIntervalChange = (newTimeframe) => {
     setTimeframe(newTimeframe);
