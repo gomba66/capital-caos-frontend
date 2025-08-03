@@ -6,6 +6,7 @@
 - **add development banner to TradingChart page and implement chart functionality**
 
 ### 🐛 Fixed
+- **remove circular dependencies in TradingChart to fix loading issues**
 - **simplify TradingChart useEffect dependencies to resolve loading issues**
 - **optimize TradingChart useEffect dependencies to prevent infinite re-renders and multiple API calls**
 - **fix TradingChart addTradeLines initialization error by removing circular dependency**

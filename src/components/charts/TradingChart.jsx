@@ -116,7 +116,6 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
     }
   }, [tradeData, priceData]);
 
-
   // Function to determine price precision based on symbol
   const getPricePrecision = (symbol) => {
     // Determine precision based on typical asset price
@@ -421,7 +420,7 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
         // Don't show error if no active operation
       }
     },
-    [priceData, setTradeData]
+    [setTradeData]
   );
 
   const addTradeLines = useCallback(
@@ -778,11 +777,10 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
       return;
     }
 
+    // Call functions directly without dependencies
     loadPriceData(symbol, timeframe);
     loadTradeData(symbol);
-  }, [symbol, timeframe, loadPriceData, loadTradeData]);
-
-
+  }, [symbol, timeframe]);
 
   const handleIntervalChange = (newTimeframe) => {
     setTimeframe(newTimeframe);
