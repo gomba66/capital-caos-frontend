@@ -104,15 +104,18 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
     }
   }, [timeZone]); // Runs when timezone changes from context
 
-  // Effect to add lines when both priceData and tradeData are available
+  // Effect to add trade lines when tradeData changes and priceData is available
   useEffect(() => {
-    if (priceData && priceData.data && priceData.data.length > 0 && tradeData) {
-      // Call addTradeLines function directly
-      if (addTradeLines) {
-        addTradeLines(tradeData, priceData);
-      }
+    if (tradeData && priceData && priceData.data && priceData.data.length > 0) {
+      // Use setTimeout to ensure addTradeLines is defined
+      setTimeout(() => {
+        if (addTradeLines) {
+          addTradeLines(tradeData, priceData);
+        }
+      }, 0);
     }
-  }, [priceData, tradeData]); // Remove addTradeLines from dependencies
+  }, [tradeData, priceData]);
+
 
   // Function to determine price precision based on symbol
   const getPricePrecision = (symbol) => {
@@ -393,7 +396,7 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
 
           setTradeData(tradeData);
 
-          // Don't call addTradeLines here, it will be handled by a separate useEffect
+          // Add trade lines if priceData is available - will be handled by useEffect
         } else {
           // Example data if no real operation
           const mockTradeData = {
@@ -411,14 +414,14 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
 
           setTradeData(mockTradeData);
 
-          // Don't call addTradeLines here, it will be handled by a separate useEffect
+          // Add trade lines if priceData is available - will be handled by useEffect
         }
       } catch (err) {
         console.error("Error loading trade data:", err);
         // Don't show error if no active operation
       }
     },
-    [setTradeData]
+    [priceData, setTradeData]
   );
 
   const addTradeLines = useCallback(
@@ -761,9 +764,7 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
         entryTpAreaRef.current = lines;
       }
     },
-    [
-      formatPriceAuto,
-    ]
+    [formatPriceAuto]
   );
 
   // Load data when chart is ready and we have a symbol
@@ -781,12 +782,7 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
     loadTradeData(symbol);
   }, [symbol, timeframe, loadPriceData, loadTradeData]);
 
-  // Add trade lines when both priceData and tradeData are available
-  useEffect(() => {
-    if (priceData && priceData.data && priceData.data.length > 0 && tradeData && addTradeLines) {
-      addTradeLines(tradeData, priceData);
-    }
-  }, [priceData, tradeData, addTradeLines]);
+
 
   const handleIntervalChange = (newTimeframe) => {
     setTimeframe(newTimeframe);
