@@ -815,14 +815,20 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
     // Get current values to avoid stale closure issues
     const currentSymbol = symbol;
     const currentTimeframe = timeframe;
-    
+
     if (!currentSymbol || !currentTimeframe || !priceData?.data?.length) {
-      console.log("🔄 updateLastCandle: missing data", { currentSymbol, currentTimeframe });
+      console.log("🔄 updateLastCandle: missing data", {
+        currentSymbol,
+        currentTimeframe,
+      });
       return;
     }
 
     try {
-      console.log("🔄 updateLastCandle: fetching data for", { currentSymbol, currentTimeframe });
+      console.log("🔄 updateLastCandle: fetching data for", {
+        currentSymbol,
+        currentTimeframe,
+      });
       const data = await getPriceHistory(currentSymbol, currentTimeframe, 2);
 
       if (data && data.data && data.data.length > 0) {
