@@ -21,6 +21,7 @@
 ### 🎨 Enhanced
 
 ### 🔧 Technical
+- **add debug logs to TradingChart to diagnose loading issues**
 - **resolve all React hooks warnings and linting issues**
 - **update page imports to use contexts from separate file**
 - **fix test files to use contexts from separate file**
