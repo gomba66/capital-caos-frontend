@@ -454,7 +454,7 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
         // Don't show error if no active operation
       }
     },
-    [priceData, addTradeLines]
+    [priceData]
   );
 
   const addTradeLines = useCallback((tradeData, priceData) => {
