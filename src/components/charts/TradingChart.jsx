@@ -151,9 +151,12 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
 
   // Create chart only once
   useEffect(() => {
+    console.log("🏗️ Creating chart...");
     // Use setTimeout to ensure DOM is ready
     const timer = setTimeout(() => {
+      console.log("🏗️ Chart creation timer fired");
       if (!chartContainerRef.current) {
+        console.log("❌ No chart container ref");
         return;
       }
       // Create the chart
@@ -256,6 +259,7 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
       });
 
       candlestickSeriesRef.current = candlestickSeries;
+      console.log("✅ Chart and candlestick series created successfully");
 
       // Click handling will be configured in a separate useEffect
 
@@ -311,7 +315,10 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
       setLoading(true);
       setError(null);
 
-      console.log("📡 Making API call to getPriceHistory:", { symbol, interval });
+      console.log("📡 Making API call to getPriceHistory:", {
+        symbol,
+        interval,
+      });
       const data = await getPriceHistory(symbol, interval, 200);
       console.log("📡 API response:", data);
 
@@ -751,11 +758,11 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
   // Load data when chart is ready and we have a symbol
   useEffect(() => {
     console.log("🔍 useEffect triggered:", { symbol, timeframe });
-    console.log("🔍 Chart refs:", { 
-      chartRef: !!chartRef.current, 
-      candlestickSeriesRef: !!candlestickSeriesRef.current 
+    console.log("🔍 Chart refs:", {
+      chartRef: !!chartRef.current,
+      candlestickSeriesRef: !!candlestickSeriesRef.current,
     });
-    
+
     // Only load if we have symbol and chart is ready
     if (!symbol) {
       console.log("❌ No symbol, returning");
@@ -771,7 +778,7 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
     // Call functions directly without dependencies
     loadPriceData(symbol, timeframe);
     loadTradeData(symbol);
-  }, [symbol, timeframe]);
+  }, [symbol, timeframe, chartRef.current, candlestickSeriesRef.current]);
 
   const handleIntervalChange = (newTimeframe) => {
     setTimeframe(newTimeframe);

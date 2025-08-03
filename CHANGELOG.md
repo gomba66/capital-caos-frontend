@@ -6,6 +6,7 @@
 - **add development banner to TradingChart page and implement chart functionality**
 
 ### 🐛 Fixed
+- **fix TradingChart useEffect to wait for chart initialization before loading data**
 - **convert TradingChart functions from useCallback to regular functions to fix loading issues**
 - **remove circular dependencies in TradingChart to fix loading issues**
 - **simplify TradingChart useEffect dependencies to resolve loading issues**
