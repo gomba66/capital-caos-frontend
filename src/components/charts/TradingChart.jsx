@@ -107,9 +107,12 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
   // Effect to add lines when both priceData and tradeData are available
   useEffect(() => {
     if (priceData && priceData.data && priceData.data.length > 0 && tradeData) {
-      addTradeLines(tradeData, priceData);
+      // Call addTradeLines function directly
+      if (addTradeLines) {
+        addTradeLines(tradeData, priceData);
+      }
     }
-  }, [priceData, tradeData, addTradeLines]); // Runs when data changes
+  }, [priceData, tradeData]); // Remove addTradeLines from dependencies
 
   // Function to determine price precision based on symbol
   const getPricePrecision = (symbol) => {
