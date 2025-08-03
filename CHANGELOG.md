@@ -10,6 +10,7 @@
 ### 🎨 Enhanced
 
 ### 🔧 Technical
+- **remove unused variables in changelog script**
 - **fix linting errors and warnings**
 
 ### 📱 Mobile Features

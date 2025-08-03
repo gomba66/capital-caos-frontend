@@ -121,8 +121,8 @@ function updateChangelog(type, description) {
     }
 
     // Find the end of the section (next ### or end of [Unreleased])
-    const nextSection = changelog.indexOf("\n### ", sectionStart + 1);
-    const unreleasedEnd = changelog.indexOf("\n## ", unreleasedIndex + 1);
+    // const nextSection = changelog.indexOf("\n### ", sectionStart + 1);
+    // const unreleasedEnd = changelog.indexOf("\n## ", unreleasedIndex + 1);
     // const sectionEnd =
     //   nextSection !== -1 && nextSection < unreleasedEnd
     //     ? nextSection
