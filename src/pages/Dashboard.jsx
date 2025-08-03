@@ -24,7 +24,7 @@ import MomentumPairsTable from "../components/MomentumPairsTable";
 import EquityChart from "../components/charts/EquityChart";
 import ProfitFactorChart from "../components/charts/ProfitFactorChart";
 import { DateTime } from "luxon";
-import { TimeZoneContext } from "../App";
+import { TimeZoneContext } from "../contexts/AppContexts";
 
 const statLabels = {
   winrate: "Winrate (%)",

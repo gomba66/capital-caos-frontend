@@ -3,13 +3,24 @@ import { render, screen } from "@testing-library/react";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { BrowserRouter } from "react-router-dom";
 import Settings from "../Settings";
+import { TimeZoneContext, SidebarContext } from "../../contexts/AppContexts";
 
 const theme = createTheme();
 
 const renderWithProviders = (component) => {
   return render(
     <BrowserRouter>
-      <ThemeProvider theme={theme}>{component}</ThemeProvider>
+      <ThemeProvider theme={theme}>
+        <TimeZoneContext.Provider
+          value={{ timeZone: "UTC", setTimeZone: vi.fn() }}
+        >
+          <SidebarContext.Provider
+            value={{ sidebarWidth: 220, setSidebarWidth: vi.fn() }}
+          >
+            {component}
+          </SidebarContext.Provider>
+        </TimeZoneContext.Provider>
+      </ThemeProvider>
     </BrowserRouter>
   );
 };

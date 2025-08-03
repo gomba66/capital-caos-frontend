@@ -1,11 +1,18 @@
 import js from "@eslint/js";
 import globals from "globals";
+import reactHooks from "eslint-plugin-react-hooks";
+import reactRefresh from "eslint-plugin-react-refresh";
+import { defineConfig, globalIgnores } from "eslint/config";
 
-export default [
-  js.configs.recommended,
+export default defineConfig([
+  globalIgnores(["dist"]),
   {
     files: ["**/*.{js,jsx}"],
-    ignores: ["dist/**", "node_modules/**"],
+    extends: [
+      js.configs.recommended,
+      reactHooks.configs["recommended-latest"],
+      reactRefresh.configs.vite,
+    ],
     languageOptions: {
       ecmaVersion: 2020,
       globals: {
@@ -37,4 +44,13 @@ export default [
       "react/react-in-jsx-scope": "off",
     },
   },
-];
+  {
+    files: ["scripts/**/*.js"],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+        process: "readonly",
+      },
+    },
+  },
+]);

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Table,
   TableBody,
@@ -101,6 +102,8 @@ function getWinLoss(pnl) {
 }
 
 export default function OperationsTable({ operations, title, timeZone }) {
+  const navigate = useNavigate();
+
   // Detect if open_trades format (Binance) or closed trades (tracker)
   const isOpenTrades =
     operations &&
@@ -111,6 +114,11 @@ export default function OperationsTable({ operations, title, timeZone }) {
   // Estado para ordenamiento
   const [orderBy, setOrderBy] = useState(null);
   const [order, setOrder] = useState("asc");
+
+  // Función para navegar al gráfico de trading
+  const handleSymbolClick = (symbol) => {
+    navigate(`/trading-chart/${symbol}`);
+  };
 
   // Función para ordenar
   function handleSort(col) {
@@ -224,7 +232,34 @@ export default function OperationsTable({ operations, title, timeZone }) {
               sortedOps.map((op, idx) => (
                 <React.Fragment key={idx}>
                   <TableRow>
-                    <TableCell>{op.symbol || "-"}</TableCell>
+                    <TableCell
+                      onClick={() =>
+                        isOpenTrades && handleSymbolClick(op.symbol)
+                      }
+                      style={{
+                        cursor: isOpenTrades ? "pointer" : "default",
+                        color: isOpenTrades ? "#2de2e6" : "inherit",
+                        fontWeight: isOpenTrades ? 600 : "normal",
+                        transition: "all 0.2s ease",
+                        borderRadius: "4px",
+                        padding: "8px 12px",
+                      }}
+                      onMouseEnter={(e) => {
+                        if (isOpenTrades) {
+                          e.target.style.backgroundColor =
+                            "rgba(45, 226, 230, 0.1)";
+                          e.target.style.color = "#2de2e6";
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (isOpenTrades) {
+                          e.target.style.backgroundColor = "transparent";
+                          e.target.style.color = "#2de2e6";
+                        }
+                      }}
+                    >
+                      {op.symbol || "-"}
+                    </TableCell>
                     <TableCell style={getSideStyle(op.side || op.positionSide)}>
                       {op.side || op.positionSide || "-"}
                       {op.protected && (

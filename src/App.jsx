@@ -1,21 +1,13 @@
-import React, { useState, useMemo, createContext } from "react";
+import React, { useState, useMemo } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import Charts from "./pages/Charts";
 import Settings from "./pages/Settings";
+import TradingChartPage from "./pages/TradingChart";
 import Sidebar from "./components/Sidebar";
 import { Box, useTheme, useMediaQuery } from "@mui/material";
 import { DateTime } from "luxon";
-
-export const SidebarContext = createContext({
-  sidebarWidth: 220,
-  setSidebarWidth: () => {},
-});
-// test comment
-export const TimeZoneContext = React.createContext({
-  timeZone: DateTime.local().zoneName,
-  setTimeZone: () => {},
-});
+import { SidebarContext, TimeZoneContext } from "./contexts/AppContexts";
 
 function App() {
   const localZone = DateTime.local().zoneName;
@@ -62,6 +54,11 @@ function App() {
               <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/charts" element={<Charts />} />
+                <Route path="/trading-chart" element={<TradingChartPage />} />
+                <Route
+                  path="/trading-chart/:symbol"
+                  element={<TradingChartPage />}
+                />
                 <Route path="/settings" element={<Settings />} />
               </Routes>
             </Box>

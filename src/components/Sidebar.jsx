@@ -15,6 +15,7 @@ import {
   useTheme,
   useMediaQuery,
   Tooltip,
+  ListItemButton,
 } from "@mui/material";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import BarChartIcon from "@mui/icons-material/BarChart";
@@ -22,13 +23,16 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import ShowChartIcon from "@mui/icons-material/ShowChart";
 
 import { Link, useLocation } from "react-router-dom";
-import { TimeZoneContext, SidebarContext } from "../App";
+import { TimeZoneContext, SidebarContext } from "../contexts/AppContexts";
 
+// const drawerWidth = 220;
 const navItems = [
   { text: "Dashboard", icon: <DashboardIcon />, path: "/" },
   { text: "Charts", icon: <BarChartIcon />, path: "/charts" },
+  { text: "Trading Chart", icon: <ShowChartIcon />, path: "/trading-chart" },
   { text: "Settings", icon: <SettingsIcon />, path: "/settings" },
 ];
 
@@ -197,52 +201,54 @@ export default function Sidebar() {
                 },
               }}
             >
-              <ListItem
-                component={Link}
-                to={item.path}
-                selected={location.pathname === item.path}
-                sx={{
-                  mb: isCollapsed ? 0.5 : 1,
-                  borderRadius: isCollapsed ? 1 : 2,
-                  minHeight: 48,
-                  justifyContent: isCollapsed ? "center" : "flex-start",
-                  background:
-                    location.pathname === item.path
-                      ? "rgba(45,226,230,0.12)"
-                      : "none",
-                  "&:hover": {
-                    background: "rgba(255,225,86,0.10)",
-                  },
-                }}
-              >
-                <ListItemIcon
+              <ListItem disablePadding>
+                <ListItemButton
+                  component={Link}
+                  to={item.path}
+                  selected={location.pathname === item.path}
                   sx={{
-                    color: "#2de2e6",
-                    minWidth: isCollapsed ? "auto" : 36,
-                    margin: 0,
+                    mb: isCollapsed ? 0.5 : 1,
+                    borderRadius: isCollapsed ? 1 : 2,
+                    minHeight: 48,
+                    justifyContent: isCollapsed ? "center" : "flex-start",
+                    background:
+                      location.pathname === item.path
+                        ? "rgba(45,226,230,0.12)"
+                        : "none",
+                    "&:hover": {
+                      background: "rgba(255,225,86,0.10)",
+                    },
                   }}
                 >
-                  {item.icon}
-                </ListItemIcon>
-                <Box
-                  sx={{
-                    overflow: "hidden",
-                    transition: "all 0.3s ease-in-out",
-                    opacity: isCollapsed ? 0 : 1,
-                    maxWidth: isCollapsed ? 0 : "auto",
-                    transform: isCollapsed
-                      ? "translateX(-10px)"
-                      : "translateX(0)",
-                  }}
-                >
-                  <ListItemText
-                    primary={item.text}
-                    primaryTypographyProps={{
-                      fontWeight: 600,
-                      letterSpacing: 1,
+                  <ListItemIcon
+                    sx={{
+                      color: "#2de2e6",
+                      minWidth: isCollapsed ? "auto" : 36,
+                      margin: 0,
                     }}
-                  />
-                </Box>
+                  >
+                    {item.icon}
+                  </ListItemIcon>
+                  <Box
+                    sx={{
+                      overflow: "hidden",
+                      transition: "all 0.3s ease-in-out",
+                      opacity: isCollapsed ? 0 : 1,
+                      maxWidth: isCollapsed ? 0 : "auto",
+                      transform: isCollapsed
+                        ? "translateX(-10px)"
+                        : "translateX(0)",
+                    }}
+                  >
+                    <ListItemText
+                      primary={item.text}
+                      primaryTypographyProps={{
+                        fontWeight: 600,
+                        letterSpacing: 1,
+                      }}
+                    />
+                  </Box>
+                </ListItemButton>
               </ListItem>
             </Tooltip>
           ))}

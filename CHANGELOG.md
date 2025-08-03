@@ -14,6 +14,45 @@
 
 ### 🖥️ Desktop Features
 
+## [v0.0.9] - 2025-08-03
+
+
+### ✨ Added
+- **add development banner to TradingChart page and implement chart functionality**
+
+### 🐛 Fixed
+- **fix TradingChart real-time and more issues**
+- **fix TradingChart real-time to stop when changing symbols and use current values**
+- **simplify TradingChart real-time useEffect to fix interval issues**
+- **fix TradingChart real-time button by converting updateLastCandle to regular function**
+- **fix TradingChart useEffect to wait for chart initialization before loading data**
+- **convert TradingChart functions from useCallback to regular functions to fix loading issues**
+- **remove circular dependencies in TradingChart to fix loading issues**
+- **simplify TradingChart useEffect dependencies to resolve loading issues**
+- **optimize TradingChart useEffect dependencies to prevent infinite re-renders and multiple API calls**
+- **fix TradingChart addTradeLines initialization error by removing circular dependency**
+- **fix TradingChart useCallback dependencies to resolve loading issues**
+- **fix TradingChart loading issue by moving functions before useEffect**
+- **fix TradingChart component initialization error with addTradeLines dependency**
+- **fix TradingChart component initialization error with loadPriceData and loadTradeData**
+- **fix TradingChart component initialization error with addTradeLines**
+- **fix TradingChart page initialization error with loadAvailableSymbols**
+
+### 🎨 Enhanced
+
+### 🔧 Technical
+- **add debug logs to TradingChart to diagnose loading issues**
+- **resolve all React hooks warnings and linting issues**
+- **update page imports to use contexts from separate file**
+- **fix test files to use contexts from separate file**
+- **move React contexts to separate file to fix react-refresh errors**
+- **remove unused variables in changelog script**
+- **fix linting errors and warnings**
+
+### 📱 Mobile Features
+
+### 🖥️ Desktop Features
+
 ## [v0.0.8] - 2025-08-01
 
 ### ✨ Added
