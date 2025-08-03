@@ -303,39 +303,6 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
     return () => clearTimeout(timer);
   }, [height, timeZone]);
 
-  // Load data when chart is ready
-  useEffect(() => {
-    if (chartRef.current && candlestickSeriesRef.current && symbol) {
-      // Call functions directly if they exist
-      if (loadPriceData) {
-        loadPriceData(symbol, timeframe);
-      }
-      if (loadTradeData) {
-        loadTradeData(symbol);
-      }
-    }
-  }, [symbol, timeframe]); // Remove function dependencies
-
-  // Load data when chart is ready and we have a symbol
-  useEffect(() => {
-    // Only load if we have symbol and chart is ready
-    if (!symbol) {
-      return;
-    }
-
-    if (!chartRef.current || !candlestickSeriesRef.current) {
-      return;
-    }
-
-    // Call functions directly if they exist
-    if (loadPriceData) {
-      loadPriceData(symbol, timeframe);
-    }
-    if (loadTradeData) {
-      loadTradeData(symbol);
-    }
-  }, [symbol, timeframe]); // Remove function dependencies
-
   const loadPriceData = useCallback(async (symbol, interval) => {
     try {
       setLoading(true);
@@ -784,6 +751,29 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
       entryTpAreaRef.current = lines;
     }
   }, []);
+
+  // Load data when chart is ready
+  useEffect(() => {
+    if (chartRef.current && candlestickSeriesRef.current && symbol) {
+      loadPriceData(symbol, timeframe);
+      loadTradeData(symbol);
+    }
+  }, [symbol, timeframe, loadPriceData, loadTradeData]);
+
+  // Load data when chart is ready and we have a symbol
+  useEffect(() => {
+    // Only load if we have symbol and chart is ready
+    if (!symbol) {
+      return;
+    }
+
+    if (!chartRef.current || !candlestickSeriesRef.current) {
+      return;
+    }
+
+    loadPriceData(symbol, timeframe);
+    loadTradeData(symbol);
+  }, [symbol, timeframe, loadPriceData, loadTradeData]);
 
   const handleIntervalChange = (newTimeframe) => {
     setTimeframe(newTimeframe);
