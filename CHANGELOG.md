@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### ✨ Added
+- **add development banner to TradingChart page and implement chart functionality**
 
 ### 🐛 Fixed
 

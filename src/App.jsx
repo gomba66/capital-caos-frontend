@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import Charts from "./pages/Charts";
 import Settings from "./pages/Settings";
+import TradingChartPage from "./pages/TradingChart";
 import Sidebar from "./components/Sidebar";
 import { Box, useTheme, useMediaQuery } from "@mui/material";
 import { DateTime } from "luxon";
@@ -62,6 +63,11 @@ function App() {
               <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/charts" element={<Charts />} />
+                <Route path="/trading-chart" element={<TradingChartPage />} />
+                <Route
+                  path="/trading-chart/:symbol"
+                  element={<TradingChartPage />}
+                />
                 <Route path="/settings" element={<Settings />} />
               </Routes>
             </Box>

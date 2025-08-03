@@ -19,6 +19,7 @@
     "@mui/icons-material": "^7.2.0",
     "@mui/material": "^7.2.0",
     "axios": "^1.10.0",
+    "lightweight-charts": "^5.0.8",
     "luxon": "^3.7.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
