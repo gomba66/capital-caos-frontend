@@ -7,6 +7,7 @@ import { getStats } from "../../api/stats";
 import { getOperations } from "../../api/operations";
 import { getOpenTrades } from "../../api/openTrades";
 import { getMomentumPairs } from "../../api/momentumPairs";
+import { TimeZoneContext, SidebarContext } from "../../contexts/AppContexts";
 
 // Mock de las APIs
 vi.mock("../../api/stats", () => ({
@@ -30,7 +31,17 @@ const theme = createTheme();
 const renderWithProviders = (component) => {
   return render(
     <BrowserRouter>
-      <ThemeProvider theme={theme}>{component}</ThemeProvider>
+      <ThemeProvider theme={theme}>
+        <TimeZoneContext.Provider
+          value={{ timeZone: "UTC", setTimeZone: vi.fn() }}
+        >
+          <SidebarContext.Provider
+            value={{ sidebarWidth: 220, setSidebarWidth: vi.fn() }}
+          >
+            {component}
+          </SidebarContext.Provider>
+        </TimeZoneContext.Provider>
+      </ThemeProvider>
     </BrowserRouter>
   );
 };

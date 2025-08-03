@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import Sidebar from "../Sidebar";
-import { TimeZoneContext, SidebarContext } from "../../App";
+import { TimeZoneContext, SidebarContext } from "../../contexts/AppContexts";
 
 const theme = createTheme();
 

@@ -4,6 +4,7 @@ import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { BrowserRouter } from "react-router-dom";
 import Charts from "../Charts";
 import { getOperations } from "../../api/operations";
+import { TimeZoneContext, SidebarContext } from "../../contexts/AppContexts";
 
 // Mock de las APIs
 vi.mock("../../api/operations", () => ({
@@ -15,7 +16,17 @@ const theme = createTheme();
 const renderWithProviders = (component) => {
   return render(
     <BrowserRouter>
-      <ThemeProvider theme={theme}>{component}</ThemeProvider>
+      <ThemeProvider theme={theme}>
+        <TimeZoneContext.Provider
+          value={{ timeZone: "UTC", setTimeZone: vi.fn() }}
+        >
+          <SidebarContext.Provider
+            value={{ sidebarWidth: 220, setSidebarWidth: vi.fn() }}
+          >
+            {component}
+          </SidebarContext.Provider>
+        </TimeZoneContext.Provider>
+      </ThemeProvider>
     </BrowserRouter>
   );
 };

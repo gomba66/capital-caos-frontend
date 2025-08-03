@@ -10,6 +10,7 @@
 ### 🎨 Enhanced
 
 ### 🔧 Technical
+- **fix test files to use contexts from separate file**
 - **move React contexts to separate file to fix react-refresh errors**
 - **remove unused variables in changelog script**
 - **fix linting errors and warnings**
