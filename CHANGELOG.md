@@ -6,6 +6,7 @@
 - **add development banner to TradingChart page and implement chart functionality**
 
 ### 🐛 Fixed
+- **fix TradingChart component initialization error with loadPriceData and loadTradeData**
 - **fix TradingChart component initialization error with addTradeLines**
 - **fix TradingChart page initialization error with loadAvailableSymbols**
 

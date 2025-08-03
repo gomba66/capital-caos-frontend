@@ -306,10 +306,15 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
   // Load data when chart is ready
   useEffect(() => {
     if (chartRef.current && candlestickSeriesRef.current && symbol) {
-      loadPriceData(symbol, timeframe);
-      loadTradeData(symbol);
+      // Call functions directly if they exist
+      if (loadPriceData) {
+        loadPriceData(symbol, timeframe);
+      }
+      if (loadTradeData) {
+        loadTradeData(symbol);
+      }
     }
-  }, [symbol, timeframe, loadPriceData, loadTradeData]);
+  }, [symbol, timeframe]); // Remove function dependencies
 
   // Load data when chart is ready and we have a symbol
   useEffect(() => {
@@ -322,9 +327,14 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
       return;
     }
 
-    loadPriceData(symbol, timeframe);
-    loadTradeData(symbol);
-  }, [symbol, timeframe, loadPriceData, loadTradeData]);
+    // Call functions directly if they exist
+    if (loadPriceData) {
+      loadPriceData(symbol, timeframe);
+    }
+    if (loadTradeData) {
+      loadTradeData(symbol);
+    }
+  }, [symbol, timeframe]); // Remove function dependencies
 
   const loadPriceData = useCallback(async (symbol, interval) => {
     try {
