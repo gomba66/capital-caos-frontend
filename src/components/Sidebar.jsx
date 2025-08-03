@@ -28,7 +28,7 @@ import ShowChartIcon from "@mui/icons-material/ShowChart";
 import { Link, useLocation } from "react-router-dom";
 import { TimeZoneContext, SidebarContext } from "../App";
 
-const drawerWidth = 220;
+// const drawerWidth = 220;
 
 const navItems = [
   { text: "Dashboard", icon: <DashboardIcon />, path: "/" },
@@ -40,7 +40,7 @@ const navItems = [
 export default function Sidebar() {
   const location = useLocation();
   const { timeZone } = useContext(TimeZoneContext);
-  const { sidebarWidth, setSidebarWidth } = useContext(SidebarContext);
+  const { setSidebarWidth } = useContext(SidebarContext);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [collapsed, setCollapsed] = useState(false);

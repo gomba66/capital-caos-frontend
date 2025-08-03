@@ -10,6 +10,7 @@
 ### 🎨 Enhanced
 
 ### 🔧 Technical
+- **fix linting errors and warnings**
 
 ### 📱 Mobile Features
 

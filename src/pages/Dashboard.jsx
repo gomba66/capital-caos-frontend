@@ -37,17 +37,17 @@ const statLabels = {
   max_loss_streak: "Max Loss Streak",
 };
 
-const commonTimeZones = [
-  "UTC",
-  "America/Bogota",
-  "America/Mexico_City",
-  "America/New_York",
-  "Europe/Madrid",
-  "Europe/London",
-  "Asia/Tokyo",
-  "Asia/Shanghai",
-  "America/Argentina/Buenos_Aires",
-];
+// const commonTimeZones = [
+//   "UTC",
+//   "America/Bogota",
+//   "America/Mexico_City",
+//   "America/New_York",
+//   "Europe/Madrid",
+//   "Europe/London",
+//   "Asia/Tokyo",
+//   "Asia/Shanghai",
+//   "America/Argentina/Buenos_Aires",
+// ];
 
 export default function Dashboard() {
   const [stats, setStats] = useState(null);
@@ -58,7 +58,7 @@ export default function Dashboard() {
   const [lastUpdate, setLastUpdate] = useState(null);
   const [prevOpenTrades, setPrevOpenTrades] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
-  const localZone = DateTime.local().zoneName;
+  // const localZone = DateTime.local().zoneName;
   const { timeZone } = useContext(TimeZoneContext);
 
   // Fetch global (stats, closed, momentum)
@@ -83,7 +83,6 @@ export default function Dashboard() {
   useEffect(() => {
     setLoading(true);
     fetchAll().then(() => setLoading(false));
-     
   }, []);
 
   // Auto-refresh solo de open trades cada 10s
@@ -111,7 +110,6 @@ export default function Dashboard() {
       isMounted = false;
       clearInterval(id);
     };
-     
   }, [prevOpenTrades]);
 
   if (loading) {

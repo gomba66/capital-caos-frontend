@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Box,
   Container,
@@ -34,9 +34,9 @@ const TradingChartPage = () => {
 
   useEffect(() => {
     loadAvailableSymbols();
-  }, []);
+  }, [loadAvailableSymbols]);
 
-  const loadAvailableSymbols = async () => {
+  const loadAvailableSymbols = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -62,7 +62,7 @@ const TradingChartPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [urlSymbol]);
 
   const handleSymbolChange = (event) => {
     const newSymbol = event.target.value;

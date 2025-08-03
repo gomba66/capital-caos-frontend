@@ -162,7 +162,7 @@ const tooltipStyle = {
   color: "#fff",
 };
 
-const CustomTooltip = ({ active, payload, label, filterType }) => {
+const CustomTooltip = ({ active, payload, /* label, */ filterType }) => {
   if (active && payload && payload.length && payload[0] && payload[0].payload) {
     const data = payload[0].payload;
     let filterText = "All operations";

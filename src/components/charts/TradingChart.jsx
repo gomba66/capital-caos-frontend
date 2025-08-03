@@ -26,7 +26,7 @@ import {
   CircularProgress,
   Button,
 } from "@mui/material";
-import { getTradeDetails } from "../../api/operations";
+// import { getTradeDetails } from "../../api/operations";
 import { getPriceHistory } from "../../api/priceHistory";
 import { TimeZoneContext } from "../../App";
 
@@ -495,7 +495,7 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
 
     // Get precision for formatting prices
     const precision = tradeData.precision || 2;
-    const formatPrice = (price) => price.toFixed(precision);
+    // const formatPrice = (price) => price.toFixed(precision);
 
     // Calculate time range based on candles and entry date
     let startTime, endTime;
@@ -649,7 +649,7 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
       const areaColor = "rgba(244, 67, 54, 0.1)"; // Light red for both cases
 
       // Determine which price is higher to create area correctly
-      const higherPrice = Math.max(tradeData.entry_price, tradeData.stop_loss);
+      // const higherPrice = Math.max(tradeData.entry_price, tradeData.stop_loss);
       const lowerPrice = Math.min(tradeData.entry_price, tradeData.stop_loss);
 
       // Create colored area using multiple lines very close together
@@ -709,10 +709,10 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
       const tpAreaColor = "rgba(76, 175, 80, 0.1)"; // Light green for gains
 
       // Determine which price is higher to create area correctly
-      const higherPrice = Math.max(
-        tradeData.entry_price,
-        tradeData.take_profit
-      );
+      // const higherPrice = Math.max(
+      //   tradeData.entry_price,
+      //   tradeData.take_profit
+      // );
       const lowerPrice = Math.min(tradeData.entry_price, tradeData.take_profit);
 
       // Create colored area using multiple lines very close together
@@ -776,7 +776,7 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
 
   // Function to update entry line PnL
   const updateEntryMarkerPnL = useCallback(
-    (newCurrentPrice) => {
+    (/* newCurrentPrice */) => {
       if (!entryLineRef.current || !tradeData?.entry_price) return;
 
       // Use PnL that comes directly from API
