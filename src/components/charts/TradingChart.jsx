@@ -305,8 +305,7 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
     return () => clearTimeout(timer);
   }, [height, timeZone]);
 
-  const loadPriceData = useCallback(
-    async (symbol, interval) => {
+  const loadPriceData = async (symbol, interval) => {
       try {
         setLoading(true);
         setError(null);
@@ -351,12 +350,9 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
       } finally {
         setLoading(false);
       }
-    },
-    [setPriceData, setError, setLoading]
-  );
+    };
 
-  const loadTradeData = useCallback(
-    async (symbol) => {
+  const loadTradeData = async (symbol) => {
       try {
         // Load real data from open operations
         const response = await fetch("/api/open_trades");
@@ -419,12 +415,9 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
         console.error("Error loading trade data:", err);
         // Don't show error if no active operation
       }
-    },
-    [setTradeData]
-  );
+    };
 
-  const addTradeLines = useCallback(
-    (tradeData, priceData) => {
+  const addTradeLines = (tradeData, priceData) => {
       if (!candlestickSeriesRef.current || !tradeData) return;
 
       // Update current_price with closing price of most recent candle
@@ -762,9 +755,7 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
         // Save lines to clean them later
         entryTpAreaRef.current = lines;
       }
-    },
-    [formatPriceAuto]
-  );
+          };
 
   // Load data when chart is ready and we have a symbol
   useEffect(() => {
