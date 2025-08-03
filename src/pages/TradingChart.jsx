@@ -32,10 +32,6 @@ const TradingChartPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    loadAvailableSymbols();
-  }, [loadAvailableSymbols]);
-
   const loadAvailableSymbols = useCallback(async () => {
     try {
       setLoading(true);
@@ -63,6 +59,10 @@ const TradingChartPage = () => {
       setLoading(false);
     }
   }, [urlSymbol]);
+
+  useEffect(() => {
+    loadAvailableSymbols();
+  }, [loadAvailableSymbols]);
 
   const handleSymbolChange = (event) => {
     const newSymbol = event.target.value;

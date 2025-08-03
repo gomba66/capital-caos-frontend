@@ -6,6 +6,7 @@
 - **add development banner to TradingChart page and implement chart functionality**
 
 ### 🐛 Fixed
+- **fix TradingChart page initialization error with loadAvailableSymbols**
 
 ### 🎨 Enhanced
 
