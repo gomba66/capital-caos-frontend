@@ -6,6 +6,7 @@
 - **add development banner to TradingChart page and implement chart functionality**
 
 ### 🐛 Fixed
+- **fix TradingChart addTradeLines initialization error by removing circular dependency**
 - **fix TradingChart useCallback dependencies to resolve loading issues**
 - **fix TradingChart loading issue by moving functions before useEffect**
 - **fix TradingChart component initialization error with addTradeLines dependency**

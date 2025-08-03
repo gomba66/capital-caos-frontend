@@ -395,7 +395,10 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
 
           // Only add lines if priceData is available
           if (priceData && priceData.data && priceData.data.length > 0) {
-            addTradeLines(tradeData, priceData);
+            // Call addTradeLines function directly if it exists
+            if (addTradeLines) {
+              addTradeLines(tradeData, priceData);
+            }
           }
         } else {
           // Example data if no real operation
@@ -416,7 +419,10 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
 
           // Only add lines if priceData is available
           if (priceData && priceData.data && priceData.data.length > 0) {
-            addTradeLines(mockTradeData, priceData);
+            // Call addTradeLines function directly if it exists
+            if (addTradeLines) {
+              addTradeLines(mockTradeData, priceData);
+            }
           }
         }
       } catch (err) {
@@ -424,7 +430,7 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
         // Don't show error if no active operation
       }
     },
-    [priceData, addTradeLines, setTradeData]
+    [priceData, setTradeData]
   );
 
   const addTradeLines = useCallback(
