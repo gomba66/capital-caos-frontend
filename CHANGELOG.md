@@ -14,6 +14,24 @@
 
 ### 🖥️ Desktop Features
 
+## [v0.1.0] - 2025-08-04
+
+
+### ✨ Added
+
+### 🐛 Fixed
+
+### 🎨 Enhanced
+- **Simplify date format in all charts and tables to dd/MM/yy - h:mm:ss a**
+- **Simplify date format in closed trades table to dd/MM/yy - h:mm:ss a**
+- **Improve open trades table with separate chart button and conditional aggregations column**
+
+### 🔧 Technical
+
+### 📱 Mobile Features
+
+### 🖥️ Desktop Features
+
 ## [v0.0.9] - 2025-08-03
 
 

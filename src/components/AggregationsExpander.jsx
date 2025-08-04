@@ -21,9 +21,7 @@ function formatAggregationTime(timestamp, timeZone) {
   try {
     const dt = DateTime.fromISO(timestamp, { zone: "utc" });
     if (!dt.isValid) return timestamp;
-    return dt
-      .setZone(timeZone)
-      .toLocaleString(DateTime.DATETIME_MED_WITH_SECONDS);
+    return dt.setZone(timeZone).toFormat("dd/MM/yy - h:mm:ss a");
   } catch {
     return timestamp;
   }

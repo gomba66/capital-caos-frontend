@@ -10,7 +10,10 @@ import {
   Paper,
   Typography,
   Box,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
+import { ShowChart } from "@mui/icons-material";
 import { DateTime } from "luxon";
 import AggregationsExpander from "./AggregationsExpander";
 
@@ -20,16 +23,14 @@ function formatDate(date, timeZone) {
     // ms timestamp
     return DateTime.fromMillis(date)
       .setZone(timeZone)
-      .toLocaleString(DateTime.DATETIME_MED_WITH_SECONDS);
+      .toFormat("dd/MM/yy - h:mm:ss a");
   }
   let dt = DateTime.fromISO(date, { zone: "utc" });
   if (!dt.isValid) {
     dt = DateTime.fromFormat(date, "yyyy-MM-dd HH:mm:ss", { zone: "utc" });
   }
   if (!dt.isValid) return date;
-  return dt
-    .setZone(timeZone)
-    .toLocaleString(DateTime.DATETIME_MED_WITH_SECONDS);
+  return dt.setZone(timeZone).toFormat("dd/MM/yy - h:mm:ss a");
 }
 
 function formatNumber(val, decimals = 4) {
@@ -110,6 +111,11 @@ export default function OperationsTable({ operations, title, timeZone }) {
     operations.length > 0 &&
     (operations[0].positionAmt !== undefined ||
       operations[0].status === "open");
+
+  // Check if any open trades have aggregations
+  const hasAggregations =
+    isOpenTrades &&
+    operations.some((op) => op.aggregations && op.aggregations.length > 0);
 
   // Estado para ordenamiento
   const [orderBy, setOrderBy] = useState(null);
@@ -207,7 +213,7 @@ export default function OperationsTable({ operations, title, timeZone }) {
                 }
                 style={{ cursor: "pointer" }}
               >
-                {isOpenTrades ? "Tiempo abierto" : "Open date"}
+                {isOpenTrades ? "Open Time" : "Open date"}
               </TableCell>
               <TableCell
                 onClick={() => handleSort(isOpenTrades ? "" : "closeTime")}
@@ -224,7 +230,8 @@ export default function OperationsTable({ operations, title, timeZone }) {
                 </TableCell>
               )}
               {isOpenTrades && <TableCell>TP Target</TableCell>}
-              {isOpenTrades && <TableCell>Aggregations</TableCell>}
+              {isOpenTrades && <TableCell>Chart</TableCell>}
+              {hasAggregations && <TableCell>Aggregations</TableCell>}
             </TableRow>
           </TableHead>
           <TableBody>
@@ -233,29 +240,9 @@ export default function OperationsTable({ operations, title, timeZone }) {
                 <React.Fragment key={idx}>
                   <TableRow>
                     <TableCell
-                      onClick={() =>
-                        isOpenTrades && handleSymbolClick(op.symbol)
-                      }
                       style={{
-                        cursor: isOpenTrades ? "pointer" : "default",
-                        color: isOpenTrades ? "#2de2e6" : "inherit",
-                        fontWeight: isOpenTrades ? 600 : "normal",
-                        transition: "all 0.2s ease",
-                        borderRadius: "4px",
-                        padding: "8px 12px",
-                      }}
-                      onMouseEnter={(e) => {
-                        if (isOpenTrades) {
-                          e.target.style.backgroundColor =
-                            "rgba(45, 226, 230, 0.1)";
-                          e.target.style.color = "#2de2e6";
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (isOpenTrades) {
-                          e.target.style.backgroundColor = "transparent";
-                          e.target.style.color = "#2de2e6";
-                        }
+                        fontWeight: 600,
+                        color: "#2de2e6",
                       }}
                     >
                       {op.symbol || "-"}
@@ -332,6 +319,25 @@ export default function OperationsTable({ operations, title, timeZone }) {
                     )}
                     {isOpenTrades && (
                       <TableCell>
+                        <Tooltip title={`View ${op.symbol} chart`}>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleSymbolClick(op.symbol)}
+                            sx={{
+                              color: "#2de2e6",
+                              "&:hover": {
+                                backgroundColor: "rgba(45, 226, 230, 0.1)",
+                                color: "#2de2e6",
+                              },
+                            }}
+                          >
+                            <ShowChart />
+                          </IconButton>
+                        </Tooltip>
+                      </TableCell>
+                    )}
+                    {hasAggregations && (
+                      <TableCell>
                         <AggregationsExpander
                           aggregations={op.aggregations}
                           timeZone={timeZone}
@@ -340,12 +346,12 @@ export default function OperationsTable({ operations, title, timeZone }) {
                     )}
                   </TableRow>
                   {/* Row for aggregations expander */}
-                  {isOpenTrades &&
+                  {hasAggregations &&
                     op.aggregations &&
                     op.aggregations.length > 0 && (
                       <TableRow>
                         <TableCell
-                          colSpan={isOpenTrades ? 8 : 7}
+                          colSpan={isOpenTrades ? (hasAggregations ? 9 : 8) : 7}
                           style={{ padding: 0 }}
                         >
                           <AggregationsExpander
@@ -360,7 +366,10 @@ export default function OperationsTable({ operations, title, timeZone }) {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={isOpenTrades ? 8 : 7} align="center">
+                <TableCell
+                  colSpan={isOpenTrades ? (hasAggregations ? 9 : 8) : 7}
+                  align="center"
+                >
                   No operations found.
                 </TableCell>
               </TableRow>
@@ -385,7 +394,7 @@ export default function OperationsTable({ operations, title, timeZone }) {
                   Total: {totalPnL > 0 ? "+" : totalPnL < 0 ? "-" : ""}$
                   {Math.abs(totalPnL).toFixed(2)}
                 </TableCell>
-                <TableCell colSpan={6} />
+                <TableCell colSpan={hasAggregations ? 6 : 5} />
               </TableRow>
             </tfoot>
           )}

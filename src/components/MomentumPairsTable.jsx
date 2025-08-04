@@ -21,9 +21,7 @@ function formatTime(time, timeZone) {
     dt = DateTime.fromFormat(time, "yyyy-MM-dd HH:mm:ss", { zone: "utc" });
   }
   if (!dt.isValid) return time;
-  return dt
-    .setZone(timeZone)
-    .toLocaleString(DateTime.DATETIME_MED_WITH_SECONDS);
+  return dt.setZone(timeZone).toFormat("dd/MM/yy - h:mm:ss a");
 }
 
 function formatVolume(volume) {
