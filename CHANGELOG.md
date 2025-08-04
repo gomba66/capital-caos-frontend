@@ -7,6 +7,9 @@
 ### 🐛 Fixed
 
 ### 🎨 Enhanced
+- **Simplify date format in all charts and tables to dd/MM/yy - h:mm:ss a**
+- **Simplify date format in closed trades table to dd/MM/yy - h:mm:ss a**
+- **Improve open trades table with separate chart button and conditional aggregations column**
 
 ### 🔧 Technical
 

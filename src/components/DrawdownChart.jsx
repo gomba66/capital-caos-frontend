@@ -40,7 +40,7 @@ function formatDateLuxon(date) {
     dt = DateTime.fromFormat(date, "yyyy-MM-dd HH:mm:ss", { zone: "utc" });
   }
   if (!dt.isValid) return date;
-  return dt.toLocaleString(DateTime.DATETIME_MED_WITH_SECONDS);
+  return dt.toFormat("dd/MM/yy - h:mm:ss a");
 }
 
 export default function DrawdownChart({ operations }) {
