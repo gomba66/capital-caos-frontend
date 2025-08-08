@@ -46,7 +46,11 @@ export default function Charts() {
       </Typography>
 
       {/* 1. Gráfica Principal (Equity) */}
-      <EquityChart operations={closedTrades} showDrawdown={true} />
+      <EquityChart
+        operations={closedTrades}
+        showDrawdown={true}
+        timeZone={timeZone}
+      />
 
       {/* 2. Métricas Clave (2x2 grid) */}
       <Box

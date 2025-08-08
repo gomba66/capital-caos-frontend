@@ -47,14 +47,14 @@ function buildEquityDrawdownData(operations) {
     });
 }
 
-function formatDateLuxon(date) {
+function formatDateLuxon(date, timeZone = "UTC") {
   if (!date) return "-";
   let dt = DateTime.fromISO(date, { zone: "utc" });
   if (!dt.isValid) {
     dt = DateTime.fromFormat(date, "yyyy-MM-dd HH:mm:ss", { zone: "utc" });
   }
   if (!dt.isValid) return date;
-  return dt.toFormat("dd/MM/yy - h:mm:ss a");
+  return dt.setZone(timeZone).toFormat("dd/MM/yy - h:mm:ss a");
 }
 
 const axisStyle = { fill: "#fff", fontWeight: 600 };
@@ -64,7 +64,11 @@ const tooltipStyle = {
   color: "#fff",
 };
 
-export default function EquityChart({ operations, showDrawdown = true }) {
+export default function EquityChart({
+  operations,
+  showDrawdown = true,
+  timeZone = "UTC",
+}) {
   const data = buildEquityDrawdownData(operations);
   const [showEquity, setShowEquity] = useState(true);
   const [showDrawdownState, setShowDrawdown] = useState(true);
@@ -125,7 +129,7 @@ export default function EquityChart({ operations, showDrawdown = true }) {
             <CartesianGrid strokeDasharray="3 3" stroke="#444" />
             <XAxis
               dataKey="date"
-              tickFormatter={formatDateLuxon}
+              tickFormatter={(date) => formatDateLuxon(date, timeZone)}
               minTickGap={20}
               tick={axisStyle}
               axisLine={{ stroke: "#2de2e6" }}
@@ -182,7 +186,7 @@ export default function EquityChart({ operations, showDrawdown = true }) {
                   ? "Drawdown (%)"
                   : name,
               ]}
-              labelFormatter={(d) => `Date: ${formatDateLuxon(d)}`}
+              labelFormatter={(d) => `Date: ${formatDateLuxon(d, timeZone)}`}
               cursor={false}
             />
             <Legend
