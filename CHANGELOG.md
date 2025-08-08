@@ -5,6 +5,7 @@
 ### ✨ Added
 
 ### 🐛 Fixed
+- **corregir timezone en EquityChart y DrawdownChart**
 
 ### 🎨 Enhanced
 
