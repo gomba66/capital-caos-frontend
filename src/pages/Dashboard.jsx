@@ -251,7 +251,11 @@ export default function Dashboard() {
         justifyContent="space-between"
       >
         <Grid sx={{ minWidth: "65%", maxWidth: "100%" }}>
-          <EquityChart operations={closedTrades} showDrawdown={false} />
+          <EquityChart
+            operations={closedTrades}
+            showDrawdown={false}
+            timeZone={timeZone}
+          />
         </Grid>
 
         <Grid
