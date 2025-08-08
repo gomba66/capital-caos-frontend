@@ -241,7 +241,7 @@
 - **Collapsed Mode**: 80px sidebar with icons only to maximize content space
 - **Expanded Mode**: 220px sidebar with complete text and all information
 - **Collapse Button**: Allows toggling between modes on desktop (icons only vs complete text)
-- **Smooth Animations**: 0.3s transitions for width and content changes
+- **Smooth Animations**: 0.3s transitions for width, left, opacity and transform
 - **Informative Tooltips**:
   - Timezone visible when hovering over clock icon when collapsed
   - Page names visible when hovering over navigation icons
