@@ -3,6 +3,21 @@
 ## [Unreleased]
 
 ### ✨ Added
+
+### 🐛 Fixed
+
+### 🎨 Enhanced
+
+### 🔧 Technical
+
+### 📱 Mobile Features
+
+### 🖥️ Desktop Features
+
+## [v0.1.2] - 2025-08-09
+
+### ✨ Added
+
 - **Show closed trade reason in OperationsTable; normalize reason labels**
 
 ### 🐛 Fixed
@@ -17,10 +32,10 @@
 
 ## [v0.1.1] - 2025-08-08
 
-
 ### ✨ Added
 
 ### 🐛 Fixed
+
 - **corregir timezone en EquityChart y DrawdownChart**
 
 ### 🎨 Enhanced
@@ -33,12 +48,12 @@
 
 ## [v0.1.0] - 2025-08-04
 
-
 ### ✨ Added
 
 ### 🐛 Fixed
 
 ### 🎨 Enhanced
+
 - **Simplify date format in all charts and tables to dd/MM/yy - h:mm:ss a**
 - **Simplify date format in closed trades table to dd/MM/yy - h:mm:ss a**
 - **Improve open trades table with separate chart button and conditional aggregations column**
@@ -51,11 +66,12 @@
 
 ## [v0.0.9] - 2025-08-03
 
-
 ### ✨ Added
+
 - **add development banner to TradingChart page and implement chart functionality**
 
 ### 🐛 Fixed
+
 - **fix TradingChart real-time and more issues**
 - **fix TradingChart real-time to stop when changing symbols and use current values**
 - **simplify TradingChart real-time useEffect to fix interval issues**
@@ -76,6 +92,7 @@
 ### 🎨 Enhanced
 
 ### 🔧 Technical
+
 - **add debug logs to TradingChart to diagnose loading issues**
 - **resolve all React hooks warnings and linting issues**
 - **update page imports to use contexts from separate file**
