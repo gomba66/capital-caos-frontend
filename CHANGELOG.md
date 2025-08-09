@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### ✨ Added
+- **Show closed trade reason in OperationsTable; normalize reason labels**
 
 ### 🐛 Fixed
 
