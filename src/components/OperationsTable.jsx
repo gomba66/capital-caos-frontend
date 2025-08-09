@@ -17,6 +17,17 @@ import { ShowChart } from "@mui/icons-material";
 import { DateTime } from "luxon";
 import AggregationsExpander from "./AggregationsExpander";
 
+function formatReason(reason) {
+  if (!reason) return "-";
+  const r = String(reason).toUpperCase();
+  if (r.includes("TP_DINAM")) return "Take Profit";
+  if (r.includes("TAKE") && r.includes("PROFIT")) return "Take Profit";
+  if (r.includes("SL") || r.includes("STOP")) return "Stop Loss";
+  if (r.includes("MANUAL")) return "Manual Close";
+  if (r.includes("BINANCE")) return "Exchange Close";
+  return String(reason);
+}
+
 function formatDate(date, timeZone) {
   if (!date) return "-";
   if (typeof date === "number") {
@@ -223,6 +234,14 @@ export default function OperationsTable({ operations, title, timeZone }) {
               </TableCell>
               {!isOpenTrades && (
                 <TableCell
+                  onClick={() => handleSort("reason")}
+                  style={{ cursor: "pointer" }}
+                >
+                  Reason
+                </TableCell>
+              )}
+              {!isOpenTrades && (
+                <TableCell
                   onClick={() => handleSort("pnl")}
                   style={{ cursor: "pointer" }}
                 >
@@ -276,6 +295,9 @@ export default function OperationsTable({ operations, title, timeZone }) {
                         ? ""
                         : formatDate(op.closed_at || op.closeTime, timeZone)}
                     </TableCell>
+                    {!isOpenTrades && (
+                      <TableCell>{formatReason(op.reason)}</TableCell>
+                    )}
                     {!isOpenTrades && (
                       <TableCell>{getWinLoss(op.pnl)}</TableCell>
                     )}
@@ -367,7 +389,7 @@ export default function OperationsTable({ operations, title, timeZone }) {
             ) : (
               <TableRow>
                 <TableCell
-                  colSpan={isOpenTrades ? (hasAggregations ? 9 : 8) : 7}
+                  colSpan={isOpenTrades ? (hasAggregations ? 9 : 8) : 8}
                   align="center"
                 >
                   No operations found.
