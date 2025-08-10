@@ -42,12 +42,12 @@ describe("WinrateChart", () => {
 
   test("displays long winrate correctly", () => {
     renderWithTheme(<WinrateChart winrates={mockWinrates} />);
-    expect(screen.getByText("66.7%")).toBeInTheDocument();
+    expect(screen.getByText("67%")).toBeInTheDocument();
   });
 
   test("displays short winrate correctly", () => {
     renderWithTheme(<WinrateChart winrates={mockWinrates} />);
-    expect(screen.getByText("33.3%")).toBeInTheDocument();
+    expect(screen.getByText("33%")).toBeInTheDocument();
   });
 
   test("displays dash when no winrates provided", () => {
