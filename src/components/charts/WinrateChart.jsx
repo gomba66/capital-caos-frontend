@@ -18,9 +18,9 @@ export default function WinrateChart({ winrates, hideDescription = false }) {
           variant="h6"
           gutterBottom
           sx={{
-            color: "#2de2e6",
+            color: "#ffa726",
             fontWeight: 700,
-            textShadow: "0 0 8px #2de2e6",
+            textShadow: "0 0 8px #ffa726",
             textAlign: "left",
           }}
         >
@@ -33,7 +33,7 @@ export default function WinrateChart({ winrates, hideDescription = false }) {
             sx={{
               mb: 2,
               display: "block",
-              color: "#2de2e6",
+              color: "#ffa726",
               textAlign: "left",
             }}
           >
@@ -46,10 +46,10 @@ export default function WinrateChart({ winrates, hideDescription = false }) {
             p: 3,
             background: "rgba(24,28,47,0.95)",
             borderRadius: 4,
-            boxShadow: "0 0 24px #2de2e633",
+            boxShadow: "0 0 24px #ffa72633",
             transition: "box-shadow 0.3s ease",
             "&:hover": {
-              boxShadow: "0 0 32px #2de2e666",
+              boxShadow: "0 0 32px #ffa72666",
             },
           }}
         >
@@ -58,14 +58,14 @@ export default function WinrateChart({ winrates, hideDescription = false }) {
             <Grid>
               <Box
                 sx={{
-                  background: "#2de2e6" + "22",
+                  background: "#ffa726" + "22",
                   borderRadius: 3,
                   p: 2,
                   textAlign: "center",
                   transition: "all 0.3s ease",
                   "&:hover": {
-                    background: "#2de2e6" + "33",
-                    boxShadow: "0 8px 24px #2de2e644",
+                    background: "#ffa726" + "33",
+                    boxShadow: "0 8px 24px #ffa72644",
                   },
                 }}
               >
@@ -84,14 +84,16 @@ export default function WinrateChart({ winrates, hideDescription = false }) {
                 <Typography
                   variant="h3"
                   sx={{
-                    color: "#2de2e6",
+                    color: "#ffa726",
                     fontWeight: 700,
-                    textShadow: `0 0 12px #2de2e6`,
+                    textShadow: `0 0 12px #ffa726`,
                     fontSize: "2.5rem",
                     lineHeight: 1.1,
                   }}
                 >
-                  {total !== null && total !== undefined ? `${total}%` : "-"}
+                  {total !== null && total !== undefined
+                    ? `${Math.round(total)}%`
+                    : "-"}
                 </Typography>
               </Box>
             </Grid>
@@ -105,7 +107,7 @@ export default function WinrateChart({ winrates, hideDescription = false }) {
               <Grid sx={{ width: "47%" }}>
                 <Box
                   sx={{
-                    background: "#2de2a6" + "22",
+                    background: "#27ff7e" + "22",
                     borderRadius: 3,
                     p: 2,
                     textAlign: "center",
@@ -116,8 +118,8 @@ export default function WinrateChart({ winrates, hideDescription = false }) {
                     justifyContent: "center",
                     transition: "all 0.3s ease",
                     "&:hover": {
-                      background: "#2de2a6" + "33",
-                      boxShadow: "0 8px 24px #2de2a644",
+                      background: "#27ff7e" + "33",
+                      boxShadow: "0 8px 24px #27ff7e44",
                     },
                   }}
                 >
@@ -136,14 +138,16 @@ export default function WinrateChart({ winrates, hideDescription = false }) {
                   <Typography
                     variant="h4"
                     sx={{
-                      color: "#2de2a6",
+                      color: "#27ff7e",
                       fontWeight: 700,
-                      textShadow: `0 0 12px #2de2a6`,
+                      textShadow: `0 0 12px #27ff7e`,
                       fontSize: "2rem",
                       lineHeight: 1.1,
                     }}
                   >
-                    {long !== null && long !== undefined ? `${long}%` : "-"}
+                    {long !== null && long !== undefined
+                      ? `${Math.round(long)}%`
+                      : "-"}
                   </Typography>
                 </Box>
               </Grid>
@@ -188,7 +192,9 @@ export default function WinrateChart({ winrates, hideDescription = false }) {
                       lineHeight: 1.1,
                     }}
                   >
-                    {short !== null && short !== undefined ? `${short}%` : "-"}
+                    {short !== null && short !== undefined
+                      ? `${Math.round(short)}%`
+                      : "-"}
                   </Typography>
                 </Box>
               </Grid>

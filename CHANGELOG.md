@@ -7,6 +7,7 @@
 ### 🐛 Fixed
 
 ### 🎨 Enhanced
+- **improve dashboard and charts components**
 
 ### 🔧 Technical
 
