@@ -9,6 +9,22 @@
 ### 🎨 Enhanced
 
 ### 🔧 Technical
+
+### 📱 Mobile Features
+
+### 🖥️ Desktop Features
+
+## [v0.1.3] - 2025-08-10
+
+
+### ✨ Added
+
+### 🐛 Fixed
+
+### 🎨 Enhanced
+
+### 🔧 Technical
+
 - **actualizar tests de WinrateChart para reflejar comportamiento solo backend**
 - **WinrateChart solo usa datos del backend, sin cálculos locales**
 
