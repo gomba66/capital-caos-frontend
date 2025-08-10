@@ -37,3 +37,40 @@ export function calculateProfitFactors(operations) {
         : null,
   };
 }
+
+/**
+ * Calcula el winrate general, de longs y de shorts.
+ * Winrate = (Número de trades ganadores / Total de trades) * 100
+ * @param {Array} operations - Lista de operaciones cerradas.
+ * @returns {{total: number|null, long: number|null, short: number|null}}
+ */
+export function calculateWinrates(operations) {
+  let totalTrades = 0,
+    totalWins = 0;
+  let longTrades = 0,
+    longWins = 0;
+  let shortTrades = 0,
+    shortWins = 0;
+
+  (operations || []).forEach((op) => {
+    const pnl = Number(op.pnl || 0);
+    const side = (op.side || op.positionSide || "").toLowerCase();
+    
+    totalTrades++;
+    if (pnl > 0) totalWins++;
+    
+    if (side.includes("long")) {
+      longTrades++;
+      if (pnl > 0) longWins++;
+    } else if (side.includes("short")) {
+      shortTrades++;
+      if (pnl > 0) shortWins++;
+    }
+  });
+
+  return {
+    total: totalTrades > 0 ? +((totalWins / totalTrades) * 100).toFixed(1) : null,
+    long: longTrades > 0 ? +((longWins / longTrades) * 100).toFixed(1) : null,
+    short: shortTrades > 0 ? +((shortWins / shortTrades) * 100).toFixed(1) : null,
+  };
+}
