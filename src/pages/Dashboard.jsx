@@ -23,11 +23,11 @@ import OperationsTable from "../components/OperationsTable";
 import MomentumPairsTable from "../components/MomentumPairsTable";
 import EquityChart from "../components/charts/EquityChart";
 import ProfitFactorChart from "../components/charts/ProfitFactorChart";
+import WinrateChart from "../components/charts/WinrateChart";
 import { DateTime } from "luxon";
 import { TimeZoneContext } from "../contexts/AppContexts";
 
 const statLabels = {
-  winrate: "Winrate (%)",
   total_pnl: "Total PnL",
   total_trades: "Total Trades",
   average_pnl: "Average PnL",
@@ -159,7 +159,7 @@ export default function Dashboard() {
           let valueColor = "#fff";
           let displayValue = stats[key] !== undefined ? stats[key] : "-";
           let textShadow = undefined;
-          if (key === "winrate" || key === "wins") valueColor = "#2de2e6";
+          if (key === "wins") valueColor = "#2de2e6";
           if (key === "total_trades") valueColor = "#ffa726"; // Naranja para total trades
           if (key === "max_win_streak") valueColor = "#27ff7e"; // Verde neón para max win streak
           if (key === "average_pnl") {
@@ -249,6 +249,7 @@ export default function Dashboard() {
         spacing={2}
         direction="row"
         justifyContent="space-between"
+        mb={4}
       >
         <Grid sx={{ minWidth: "65%", maxWidth: "100%" }}>
           <EquityChart
@@ -265,6 +266,19 @@ export default function Dashboard() {
           }}
         >
           <ProfitFactorChart operations={closedTrades} hideDescription />
+        </Grid>
+      </Grid>
+
+      {/* Nueva fila para WinrateChart */}
+      <Grid
+        container
+        spacing={2}
+        direction="row"
+        justifyContent="center"
+        mb={4}
+      >
+        <Grid>
+          <WinrateChart winrates={stats?.winrates} hideDescription />
         </Grid>
       </Grid>
       <OperationsTable

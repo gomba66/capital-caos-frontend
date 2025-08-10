@@ -48,13 +48,18 @@ const renderWithProviders = (component) => {
 
 describe("Dashboard", () => {
   const mockStats = {
-    winrate: 65.5,
     total_trades: 100,
     wins: 65,
     losses: 35,
-    total_pnl: 1500,
-    average_pnl: 15,
-    max_win_streak: 5,
+    winrate: 65.0,
+    winrates: {
+      total: 65.0,
+      long: 70.0,
+      short: 60.0,
+    },
+    total_pnl: 1500.5,
+    average_pnl: 15.005,
+    max_win_streak: 8,
     max_loss_streak: 3,
   };
 
@@ -141,7 +146,6 @@ describe("Dashboard", () => {
 
     // Verificar que se muestran los componentes principales
     expect(screen.getByText("Trading Dashboard")).toBeInTheDocument();
-    expect(screen.getByText("Winrate (%)")).toBeInTheDocument();
     expect(screen.getByText("Total Trades")).toBeInTheDocument();
   });
 
