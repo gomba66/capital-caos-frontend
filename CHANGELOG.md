@@ -5,6 +5,7 @@
 ### ✨ Added
 
 ### 🐛 Fixed
+- **update WinrateChart tests to expect rounded values**
 
 ### 🎨 Enhanced
 - **improve dashboard and charts components**
