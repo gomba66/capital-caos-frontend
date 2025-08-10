@@ -10,68 +10,68 @@ const renderWithTheme = (component) => {
 };
 
 describe("WinrateChart", () => {
-  const mockOperations = [
-    { pnl: 100, side: "LONG" },
-    { pnl: -50, side: "LONG" },
-    { pnl: 75, side: "SHORT" },
-    { pnl: -25, side: "SHORT" },
-    { pnl: 200, side: "LONG" },
-    { pnl: -100, side: "SHORT" },
-  ];
+  const mockWinrates = {
+    total: 50.0,
+    long: 66.7,
+    short: 33.3,
+  };
 
   test("renders winrate chart with title", () => {
-    renderWithTheme(<WinrateChart operations={mockOperations} />);
+    renderWithTheme(<WinrateChart winrates={mockWinrates} />);
     expect(screen.getByText("Winrate")).toBeInTheDocument();
   });
 
   test("renders description when hideDescription is false", () => {
-    renderWithTheme(<WinrateChart operations={mockOperations} />);
+    renderWithTheme(<WinrateChart winrates={mockWinrates} />);
     expect(
       screen.getByText(/Winrate is the percentage of profitable trades/)
     ).toBeInTheDocument();
   });
 
   test("hides description when hideDescription is true", () => {
-    renderWithTheme(
-      <WinrateChart operations={mockOperations} hideDescription />
-    );
+    renderWithTheme(<WinrateChart winrates={mockWinrates} hideDescription />);
     expect(
       screen.queryByText(/Winrate is the percentage of profitable trades/)
     ).not.toBeInTheDocument();
   });
 
   test("displays total winrate correctly", () => {
-    renderWithTheme(<WinrateChart operations={mockOperations} />);
-    // 3 wins out of 6 trades = 50%
+    renderWithTheme(<WinrateChart winrates={mockWinrates} />);
     expect(screen.getByText("50%")).toBeInTheDocument();
   });
 
   test("displays long winrate correctly", () => {
-    renderWithTheme(<WinrateChart operations={mockOperations} />);
-    // 2 wins out of 3 long trades = 66.7%
+    renderWithTheme(<WinrateChart winrates={mockWinrates} />);
     expect(screen.getByText("66.7%")).toBeInTheDocument();
   });
 
   test("displays short winrate correctly", () => {
-    renderWithTheme(<WinrateChart operations={mockOperations} />);
-    // 1 win out of 3 short trades = 33.3%
+    renderWithTheme(<WinrateChart winrates={mockWinrates} />);
     expect(screen.getByText("33.3%")).toBeInTheDocument();
   });
 
-  test("handles empty operations array", () => {
-    renderWithTheme(<WinrateChart operations={[]} />);
+  test("displays dash when no winrates provided", () => {
+    renderWithTheme(<WinrateChart />);
     expect(screen.getAllByText("-")).toHaveLength(3); // Total, Long, Short
   });
 
-  test("handles operations without side information", () => {
-    const operationsWithoutSide = [{ pnl: 100 }, { pnl: -50 }, { pnl: 75 }];
-    renderWithTheme(<WinrateChart operations={operationsWithoutSide} />);
-    // Should still calculate total winrate (2 wins out of 3 trades = 66.7%)
-    expect(screen.getByText("66.7%")).toBeInTheDocument();
+  test("displays dash when winrates are null", () => {
+    renderWithTheme(<WinrateChart winrates={null} />);
+    expect(screen.getAllByText("-")).toHaveLength(3); // Total, Long, Short
+  });
+
+  test("displays dash when winrates are undefined", () => {
+    renderWithTheme(<WinrateChart winrates={undefined} />);
+    expect(screen.getAllByText("-")).toHaveLength(3); // Total, Long, Short
+  });
+
+  test("displays dash when winrates are empty object", () => {
+    renderWithTheme(<WinrateChart winrates={{}} />);
+    expect(screen.getAllByText("-")).toHaveLength(3); // Total, Long, Short
   });
 
   test("displays all three sections: Total, Longs, Shorts", () => {
-    renderWithTheme(<WinrateChart operations={mockOperations} />);
+    renderWithTheme(<WinrateChart winrates={mockWinrates} />);
     expect(screen.getByText("Total")).toBeInTheDocument();
     expect(screen.getByText("Longs")).toBeInTheDocument();
     expect(screen.getByText("Shorts")).toBeInTheDocument();
@@ -84,18 +84,34 @@ describe("WinrateChart", () => {
       short: 70.0,
     };
 
-    renderWithTheme(
-      <WinrateChart operations={[]} winrates={backendWinrates} />
-    );
+    renderWithTheme(<WinrateChart winrates={backendWinrates} />);
 
     expect(screen.getByText("75%")).toBeInTheDocument();
     expect(screen.getByText("80%")).toBeInTheDocument();
     expect(screen.getByText("70%")).toBeInTheDocument();
   });
 
-  test("falls back to local calculation when backend winrates are not provided", () => {
-    renderWithTheme(<WinrateChart operations={mockOperations} />);
-    // Should still calculate from operations (3 wins out of 6 trades = 50%)
-    expect(screen.getByText("50%")).toBeInTheDocument();
+  test("handles partial winrates data", () => {
+    const partialWinrates = {
+      total: 60.0,
+      // long and short are missing
+    };
+
+    renderWithTheme(<WinrateChart winrates={partialWinrates} />);
+
+    expect(screen.getByText("60%")).toBeInTheDocument();
+    expect(screen.getAllByText("-")).toHaveLength(2); // Long and Short
+  });
+
+  test("handles winrates with zero values", () => {
+    const zeroWinrates = {
+      total: 0.0,
+      long: 0.0,
+      short: 0.0,
+    };
+
+    renderWithTheme(<WinrateChart winrates={zeroWinrates} />);
+
+    expect(screen.getAllByText("0%")).toHaveLength(3);
   });
 });
