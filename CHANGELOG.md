@@ -9,6 +9,7 @@
 ### 🎨 Enhanced
 
 ### 🔧 Technical
+- **actualizar tests de WinrateChart para reflejar comportamiento solo backend**
 - **WinrateChart solo usa datos del backend, sin cálculos locales**
 
 ### 📱 Mobile Features
