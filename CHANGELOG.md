@@ -16,10 +16,11 @@
 
 ## [v0.1.4] - 2025-08-11
 
-
 ### ✨ Added
 
 ### 🐛 Fixed
+
+- **corregir timezone en EquityChart y DrawdownChart**
 
 - **update WinrateChart tests to expect rounded values**
 
@@ -67,6 +68,22 @@
 ### 🖥️ Desktop Features
 
 ## [v0.1.1] - 2025-08-08
+
+### ✨ Added
+
+### 🐛 Fixed
+
+- **corregir timezone en EquityChart y DrawdownChart**
+
+### 🎨 Enhanced
+
+### 🔧 Technical
+
+### 📱 Mobile Features
+
+### 🖥️ Desktop Features
+
+## [v0.1.0] - 2025-08-04
 
 ### ✨ Added
 
