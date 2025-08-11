@@ -10,120 +10,108 @@ const renderWithTheme = (component) => {
 };
 
 describe("WinrateChart", () => {
-  const mockOperations = [
-    { result: "win" },
-    { result: "win" },
-    { result: "loss" },
-    { result: "win" },
-    { result: "loss" },
-  ];
+  const mockWinrates = {
+    total: 50.0,
+    long: 66.7,
+    short: 33.3,
+  };
 
   test("renders winrate chart with title", () => {
-    renderWithTheme(<WinrateChart operations={mockOperations} />);
-
+    renderWithTheme(<WinrateChart winrates={mockWinrates} />);
     expect(screen.getByText("Winrate")).toBeInTheDocument();
+  });
+
+  test("renders description when hideDescription is false", () => {
+    renderWithTheme(<WinrateChart winrates={mockWinrates} />);
     expect(
-      screen.getByText(
-        /This chart shows the number of winning and losing trades/
-      )
+      screen.getByText(/Winrate is the percentage of profitable trades/)
     ).toBeInTheDocument();
   });
 
-  test("renders message when no operations", () => {
-    renderWithTheme(<WinrateChart operations={[]} />);
-
+  test("hides description when hideDescription is true", () => {
+    renderWithTheme(<WinrateChart winrates={mockWinrates} hideDescription />);
     expect(
-      screen.getByText("No closed trades to display winrate.")
-    ).toBeInTheDocument();
+      screen.queryByText(/Winrate is the percentage of profitable trades/)
+    ).not.toBeInTheDocument();
   });
 
-  test("renders message when operations is null", () => {
-    renderWithTheme(<WinrateChart operations={null} />);
-
-    expect(
-      screen.getByText("No closed trades to display winrate.")
-    ).toBeInTheDocument();
+  test("displays total winrate correctly", () => {
+    renderWithTheme(<WinrateChart winrates={mockWinrates} />);
+    expect(screen.getByText("50%")).toBeInTheDocument();
   });
 
-  test("renders chart with operations data", () => {
-    renderWithTheme(<WinrateChart operations={mockOperations} />);
-
-    expect(screen.getByText("Winrate")).toBeInTheDocument();
-    // Verificar que el chart se renderiza
-    expect(
-      document.querySelector(".recharts-responsive-container")
-    ).toBeInTheDocument();
+  test("displays long winrate correctly", () => {
+    renderWithTheme(<WinrateChart winrates={mockWinrates} />);
+    expect(screen.getByText("67%")).toBeInTheDocument();
   });
 
-  test("handles operations with only wins", () => {
-    const onlyWins = [{ result: "win" }, { result: "win" }, { result: "win" }];
-
-    renderWithTheme(<WinrateChart operations={onlyWins} />);
-
-    expect(screen.getByText("Winrate")).toBeInTheDocument();
-    expect(
-      document.querySelector(".recharts-responsive-container")
-    ).toBeInTheDocument();
+  test("displays short winrate correctly", () => {
+    renderWithTheme(<WinrateChart winrates={mockWinrates} />);
+    expect(screen.getByText("33%")).toBeInTheDocument();
   });
 
-  test("handles operations with only losses", () => {
-    const onlyLosses = [
-      { result: "loss" },
-      { result: "loss" },
-      { result: "loss" },
-    ];
-
-    renderWithTheme(<WinrateChart operations={onlyLosses} />);
-
-    expect(screen.getByText("Winrate")).toBeInTheDocument();
-    expect(
-      document.querySelector(".recharts-responsive-container")
-    ).toBeInTheDocument();
+  test("displays dash when no winrates provided", () => {
+    renderWithTheme(<WinrateChart />);
+    expect(screen.getAllByText("-")).toHaveLength(3); // Total, Long, Short
   });
 
-  test("handles operations with mixed results", () => {
-    const mixedResults = [
-      { result: "win" },
-      { result: "loss" },
-      { result: "win" },
-      { result: "loss" },
-      { result: "win" },
-    ];
-
-    renderWithTheme(<WinrateChart operations={mixedResults} />);
-
-    expect(screen.getByText("Winrate")).toBeInTheDocument();
-    expect(
-      document.querySelector(".recharts-responsive-container")
-    ).toBeInTheDocument();
+  test("displays dash when winrates are null", () => {
+    renderWithTheme(<WinrateChart winrates={null} />);
+    expect(screen.getAllByText("-")).toHaveLength(3); // Total, Long, Short
   });
 
-  test("handles operations with invalid results", () => {
-    const invalidResults = [
-      { result: "win" },
-      { result: "invalid" },
-      { result: "loss" },
-      { result: "unknown" },
-    ];
-
-    renderWithTheme(<WinrateChart operations={invalidResults} />);
-
-    expect(screen.getByText("Winrate")).toBeInTheDocument();
-    expect(
-      document.querySelector(".recharts-responsive-container")
-    ).toBeInTheDocument();
+  test("displays dash when winrates are undefined", () => {
+    renderWithTheme(<WinrateChart winrates={undefined} />);
+    expect(screen.getAllByText("-")).toHaveLength(3); // Total, Long, Short
   });
 
-  test("handles operations without result field", () => {
-    const operationsWithoutResult = [
-      { symbol: "BTCUSDT" },
-      { symbol: "ETHUSDT" },
-    ];
+  test("displays dash when winrates are empty object", () => {
+    renderWithTheme(<WinrateChart winrates={{}} />);
+    expect(screen.getAllByText("-")).toHaveLength(3); // Total, Long, Short
+  });
 
-    renderWithTheme(<WinrateChart operations={operationsWithoutResult} />);
+  test("displays all three sections: Total, Longs, Shorts", () => {
+    renderWithTheme(<WinrateChart winrates={mockWinrates} />);
+    expect(screen.getByText("Total")).toBeInTheDocument();
+    expect(screen.getByText("Longs")).toBeInTheDocument();
+    expect(screen.getByText("Shorts")).toBeInTheDocument();
+  });
 
-    expect(
-      screen.getByText("No closed trades to display winrate.")
-    ).toBeInTheDocument();
+  test("uses backend winrates when provided", () => {
+    const backendWinrates = {
+      total: 75.0,
+      long: 80.0,
+      short: 70.0,
+    };
+
+    renderWithTheme(<WinrateChart winrates={backendWinrates} />);
+
+    expect(screen.getByText("75%")).toBeInTheDocument();
+    expect(screen.getByText("80%")).toBeInTheDocument();
+    expect(screen.getByText("70%")).toBeInTheDocument();
+  });
+
+  test("handles partial winrates data", () => {
+    const partialWinrates = {
+      total: 60.0,
+      // long and short are missing
+    };
+
+    renderWithTheme(<WinrateChart winrates={partialWinrates} />);
+
+    expect(screen.getByText("60%")).toBeInTheDocument();
+    expect(screen.getAllByText("-")).toHaveLength(2); // Long and Short
+  });
+
+  test("handles winrates with zero values", () => {
+    const zeroWinrates = {
+      total: 0.0,
+      long: 0.0,
+      short: 0.0,
+    };
+
+    renderWithTheme(<WinrateChart winrates={zeroWinrates} />);
+
+    expect(screen.getAllByText("0%")).toHaveLength(3);
   });
 });

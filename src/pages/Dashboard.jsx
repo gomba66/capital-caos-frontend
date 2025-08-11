@@ -23,12 +23,13 @@ import OperationsTable from "../components/OperationsTable";
 import MomentumPairsTable from "../components/MomentumPairsTable";
 import EquityChart from "../components/charts/EquityChart";
 import ProfitFactorChart from "../components/charts/ProfitFactorChart";
+import WinrateChart from "../components/charts/WinrateChart";
 import { DateTime } from "luxon";
 import { TimeZoneContext } from "../contexts/AppContexts";
 
 const statLabels = {
-  winrate: "Winrate (%)",
   total_pnl: "Total PnL",
+  unrealized_pnl: "Unrealized PnL",
   total_trades: "Total Trades",
   average_pnl: "Average PnL",
   max_win_streak: "Max Win Streak",
@@ -159,19 +160,52 @@ export default function Dashboard() {
           let valueColor = "#fff";
           let displayValue = stats[key] !== undefined ? stats[key] : "-";
           let textShadow = undefined;
-          if (key === "winrate" || key === "wins") valueColor = "#2de2e6";
-          if (key === "total_trades") valueColor = "#ffa726"; // Naranja para total trades
-          if (key === "max_win_streak") valueColor = "#27ff7e"; // Verde neón para max win streak
-          if (key === "average_pnl") {
+
+          // Lógica especial para unrealized_pnl
+          if (key === "unrealized_pnl") {
+            const unrealizedPnl = openTrades.reduce((total, trade) => {
+              const profit = Number(trade.unrealizedProfit) || 0;
+              return total + profit;
+            }, 0);
+
+            // Asegurar que sea un número válido
+            const numericPnl = Number(unrealizedPnl);
+            if (!isNaN(numericPnl)) {
+              displayValue =
+                numericPnl !== 0
+                  ? `${numericPnl > 0 ? "+" : ""}$${numericPnl.toFixed(2)}`
+                  : "$0.00";
+              valueColor =
+                numericPnl > 0
+                  ? "#27ff7e"
+                  : numericPnl < 0
+                  ? "#ff2e63"
+                  : "#fff";
+            } else {
+              displayValue = "$0.00";
+              valueColor = "#fff";
+            }
+            textShadow = `0 0 12px ${valueColor}`;
+          } else if (key === "wins") {
+            valueColor = "#2de2e6";
+            textShadow = `0 0 12px ${valueColor}`;
+          } else if (key === "total_trades") {
+            valueColor = "#ffa726"; // Naranja para total trades
+            textShadow = `0 0 12px ${valueColor}`;
+          } else if (key === "max_win_streak") {
+            valueColor = "#27ff7e"; // Verde neón para max win streak
+            textShadow = `0 0 12px ${valueColor}`;
+          } else if (key === "average_pnl") {
             valueColor = "#2de2e6";
             const avgPnl = Number(stats[key]);
             if (!isNaN(avgPnl)) {
               displayValue = `$${avgPnl.toFixed(2)}`;
             }
-          }
-          if (key === "losses" || key === "max_loss_streak")
+            textShadow = `0 0 12px ${valueColor}`;
+          } else if (key === "losses" || key === "max_loss_streak") {
             valueColor = "#ff2e63";
-          if (key === "total_pnl") {
+            textShadow = `0 0 12px ${valueColor}`;
+          } else if (key === "total_pnl") {
             const pnl = Number(stats[key]);
             if (!isNaN(pnl)) {
               valueColor = pnl > 0 ? "#27ff7e" : pnl < 0 ? "#ff2e63" : "#fff";
@@ -181,17 +215,15 @@ export default function Dashboard() {
               displayValue = "-";
               valueColor = "#fff";
             }
-          } else {
-            textShadow = `0 0 12px ${valueColor}`;
           }
           return (
             <Grid
               sx={{
                 width: {
-                  xs: "100%",
-                  sm: "50%",
+                  xs: "25%",
+                  sm: "35%",
                   md: "33.333%",
-                  lg: "20%",
+                  lg: "22.5%",
                 },
               }}
               key={key}
@@ -244,13 +276,10 @@ export default function Dashboard() {
           );
         })}
       </Grid>
-      <Grid
-        container
-        spacing={2}
-        direction="row"
-        justifyContent="space-between"
-      >
-        <Grid sx={{ minWidth: "65%", maxWidth: "100%" }}>
+      {/* Charts Section - Responsive Layout */}
+      <Grid container spacing={9} mb={4} justifyContent="center">
+        {/* Equity Chart - Full width on mobile/tablet, 48% on desktop */}
+        <Grid item xs={12} md={6}>
           <EquityChart
             operations={closedTrades}
             showDrawdown={false}
@@ -258,15 +287,17 @@ export default function Dashboard() {
           />
         </Grid>
 
-        <Grid
-          sx={{
-            minWidth: "30%",
-            maxWidth: "100%",
-          }}
-        >
+        {/* Profit Factor Chart - Full width on mobile, 24% on tablet/desktop */}
+        <Grid item xs={12} sm={6} md={3}>
           <ProfitFactorChart operations={closedTrades} hideDescription />
         </Grid>
+
+        {/* Winrate Chart - Full width on mobile, 24% on tablet/desktop */}
+        <Grid item xs={12} sm={6} md={3}>
+          <WinrateChart winrates={stats?.winrates} hideDescription />
+        </Grid>
       </Grid>
+
       <OperationsTable
         operations={openTrades}
         title="Open Trades"

@@ -10,9 +10,11 @@ import WeeklyPerformanceChart from "../components/charts/WeeklyPerformanceChart"
 import MonthlyPerformanceChart from "../components/charts/MonthlyPerformanceChart";
 import WeeklyMonthlyPerformanceChart from "../components/charts/WeeklyMonthlyPerformanceChart";
 import { TimeZoneContext } from "../contexts/AppContexts";
+import { calculateWinrates } from "../utils/formatting";
 
 export default function Charts() {
   const [closedTrades, setClosedTrades] = useState([]);
+  const [winrates, setWinrates] = useState(null);
   const [loading, setLoading] = useState(true);
   const { timeZone } = useContext(TimeZoneContext);
 
@@ -20,7 +22,13 @@ export default function Charts() {
     async function fetchOps() {
       setLoading(true);
       const opsData = await getOperations();
-      setClosedTrades(opsData?.closed || []);
+      const closed = opsData?.closed || [];
+      setClosedTrades(closed);
+
+      // Calcular winrates
+      const calculatedWinrates = calculateWinrates(closed);
+      setWinrates(calculatedWinrates);
+
       setLoading(false);
     }
     fetchOps();
@@ -61,7 +69,7 @@ export default function Charts() {
         sx={{ mb: 4 }}
       >
         <ProfitFactorChart operations={closedTrades} />
-        <WinrateChart operations={closedTrades} />
+        <WinrateChart winrates={winrates} />
         <PnLHistogram operations={closedTrades} />
         <LongShortWinLossChart operations={closedTrades} />
       </Box>
