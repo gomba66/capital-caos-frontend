@@ -5,7 +5,6 @@
 ### ✨ Added
 
 ### 🐛 Fixed
-- **corregir timezone en EquityChart y DrawdownChart**
 
 ### 🎨 Enhanced
 
@@ -17,10 +16,11 @@
 
 ## [v0.1.4] - 2025-08-11
 
-
 ### ✨ Added
 
 ### 🐛 Fixed
+
+- **corregir timezone en EquityChart y DrawdownChart**
 
 - **update WinrateChart tests to expect rounded values**
 
