@@ -22,6 +22,8 @@
 
 ### 🐛 Fixed
 
+- **corregir timezone en EquityChart y DrawdownChart**
+
 - **update WinrateChart tests to expect rounded values**
 
 ### 🎨 Enhanced
