@@ -83,7 +83,7 @@ export default function EquityChart({
   }
 
   return (
-    <Box mb={4} width="100%" minWidth={0}>
+    <Box mb={4} sx={{ minWidth: "720px", width: "100%" }}>
       <Typography variant="h6" gutterBottom>
         Equity Curve{showDrawdown ? " & Drawdown" : ""}
       </Typography>
