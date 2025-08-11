@@ -6,6 +6,21 @@
 
 ### 🐛 Fixed
 
+### 🎨 Enhanced
+
+### 🔧 Technical
+
+### 📱 Mobile Features
+
+### 🖥️ Desktop Features
+
+## [v0.1.4] - 2025-08-11
+
+
+### ✨ Added
+
+### 🐛 Fixed
+
 - **update WinrateChart tests to expect rounded values**
 
 ### 🎨 Enhanced
