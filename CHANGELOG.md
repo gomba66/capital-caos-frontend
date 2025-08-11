@@ -5,9 +5,11 @@
 ### ✨ Added
 
 ### 🐛 Fixed
+
 - **update WinrateChart tests to expect rounded values**
 
 ### 🎨 Enhanced
+
 - **improve dashboard and charts components**
 
 ### 🔧 Technical
@@ -17,7 +19,6 @@
 ### 🖥️ Desktop Features
 
 ## [v0.1.3] - 2025-08-10
-
 
 ### ✨ Added
 
@@ -124,7 +125,7 @@
 ### 🎨 Enhanced
 
 =======
->>>>>>> 2e7344a (Release v0.1.2)
+
 - **Simplify date format in all charts and tables to dd/MM/yy - h:mm:ss a**
 - **Simplify date format in closed trades table to dd/MM/yy - h:mm:ss a**
 - **Improve open trades table with separate chart button and conditional aggregations column**
@@ -134,8 +135,6 @@
 ### 📱 Mobile Features
 
 ### 🖥️ Desktop Features
-<<<<<<< HEAD
-=======
 
 ## [v0.0.9] - 2025-08-03
 
@@ -336,4 +335,3 @@
   - Block commits when significant files are staged without CHANGELOG updates
   - Show staged files that require documentation
   - Provide clear guidance on how to update CHANGELOG
->>>>>>> 2e7344a (Release v0.1.2)
