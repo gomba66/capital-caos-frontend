@@ -17,9 +17,11 @@
 ## [v0.1.4] - 2025-08-11
 
 ### ✨ Added
+- **integrar información del scanner en tablas de trades**
 
 ### 🐛 Fixed
 
+- **corregir timezone en EquityChart y DrawdownChart**
 - **corregir timezone en EquityChart y DrawdownChart**
 
 - **update WinrateChart tests to expect rounded values**
@@ -29,71 +31,7 @@
 - **improve dashboard and charts components**
 
 ### 🔧 Technical
-
-### 📱 Mobile Features
-
-### 🖥️ Desktop Features
-
-## [v0.1.3] - 2025-08-10
-
-### ✨ Added
-
-### 🐛 Fixed
-
-### 🎨 Enhanced
-
-### 🔧 Technical
-
-- **actualizar tests de WinrateChart para reflejar comportamiento solo backend**
-- **WinrateChart solo usa datos del backend, sin cálculos locales**
-
-### 📱 Mobile Features
-
-### 🖥️ Desktop Features
-
-## [v0.1.2] - 2025-08-09
-
-### ✨ Added
-
-- **Show closed trade reason in OperationsTable; normalize reason labels**
-
-### 🐛 Fixed
-
-### 🎨 Enhanced
-
-### 🔧 Technical
-
-### 📱 Mobile Features
-
-### 🖥️ Desktop Features
-
-## [v0.1.1] - 2025-08-08
-
-### ✨ Added
-
-### 🐛 Fixed
-
-- **corregir timezone en EquityChart y DrawdownChart**
-
-### 🎨 Enhanced
-
-### 🔧 Technical
-
-### 📱 Mobile Features
-
-### 🖥️ Desktop Features
-
-## [v0.1.0] - 2025-08-04
-
-### ✨ Added
-
-### 🐛 Fixed
-
-- **corregir timezone en EquityChart y DrawdownChart**
-
-### 🎨 Enhanced
-
-### 🔧 Technical
+- **aplicar formateo y mejoras de código**
 
 ### 📱 Mobile Features
 
@@ -155,8 +93,6 @@
 ### 🐛 Fixed
 
 ### 🎨 Enhanced
-
-=======
 
 - **Simplify date format in all charts and tables to dd/MM/yy - h:mm:ss a**
 - **Simplify date format in closed trades table to dd/MM/yy - h:mm:ss a**
@@ -308,7 +244,7 @@
 - **Collapsed Mode**: 80px sidebar with icons only to maximize content space
 - **Expanded Mode**: 220px sidebar with complete text and all information
 - **Collapse Button**: Allows toggling between modes on desktop (icons only vs complete text)
-- **Smooth Animations**: 0.3s transitions for width and content changes
+- **Smooth Animations**: 0.3s transitions for width, left, opacity and transform
 - **Informative Tooltips**:
   - Timezone visible when hovering over clock icon when collapsed
   - Page names visible when hovering over navigation icons
