@@ -3,16 +3,12 @@
 ## [Unreleased]
 
 ### ✨ Added
-- **integrar información del scanner en tablas de trades**
 
 ### 🐛 Fixed
-
-- **corregir timezone en EquityChart y DrawdownChart**
 
 ### 🎨 Enhanced
 
 ### 🔧 Technical
-- **aplicar formateo y mejoras de código**
 
 ### 📱 Mobile Features
 
@@ -21,9 +17,11 @@
 ## [v0.1.4] - 2025-08-11
 
 ### ✨ Added
+- **integrar información del scanner en tablas de trades**
 
 ### 🐛 Fixed
 
+- **corregir timezone en EquityChart y DrawdownChart**
 - **corregir timezone en EquityChart y DrawdownChart**
 
 - **update WinrateChart tests to expect rounded values**
@@ -33,6 +31,7 @@
 - **improve dashboard and charts components**
 
 ### 🔧 Technical
+- **aplicar formateo y mejoras de código**
 
 ### 📱 Mobile Features
 
