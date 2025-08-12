@@ -12,6 +12,7 @@
 ### 🎨 Enhanced
 
 ### 🔧 Technical
+- **aplicar formateo y mejoras de código**
 
 ### 📱 Mobile Features
 

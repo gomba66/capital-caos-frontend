@@ -315,14 +315,19 @@ export default function OperationsTable({ operations, title, timeZone }) {
                       <TableCell>{getWinLoss(op.pnl)}</TableCell>
                     )}
                     <TableCell>
-                      <ScannerInfo scannerInfo={op.scanner_info} compact={true} />
+                      <ScannerInfo
+                        scannerInfo={op.scanner_info}
+                        compact={true}
+                      />
                     </TableCell>
                     <TableCell>
                       {op.scanner_info?.scanner_type ? (
-                        <span style={{ 
-                          fontSize: "0.875rem",
-                          color: "#888"
-                        }}>
+                        <span
+                          style={{
+                            fontSize: "0.875rem",
+                            color: "#888",
+                          }}
+                        >
                           {op.scanner_info.scanner_type}
                         </span>
                       ) : (
@@ -401,7 +406,9 @@ export default function OperationsTable({ operations, title, timeZone }) {
                     op.aggregations.length > 0 && (
                       <TableRow>
                         <TableCell
-                          colSpan={isOpenTrades ? (hasAggregations ? 11 : 10) : 9}
+                          colSpan={
+                            isOpenTrades ? (hasAggregations ? 11 : 10) : 9
+                          }
                           style={{ padding: 0 }}
                         >
                           <AggregationsExpander
