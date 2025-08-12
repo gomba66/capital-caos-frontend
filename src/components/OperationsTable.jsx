@@ -16,6 +16,7 @@ import {
 import { ShowChart } from "@mui/icons-material";
 import { DateTime } from "luxon";
 import AggregationsExpander from "./AggregationsExpander";
+import ScannerInfo from "./ScannerInfo";
 
 function formatReason(reason) {
   if (!reason) return "-";
@@ -248,6 +249,18 @@ export default function OperationsTable({ operations, title, timeZone }) {
                   Result
                 </TableCell>
               )}
+              <TableCell
+                onClick={() => handleSort("scanner")}
+                style={{ cursor: "pointer" }}
+              >
+                Scanner
+              </TableCell>
+              <TableCell
+                onClick={() => handleSort("scanner_type")}
+                style={{ cursor: "pointer" }}
+              >
+                Type
+              </TableCell>
               {isOpenTrades && <TableCell>TP Target</TableCell>}
               {isOpenTrades && <TableCell>Chart</TableCell>}
               {hasAggregations && <TableCell>Aggregations</TableCell>}
@@ -301,6 +314,21 @@ export default function OperationsTable({ operations, title, timeZone }) {
                     {!isOpenTrades && (
                       <TableCell>{getWinLoss(op.pnl)}</TableCell>
                     )}
+                    <TableCell>
+                      <ScannerInfo scannerInfo={op.scanner_info} compact={true} />
+                    </TableCell>
+                    <TableCell>
+                      {op.scanner_info?.scanner_type ? (
+                        <span style={{ 
+                          fontSize: "0.875rem",
+                          color: "#888"
+                        }}>
+                          {op.scanner_info.scanner_type}
+                        </span>
+                      ) : (
+                        "-"
+                      )}
+                    </TableCell>
                     {isOpenTrades && (
                       <TableCell>
                         {op.take_profit_target ? (
@@ -373,7 +401,7 @@ export default function OperationsTable({ operations, title, timeZone }) {
                     op.aggregations.length > 0 && (
                       <TableRow>
                         <TableCell
-                          colSpan={isOpenTrades ? (hasAggregations ? 9 : 8) : 7}
+                          colSpan={isOpenTrades ? (hasAggregations ? 11 : 10) : 9}
                           style={{ padding: 0 }}
                         >
                           <AggregationsExpander
@@ -389,7 +417,7 @@ export default function OperationsTable({ operations, title, timeZone }) {
             ) : (
               <TableRow>
                 <TableCell
-                  colSpan={isOpenTrades ? (hasAggregations ? 9 : 8) : 8}
+                  colSpan={isOpenTrades ? (hasAggregations ? 11 : 10) : 9}
                   align="center"
                 >
                   No operations found.
@@ -416,7 +444,7 @@ export default function OperationsTable({ operations, title, timeZone }) {
                   Total: {totalPnL > 0 ? "+" : totalPnL < 0 ? "-" : ""}$
                   {Math.abs(totalPnL).toFixed(2)}
                 </TableCell>
-                <TableCell colSpan={hasAggregations ? 6 : 5} />
+                <TableCell colSpan={hasAggregations ? 8 : 7} />
               </TableRow>
             </tfoot>
           )}

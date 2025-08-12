@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### ✨ Added
+- **integrar información del scanner en tablas de trades**
 
 ### 🐛 Fixed
 

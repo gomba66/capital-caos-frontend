@@ -2,12 +2,6 @@ import React from "react";
 import { Box, Typography, Tooltip, Chip } from "@mui/material";
 import { Info } from "@mui/icons-material";
 
-/**
- * Componente para mostrar información del scanner que detectó un trade
- * @param {Object} scannerInfo - Información del scanner
- * @param {boolean} compact - Si es true, muestra versión compacta
- * @returns {JSX.Element}
- */
 const ScannerInfo = ({ scannerInfo, compact = false }) => {
   if (!scannerInfo || !scannerInfo.scanner) {
     return <span style={{ color: "#888" }}>-</span>;
