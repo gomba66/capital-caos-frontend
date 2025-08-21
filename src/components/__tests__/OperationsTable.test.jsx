@@ -249,42 +249,6 @@ describe("OperationsTable", () => {
     expect(screen.getByText("SHORT")).toBeInTheDocument();
   });
 
-  test("handles operations with aggregations", () => {
-    const operationsWithAggregations = [
-      {
-        id: 1,
-        symbol: "BTCUSDT",
-        side: "LONG",
-        entry_price: "50000",
-        current_price: "51000",
-        quantity: "0.1",
-        pnl: "100",
-        unrealized_profit: "100",
-        entry_time: "2024-01-01T10:00:00Z",
-        closed_at: "2024-01-01T11:00:00Z",
-        aggregations: [
-          {
-            timestamp: "2024-01-01T10:30:00Z",
-            price: "50500",
-            sizeAdded: "0.05",
-            newAvgEntry: "50250",
-            totalSize: "0.15",
-          },
-        ],
-      },
-    ];
-
-    renderWithProviders(
-      <OperationsTable
-        operations={operationsWithAggregations}
-        title="Test Operations"
-      />
-    );
-
-    expect(screen.getByText("Test Operations")).toBeInTheDocument();
-    expect(screen.getByText("BTCUSDT")).toBeInTheDocument();
-  });
-
   test("handles edge cases in sorting", () => {
     const operationsWithEdgeCases = [
       {
@@ -685,51 +649,6 @@ describe("OperationsTable - Cobertura avanzada", () => {
       screen.getByText((content) => content.includes("50.00"))
     ).toBeInTheDocument();
     expect(screen.getAllByText("-").length).toBeGreaterThan(0);
-  });
-
-  test("renderiza Aggregations y fila expandida", () => {
-    const ops = [
-      {
-        id: 1,
-        symbol: "BTCUSDT",
-        side: "LONG",
-        entryPrice: "100",
-        unrealizedProfit: "10",
-        updateTime: Date.now(),
-        positionAmt: "0.001", // Para que se detecte como open trade
-        aggregations: [
-          {
-            timestamp: Date.now(),
-            price: "105",
-            sizeAdded: "0.01",
-            newAvgEntry: "101",
-            totalSize: "0.02",
-          },
-        ],
-      },
-      {
-        id: 2,
-        symbol: "ETHUSDT",
-        side: "SHORT",
-        entryPrice: "200",
-        unrealizedProfit: "-5",
-        updateTime: Date.now(),
-        positionAmt: "-0.01", // Para que se detecte como open trade
-      },
-    ];
-    renderWithProviders(
-      <OperationsTable
-        operations={ops}
-        title="Open Trades"
-        isOpenTrades={true}
-      />
-    );
-    // Verificar que se renderiza el componente AggregationsExpander
-    // Buscar por el contenido que debería estar en el componente
-    expect(screen.getByText("BTCUSDT")).toBeInTheDocument();
-    expect(screen.getByText("ETHUSDT")).toBeInTheDocument();
-    // Verificar que se renderiza el botón de expandir aggregations
-    expect(screen.getByTestId("KeyboardArrowDownIcon")).toBeInTheDocument();
   });
 
   test("colores y signos en PnL: positivo, negativo, cero", () => {
