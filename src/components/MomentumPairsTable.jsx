@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Table,
   TableBody,
@@ -8,6 +8,7 @@ import {
   TableRow,
   Paper,
   Typography,
+  Tooltip,
 } from "@mui/material";
 import { DateTime } from "luxon";
 
@@ -44,10 +45,41 @@ export default function MomentumPairsTable({
   openTrades = [],
   timeZone,
 }) {
+  const [cooldowns, setCooldowns] = useState([]);
+  const [loadingCooldowns, setLoadingCooldowns] = useState(true);
+
   // Crear un mapa de símbolos que están en open trades para búsqueda rápida
   const openTradeMap = new Map(
     openTrades.map((trade) => [trade.symbol?.toUpperCase(), trade])
   );
+
+  // Crear un mapa de símbolos en cooldown para búsqueda rápida
+  const cooldownMap = new Map(
+    cooldowns.map((cooldown) => [cooldown.symbol?.toUpperCase(), cooldown])
+  );
+
+  // Obtener cooldowns al montar el componente
+  useEffect(() => {
+    const fetchCooldowns = async () => {
+      try {
+        const response = await fetch("/api/cooldowns");
+        if (response.ok) {
+          const data = await response.json();
+          setCooldowns(data.cooldowns || []);
+        }
+      } catch (error) {
+        console.error("Error fetching cooldowns:", error);
+      } finally {
+        setLoadingCooldowns(false);
+      }
+    };
+
+    fetchCooldowns();
+
+    // Actualizar cada 30 segundos
+    const interval = setInterval(fetchCooldowns, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <>
@@ -62,6 +94,7 @@ export default function MomentumPairsTable({
               <TableCell>Change %</TableCell>
               <TableCell>Volume</TableCell>
               <TableCell>Type</TableCell>
+              <TableCell>Status</TableCell>
               <TableCell>Time</TableCell>
             </TableRow>
           </TableHead>
@@ -120,13 +153,55 @@ export default function MomentumPairsTable({
                       {pair.type ||
                         (pair.change_2m !== undefined ? "FAST" : "30m")}
                     </TableCell>
+                    <TableCell>
+                      {(() => {
+                        const cooldown = cooldownMap.get(
+                          pair.symbol?.toUpperCase()
+                        );
+                        if (cooldown) {
+                          const timeRemaining = cooldown.time_remaining;
+                          const [hours, minutes] = timeRemaining
+                            .split(":")
+                            .map(Number);
+                          const totalMinutes = hours * 60 + minutes;
+
+                          let emoji = "⏳";
+                          let color = "#ff9800"; // naranja por defecto
+
+                          if (totalMinutes <= 30) {
+                            emoji = "🔴"; // rojo para < 30 min
+                            color = "#f44336";
+                          } else if (totalMinutes <= 60) {
+                            emoji = "🟡"; // amarillo para < 1 hora
+                            color = "#ffeb3b";
+                          }
+
+                          return (
+                            <Tooltip
+                              title={`En cooldown - Tiempo restante: ${timeRemaining}`}
+                              arrow
+                              placement="top"
+                            >
+                              <span style={{ color, fontSize: "16px" }}>
+                                {emoji}
+                              </span>
+                            </Tooltip>
+                          );
+                        }
+                        return (
+                          <span style={{ color: "#4caf50", fontSize: "16px" }}>
+                            ✅
+                          </span>
+                        );
+                      })()}
+                    </TableCell>
                     <TableCell>{formatTime(pair.time, timeZone)}</TableCell>
                   </TableRow>
                 );
               })
             ) : (
               <TableRow>
-                <TableCell colSpan={5} align="center">
+                <TableCell colSpan={6} align="center">
                   No momentum pairs found.
                 </TableCell>
               </TableRow>

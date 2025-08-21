@@ -7,6 +7,7 @@
 ### 🐛 Fixed
 
 ### 🎨 Enhanced
+- **mejorar gráfica de rendimiento por scanner - optimizar espaciado vertical y labels - agregar sistema de alertas para winrate bajo - simplificar pie chart sin labels personalizados - unificar altura de charts a 250px**
 
 ### 🔧 Technical
 

@@ -276,6 +276,7 @@ export default function Dashboard() {
           );
         })}
       </Grid>
+
       {/* Charts Section - Responsive Layout */}
       <Grid container spacing={9} mb={4} justifyContent="center">
         {/* Equity Chart - Full width on mobile/tablet, 48% on desktop */}
