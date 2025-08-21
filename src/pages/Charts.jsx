@@ -9,6 +9,7 @@ import ProfitFactorChart from "../components/charts/ProfitFactorChart";
 import WeeklyPerformanceChart from "../components/charts/WeeklyPerformanceChart";
 import MonthlyPerformanceChart from "../components/charts/MonthlyPerformanceChart";
 import WeeklyMonthlyPerformanceChart from "../components/charts/WeeklyMonthlyPerformanceChart";
+import ScannerPerformanceChart from "../components/charts/ScannerPerformanceChart";
 import { TimeZoneContext } from "../contexts/AppContexts";
 import { calculateWinrates } from "../utils/formatting";
 
@@ -85,6 +86,11 @@ export default function Charts() {
           operations={closedTrades}
           timeZone={timeZone}
         />
+      </Box>
+
+      {/* 4. Análisis de Rendimiento por Scanner */}
+      <Box sx={{ mt: 4 }}>
+        <ScannerPerformanceChart operations={closedTrades} />
       </Box>
     </Box>
   );

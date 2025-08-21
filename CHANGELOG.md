@@ -14,6 +14,23 @@
 
 ### 🖥️ Desktop Features
 
+## [v0.1.6] - 2025-08-21
+
+
+### ✨ Added
+
+### 🐛 Fixed
+- **corregir tests de MomentumPairsTable - usar regex para búsqueda de texto con emojis - usar findAllByText para elementos múltiples**
+
+### 🎨 Enhanced
+- **mejorar gráfica de rendimiento por scanner - optimizar espaciado vertical y labels - agregar sistema de alertas para winrate bajo - simplificar pie chart sin labels personalizados - unificar altura de charts a 250px**
+
+### 🔧 Technical
+
+### 📱 Mobile Features
+
+### 🖥️ Desktop Features
+
 ## [v0.1.5] - 2025-08-21
 
 
