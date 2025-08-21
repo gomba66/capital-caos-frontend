@@ -14,9 +14,27 @@
 
 ### 🖥️ Desktop Features
 
+## [v0.1.5] - 2025-08-21
+
+
+### ✨ Added
+
+### 🐛 Fixed
+
+- **corregir timezone en EquityChart y DrawdownChart**
+
+### 🎨 Enhanced
+
+### 🔧 Technical
+
+### 📱 Mobile Features
+
+### 🖥️ Desktop Features
+
 ## [v0.1.4] - 2025-08-11
 
 ### ✨ Added
+
 - **integrar información del scanner en tablas de trades**
 
 ### 🐛 Fixed
@@ -31,6 +49,7 @@
 - **improve dashboard and charts components**
 
 ### 🔧 Technical
+
 - **aplicar formateo y mejoras de código**
 
 ### 📱 Mobile Features
@@ -96,7 +115,6 @@
 
 - **Simplify date format in all charts and tables to dd/MM/yy - h:mm:ss a**
 - **Simplify date format in closed trades table to dd/MM/yy - h:mm:ss a**
-- **Improve open trades table with separate chart button and conditional aggregations column**
 
 ### 🔧 Technical
 
@@ -205,9 +223,6 @@
 
 ### ✨ Added
 
-- **Aggregations Expander Component**: New component to display and expand aggregation information in the operations table
-- **Enhanced Operations Table**: Improved table with aggregation details and expandable rows
-
 ### 🐛 Fixed
 
 ### 🎨 Enhanced
@@ -258,7 +273,6 @@
 - **Consistent Styling**: Tooltips with dark theme and cyan borders
 - **Dynamic Layout**: Main content automatically adjusts to sidebar width
 - **Improve hooks installation script to work from any location**
-- **Add aggregations expander to open trades table**
 
 ### 🔧 Technical
 

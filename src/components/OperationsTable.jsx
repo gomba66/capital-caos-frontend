@@ -15,7 +15,7 @@ import {
 } from "@mui/material";
 import { ShowChart } from "@mui/icons-material";
 import { DateTime } from "luxon";
-import AggregationsExpander from "./AggregationsExpander";
+
 import ScannerInfo from "./ScannerInfo";
 
 function formatReason(reason) {
@@ -123,11 +123,6 @@ export default function OperationsTable({ operations, title, timeZone }) {
     operations.length > 0 &&
     (operations[0].positionAmt !== undefined ||
       operations[0].status === "open");
-
-  // Check if any open trades have aggregations
-  const hasAggregations =
-    isOpenTrades &&
-    operations.some((op) => op.aggregations && op.aggregations.length > 0);
 
   // Estado para ordenamiento
   const [orderBy, setOrderBy] = useState(null);
@@ -263,7 +258,6 @@ export default function OperationsTable({ operations, title, timeZone }) {
               </TableCell>
               {isOpenTrades && <TableCell>TP Target</TableCell>}
               {isOpenTrades && <TableCell>Chart</TableCell>}
-              {hasAggregations && <TableCell>Aggregations</TableCell>}
             </TableRow>
           </TableHead>
           <TableBody>
@@ -391,42 +385,12 @@ export default function OperationsTable({ operations, title, timeZone }) {
                         </Tooltip>
                       </TableCell>
                     )}
-                    {hasAggregations && (
-                      <TableCell>
-                        <AggregationsExpander
-                          aggregations={op.aggregations}
-                          timeZone={timeZone}
-                        />
-                      </TableCell>
-                    )}
                   </TableRow>
-                  {/* Row for aggregations expander */}
-                  {hasAggregations &&
-                    op.aggregations &&
-                    op.aggregations.length > 0 && (
-                      <TableRow>
-                        <TableCell
-                          colSpan={
-                            isOpenTrades ? (hasAggregations ? 11 : 10) : 9
-                          }
-                          style={{ padding: 0 }}
-                        >
-                          <AggregationsExpander
-                            aggregations={op.aggregations}
-                            timeZone={timeZone}
-                            showButton={false}
-                          />
-                        </TableCell>
-                      </TableRow>
-                    )}
                 </React.Fragment>
               ))
             ) : (
               <TableRow>
-                <TableCell
-                  colSpan={isOpenTrades ? (hasAggregations ? 11 : 10) : 9}
-                  align="center"
-                >
+                <TableCell colSpan={isOpenTrades ? 10 : 9} align="center">
                   No operations found.
                 </TableCell>
               </TableRow>
@@ -451,7 +415,7 @@ export default function OperationsTable({ operations, title, timeZone }) {
                   Total: {totalPnL > 0 ? "+" : totalPnL < 0 ? "-" : ""}$
                   {Math.abs(totalPnL).toFixed(2)}
                 </TableCell>
-                <TableCell colSpan={hasAggregations ? 8 : 7} />
+                <TableCell colSpan={7} />
               </TableRow>
             </tfoot>
           )}
