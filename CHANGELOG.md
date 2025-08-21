@@ -6,6 +6,21 @@
 
 ### 🐛 Fixed
 
+### 🎨 Enhanced
+
+### 🔧 Technical
+
+### 📱 Mobile Features
+
+### 🖥️ Desktop Features
+
+## [v0.1.5] - 2025-08-21
+
+
+### ✨ Added
+
+### 🐛 Fixed
+
 - **corregir timezone en EquityChart y DrawdownChart**
 
 ### 🎨 Enhanced
