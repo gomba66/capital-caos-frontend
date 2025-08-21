@@ -5,6 +5,21 @@
 ### ✨ Added
 
 ### 🐛 Fixed
+
+### 🎨 Enhanced
+
+### 🔧 Technical
+
+### 📱 Mobile Features
+
+### 🖥️ Desktop Features
+
+## [v0.1.6] - 2025-08-21
+
+
+### ✨ Added
+
+### 🐛 Fixed
 - **corregir tests de MomentumPairsTable - usar regex para búsqueda de texto con emojis - usar findAllByText para elementos múltiples**
 
 ### 🎨 Enhanced
