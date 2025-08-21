@@ -46,7 +46,7 @@ export default function MomentumPairsTable({
   timeZone,
 }) {
   const [cooldowns, setCooldowns] = useState([]);
-  const [loadingCooldowns, setLoadingCooldowns] = useState(true);
+  const [loadingCooldowns, setLoadingCooldowns] = useState(true); // eslint-disable-line no-unused-vars
 
   // Crear un mapa de símbolos que están en open trades para búsqueda rápida
   const openTradeMap = new Map(

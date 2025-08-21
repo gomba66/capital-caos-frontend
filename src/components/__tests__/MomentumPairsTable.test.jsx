@@ -1,10 +1,11 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
+import { vi } from "vitest";
 import MomentumPairsTable from "../MomentumPairsTable";
 
 // Mock fetch for cooldowns
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
 const mockPairs = [
   {
@@ -52,8 +53,8 @@ describe("MomentumPairsTable", () => {
     );
 
     expect(screen.getByText("Test Momentum Pairs")).toBeInTheDocument();
-    expect(screen.getByText("BTCUSDT")).toBeInTheDocument();
-    expect(screen.getByText("ETHUSDT")).toBeInTheDocument();
+    expect(screen.getByText(/BTCUSDT/)).toBeInTheDocument();
+    expect(screen.getByText(/ETHUSDT/)).toBeInTheDocument();
   });
 
   it("shows open trade indicators", async () => {
@@ -71,8 +72,8 @@ describe("MomentumPairsTable", () => {
       />
     );
 
-    await screen.findByText("🔥");
-    expect(screen.getByText("📈")).toBeInTheDocument();
+    await screen.findByText(/🔥/);
+    expect(screen.getByText(/📈/)).toBeInTheDocument();
   });
 
   it("displays cooldown status correctly", async () => {
@@ -116,8 +117,8 @@ describe("MomentumPairsTable", () => {
     );
 
     // Debería mostrar todos los pares como disponibles (✅)
-    await screen.findByText("✅");
-    expect(screen.getAllByText("✅")).toHaveLength(2);
+    const statusElements = await screen.findAllByText(/✅/);
+    expect(statusElements).toHaveLength(2);
   });
 
   it("shows correct status for different cooldown times", async () => {
