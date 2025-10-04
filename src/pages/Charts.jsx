@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useContext } from "react";
 import { getOperations } from "../api/operations";
+import { getStats } from "../api/stats";
 import { Box, CircularProgress, Typography } from "@mui/material";
 import EquityChart from "../components/charts/EquityChart";
 import PnLHistogram from "../components/charts/PnLHistogram";
@@ -11,7 +12,6 @@ import MonthlyPerformanceChart from "../components/charts/MonthlyPerformanceChar
 import WeeklyMonthlyPerformanceChart from "../components/charts/WeeklyMonthlyPerformanceChart";
 import ScannerPerformanceChart from "../components/charts/ScannerPerformanceChart";
 import { TimeZoneContext } from "../contexts/AppContexts";
-import { calculateWinrates } from "../utils/formatting";
 
 export default function Charts() {
   const [closedTrades, setClosedTrades] = useState([]);
@@ -22,13 +22,17 @@ export default function Charts() {
   useEffect(() => {
     async function fetchOps() {
       setLoading(true);
-      const opsData = await getOperations();
+      // Obtener datos de ambos endpoints
+      const [opsData, statsData] = await Promise.all([
+        getOperations(),
+        getStats(),
+      ]);
+
       const closed = opsData?.closed || [];
       setClosedTrades(closed);
 
-      // Calcular winrates
-      const calculatedWinrates = calculateWinrates(closed);
-      setWinrates(calculatedWinrates);
+      // Usar winrates calculados en el backend (fuente única de verdad)
+      setWinrates(statsData?.winrates || null);
 
       setLoading(false);
     }
