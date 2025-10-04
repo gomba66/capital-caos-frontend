@@ -9,6 +9,7 @@
 ### 🎨 Enhanced
 
 ### 🔧 Technical
+- **Unificar cálculo de winrates usando endpoint del backend** - Charts page ahora usa `getStats()` para obtener winrates pre-calculados del backend en lugar de calcularlos localmente, eliminando duplicación de lógica y asegurando consistencia con Dashboard
 
 ### 📱 Mobile Features
 
