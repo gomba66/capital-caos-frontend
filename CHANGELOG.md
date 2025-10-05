@@ -14,8 +14,36 @@
 
 ### 🖥️ Desktop Features
 
-## [v0.1.7] - 2025-10-04
+## [v0.1.8] - 2025-10-05
 
+
+### 🎯 Fix - Equity Chart Starting Point
+
+#### Problema
+
+- **Chart incompleto**: El equity chart no mostraba el punto de inicio desde $0
+- **Falta de contexto**: No se veía el recorrido completo desde el punto de partida
+- **Punto inicial faltante**: El chart empezaba directamente con el primer trade
+
+#### Solución
+
+- **Punto inicial**: Se agrega un punto antes del primer trade con equity = $0
+- **Recorrido completo**: El chart ahora muestra la evolución desde $0
+- **Mejor visualización**: Se ve claramente el punto de partida y la evolución
+
+#### Archivos Modificados
+
+- `frontend/src/components/charts/EquityChart.jsx` - Agregado punto inicial desde $0
+- `docs/EQUITY_CHART_STARTING_POINT_FIX.md` - Documentación del fix
+
+#### Impacto
+
+- ✅ **Punto de inicio**: Se ve claramente el punto de partida desde $0
+- ✅ **Recorrido completo**: Se muestra la evolución completa del PnL
+- ✅ **Mejor análisis**: Permite ver el rendimiento desde el inicio
+- ✅ **Contexto claro**: Se entiende la evolución del equity desde $0
+
+## [v0.1.7] - 2025-10-04
 
 ### ✨ Added
 
@@ -24,6 +52,7 @@
 ### 🎨 Enhanced
 
 ### 🔧 Technical
+
 - **Unificar cálculo de winrates usando endpoint del backend** - Charts page ahora usa `getStats()` para obtener winrates pre-calculados del backend en lugar de calcularlos localmente, eliminando duplicación de lógica y asegurando consistencia con Dashboard
 
 ### 📱 Mobile Features
@@ -32,13 +61,14 @@
 
 ## [v0.1.6] - 2025-08-21
 
-
 ### ✨ Added
 
 ### 🐛 Fixed
+
 - **corregir tests de MomentumPairsTable - usar regex para búsqueda de texto con emojis - usar findAllByText para elementos múltiples**
 
 ### 🎨 Enhanced
+
 - **mejorar gráfica de rendimiento por scanner - optimizar espaciado vertical y labels - agregar sistema de alertas para winrate bajo - simplificar pie chart sin labels personalizados - unificar altura de charts a 250px**
 
 ### 🔧 Technical
@@ -48,7 +78,6 @@
 ### 🖥️ Desktop Features
 
 ## [v0.1.5] - 2025-08-21
-
 
 ### ✨ Added
 
