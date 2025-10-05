@@ -26,25 +26,55 @@ import { DateTime } from "luxon";
 function buildEquityDrawdownData(operations) {
   let equity = 0;
   let peak = 0;
-  return (operations || [])
+
+  const filteredOps = (operations || [])
     .filter((op) => op.closed_at || op.closeTime)
     .sort(
       (a, b) =>
         new Date(a.closed_at || a.closeTime) -
         new Date(b.closed_at || b.closeTime)
-    )
-    .map((op) => {
-      equity += Number(op.pnl || 0);
-      peak = Math.max(peak, equity);
-      const drawdown = peak > 0 ? ((equity - peak) / peak) * 100 : 0;
-      return {
-        date: op.closed_at || op.closeTime,
-        equity: Number(equity.toFixed(4)),
-        drawdown: Number(drawdown.toFixed(2)),
-        pnl: Number(op.pnl || 0),
-        symbol: op.symbol,
-      };
-    });
+    );
+
+  // Si no hay operaciones, retornar solo el punto inicial
+  if (filteredOps.length === 0) {
+    return [
+      {
+        date: new Date().toISOString(),
+        equity: 0,
+        drawdown: 0,
+        pnl: 0,
+        symbol: "Starting Point",
+      },
+    ];
+  }
+
+  // Agregar punto inicial antes del primer trade
+  const firstTrade = filteredOps[0];
+  const initialPoint = {
+    date: new Date(
+      new Date(firstTrade.closed_at || firstTrade.closeTime).getTime() - 60000
+    ).toISOString(), // 1 minuto antes del primer trade
+    equity: 0,
+    drawdown: 0,
+    pnl: 0,
+    symbol: "Starting Point",
+  };
+
+  const equityData = filteredOps.map((op) => {
+    equity += Number(op.pnl || 0);
+    peak = Math.max(peak, equity);
+    const drawdown = peak > 0 ? ((equity - peak) / peak) * 100 : 0;
+    return {
+      date: op.closed_at || op.closeTime,
+      equity: Number(equity.toFixed(4)),
+      drawdown: Number(drawdown.toFixed(2)),
+      pnl: Number(op.pnl || 0),
+      symbol: op.symbol,
+    };
+  });
+
+  // Combinar punto inicial con datos de equity
+  return [initialPoint, ...equityData];
 }
 
 function formatDateLuxon(date, timeZone = "UTC") {
@@ -78,7 +108,11 @@ export default function EquityChart({
   const lastEquity = data.length ? data[data.length - 1].equity : 0;
   const refLineColor = lastEquity >= 0 ? "#2de2e6" : "#ff2e63";
 
-  if (!data.length) {
+  // Verificar si hay operaciones reales (no solo el punto inicial)
+  const hasRealOperations =
+    operations && operations.some((op) => op.closed_at || op.closeTime);
+
+  if (!hasRealOperations) {
     return <Typography>No closed trades to display equity curve.</Typography>;
   }
 
