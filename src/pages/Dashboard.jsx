@@ -65,6 +65,7 @@ export default function Dashboard() {
   const [prevOpenTrades, setPrevOpenTrades] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [dbTradeCount, setDbTradeCount] = useState(null);
+  const [config, setConfig] = useState(null);
   const [totalCapital, setTotalCapital] = useState(1);
   const [capitalCurrency, setCapitalCurrency] = useState(() => {
     return localStorage.getItem("capitalCurrency") || "USDT";
@@ -99,6 +100,7 @@ export default function Dashboard() {
     setOpenTrades(openData?.open_trades || []);
     setMomentumPairs(momentumData?.momentum_pairs || []);
     setDbTradeCount(configData?.database?.total || null);
+    setConfig(configData);
     setTotalCapital(capitalUsdt);
     const selectedCurrency = localStorage.getItem("capitalCurrency") || "USDT";
     setCapitalCurrency(selectedCurrency);
@@ -150,6 +152,7 @@ export default function Dashboard() {
       const newOpen = openData?.open_trades || [];
       setOpenTrades(newOpen);
       setDbTradeCount(configData?.database?.total || null);
+      setConfig(configData);
       setTotalCapital(capitalUsdt);
       // Detectar si algún trade fue cerrado
       const prevIds = new Set(
@@ -937,6 +940,7 @@ export default function Dashboard() {
         binanceCount={openTrades.length}
         dbCount={dbTradeCount}
         simplifiedView={simplifiedView}
+        config={config}
       />
       <Accordion sx={{ mb: 2 }}>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>

@@ -158,6 +158,7 @@ export default function OperationsTable({
   binanceCount,
   dbCount,
   simplifiedView = false,
+  config = null,
 }) {
   const navigate = useNavigate();
   const [currency, setCurrency] = useState(() => {
@@ -258,9 +259,44 @@ export default function OperationsTable({
   // Mostrar contador solo para "Open Trades"
   const showCounter = title === "Open Trades" && binanceCount !== undefined;
 
+  // Determinar qué sides están activos y sus límites
+  const getActiveSidesAndLimits = () => {
+    if (!config || !config.limits) return null;
+
+    const limits = config.limits;
+    const allowedSide = config.side_config?.allowed_side || "both";
+    const activeSides = [];
+
+    // Verificar si LONG está activo según la configuración de side
+    if (
+      (allowedSide === "long" || allowedSide === "both") &&
+      limits.max_long_trades > 0
+    ) {
+      activeSides.push({
+        side: "LONG",
+        limit: limits.max_long_trades,
+      });
+    }
+
+    // Verificar si SHORT está activo según la configuración de side
+    if (
+      (allowedSide === "short" || allowedSide === "both") &&
+      limits.max_short_trades > 0
+    ) {
+      activeSides.push({
+        side: "SHORT",
+        limit: limits.max_short_trades,
+      });
+    }
+
+    return activeSides.length > 0 ? activeSides : null;
+  };
+
+  const activeSidesAndLimits = getActiveSidesAndLimits();
+
   return (
     <>
-      <Box display="flex" alignItems="center" gap={1} mb={1}>
+      <Box display="flex" alignItems="center" gap={1} mb={1} flexWrap="wrap">
         <Typography variant="h6" gutterBottom sx={{ mb: 0 }}>
           {title}
         </Typography>
@@ -276,6 +312,46 @@ export default function OperationsTable({
             ({binanceCount}
             {dbCount !== null && ` / ${dbCount}`})
           </Typography>
+        )}
+        {title === "Open Trades" && activeSidesAndLimits && (
+          <Box display="flex" alignItems="center" gap={1} ml={1}>
+            <Typography
+              variant="body2"
+              sx={{
+                color: "text.secondary",
+                opacity: 0.7,
+                fontFamily: "monospace",
+                fontSize: "0.85rem",
+              }}
+            >
+              Limits:
+            </Typography>
+            {activeSidesAndLimits.map((item, index) => (
+              <Typography
+                key={item.side}
+                variant="body2"
+                sx={{
+                  color: item.side === "LONG" ? "#2de2a6" : "#ff2e63",
+                  opacity: 0.9,
+                  fontFamily: "monospace",
+                  fontSize: "0.85rem",
+                  fontWeight: 600,
+                }}
+              >
+                {item.side} {item.limit}
+                {index < activeSidesAndLimits.length - 1 && (
+                  <span
+                    style={{
+                      color: "rgba(255, 255, 255, 0.5)",
+                      margin: "0 4px",
+                    }}
+                  >
+                    |
+                  </span>
+                )}
+              </Typography>
+            ))}
+          </Box>
         )}
       </Box>
       <TableContainer component={Paper} sx={{ mb: 4, overflowX: "auto" }}>
