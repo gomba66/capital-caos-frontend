@@ -69,7 +69,10 @@ export default function Dashboard() {
   const [capitalCurrency, setCapitalCurrency] = useState(() => {
     return localStorage.getItem("capitalCurrency") || "USDT";
   });
-  const [simplifiedView, setSimplifiedView] = useState(false);
+  const [simplifiedView, setSimplifiedView] = useState(() => {
+    const saved = localStorage.getItem("simplifiedView");
+    return saved === "true";
+  });
   // const localZone = DateTime.local().zoneName;
   const { timeZone } = useContext(TimeZoneContext);
 
@@ -221,7 +224,11 @@ export default function Dashboard() {
           control={
             <Switch
               checked={simplifiedView}
-              onChange={(e) => setSimplifiedView(e.target.checked)}
+              onChange={(e) => {
+                const newValue = e.target.checked;
+                setSimplifiedView(newValue);
+                localStorage.setItem("simplifiedView", String(newValue));
+              }}
               sx={{
                 "& .MuiSwitch-switchBase.Mui-checked": {
                   color: "#2de2e6",
