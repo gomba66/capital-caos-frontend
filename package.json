@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "npm run version:extract",
     "build": "vite build",
     "lint": "eslint . --ignore-pattern 'dist/**' --ignore-pattern 'node_modules/**' --ignore-pattern 'coverage/**'",
     "preview": "vite preview",
@@ -15,6 +16,7 @@
     "changelog:add": "node scripts/update-changelog.js",
     "changelog:check": "sh scripts/pre-commit-hook.sh",
     "changelog:release": "node scripts/release-changelog.js",
+    "version:extract": "node scripts/extract-version.js",
     "hooks:install": "./scripts/install-hooks.sh",
     "node:check": "./scripts/check-node-version.sh",
     "node:switch": "./scripts/auto-switch-node.sh",
