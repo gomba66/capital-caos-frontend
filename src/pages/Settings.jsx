@@ -30,10 +30,15 @@ const commonTimeZones = [
   "America/Argentina/Buenos_Aires",
 ];
 
+const commonCurrencies = ["USDT", "COP", "MXN"];
+
 export default function Settings() {
   const { timeZone, setTimeZone } = useContext(TimeZoneContext);
   const [backendVersionInfo, setBackendVersionInfo] = useState(null);
   const [config, setConfig] = useState(null);
+  const [currency, setCurrency] = useState(() => {
+    return localStorage.getItem("capitalCurrency") || "USDT";
+  });
   const frontendVersion = getFrontendVersion();
   const frontendVersionDate = getFrontendVersionDate();
 
@@ -54,6 +59,16 @@ export default function Settings() {
   const handleZoneChange = (e) => {
     setTimeZone(e.target.value);
     localStorage.setItem("timeZone", e.target.value);
+  };
+
+  const handleCurrencyChange = (e) => {
+    const newCurrency = e.target.value;
+    setCurrency(newCurrency);
+    localStorage.setItem("capitalCurrency", newCurrency);
+    // Disparar evento personalizado para actualizar Dashboard en la misma ventana
+    window.dispatchEvent(
+      new CustomEvent("currencyChange", { detail: newCurrency })
+    );
   };
 
   return (
@@ -88,6 +103,27 @@ export default function Settings() {
               </MenuItem>
             )
           )}
+        </Select>
+      </FormControl>
+
+      <FormControl
+        sx={{ minWidth: 260, mt: 3, ml: 2 }}
+        size="small"
+        variant="outlined"
+      >
+        <InputLabel id="currency-select-label">Capital Currency</InputLabel>
+        <Select
+          labelId="currency-select-label"
+          id="currency-select"
+          value={currency}
+          label="Capital Currency"
+          onChange={handleCurrencyChange}
+        >
+          {commonCurrencies.map((curr) => (
+            <MenuItem key={curr} value={curr}>
+              {curr}
+            </MenuItem>
+          ))}
         </Select>
       </FormControl>
 

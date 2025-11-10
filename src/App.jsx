@@ -9,6 +9,7 @@ import { Box, useTheme, useMediaQuery } from "@mui/material";
 import { DateTime } from "luxon";
 import { SidebarContext, TimeZoneContext } from "./contexts/AppContexts";
 import { getBackendVersion } from "./api/version";
+import { initializeExchangeRates } from "./utils/currencyConverter";
 
 function App() {
   const localZone = DateTime.local().zoneName;
@@ -23,6 +24,13 @@ function App() {
   );
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+
+  // Inicializar tasas de cambio al cargar la aplicación
+  useEffect(() => {
+    initializeExchangeRates().catch((error) => {
+      console.warn("Error initializing exchange rates:", error);
+    });
+  }, []);
 
   // Actualizar el título de la página con la versión del backend
   useEffect(() => {

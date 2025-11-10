@@ -1,6 +1,11 @@
 // test comment
 import React, { useState } from "react";
 import {
+  convertFromUSDT,
+  formatCurrency,
+  getCurrencySymbol,
+} from "../../utils/currencyConverter";
+import {
   LineChart,
   Line,
   XAxis,
@@ -100,6 +105,7 @@ export default function EquityChart({
   timeZone = "UTC",
   height = 320,
   simplifiedView = false,
+  currency = "USDT",
 }) {
   const data = buildEquityDrawdownData(operations);
   const [showEquity, setShowEquity] = useState(true);
@@ -187,6 +193,13 @@ export default function EquityChart({
               }}
               tick={axisStyle}
               axisLine={{ stroke: "#2de2e6" }}
+              tickFormatter={(value) => {
+                const converted = convertFromUSDT(value, currency);
+                const symbol = getCurrencySymbol(currency);
+                return `${symbol}${converted.toLocaleString(undefined, {
+                  maximumFractionDigits: 0,
+                })}`;
+              }}
             />
             {showDrawdown && (
               <YAxis
@@ -215,20 +228,18 @@ export default function EquityChart({
               contentStyle={tooltipStyle}
               labelStyle={{ color: "#2de2e6", fontWeight: 700 }}
               itemStyle={{ color: "#fff" }}
-              formatter={(value, name) => [
-                name === "equity"
-                  ? `$${Number(value).toLocaleString(undefined, {
-                      maximumFractionDigits: 2,
-                    })}`
-                  : name === "drawdown"
-                  ? `${Number(value).toFixed(2)}%`
-                  : value,
-                name === "equity"
-                  ? "Equity"
-                  : name === "drawdown"
-                  ? "Drawdown (%)"
-                  : name,
-              ]}
+              formatter={(value, name) => {
+                if (name === "equity") {
+                  const convertedValue = convertFromUSDT(
+                    Number(value),
+                    currency
+                  );
+                  return [formatCurrency(convertedValue, currency), "Equity"];
+                } else if (name === "drawdown") {
+                  return [`${Number(value).toFixed(2)}%`, "Drawdown (%)"];
+                }
+                return [value, name];
+              }}
               labelFormatter={(d) => `Date: ${formatDateLuxon(d, timeZone)}`}
               cursor={false}
             />
