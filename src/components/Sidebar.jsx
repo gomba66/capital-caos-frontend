@@ -1,7 +1,7 @@
 // Comentario de prueba para flujo de PR y changelog
 // Segundo comentario de prueba para validar pre-commit hook
 // Tercer comentario para forzar nueva ejecución del workflow
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import {
   Drawer,
   List,
@@ -27,6 +27,7 @@ import ShowChartIcon from "@mui/icons-material/ShowChart";
 
 import { Link, useLocation } from "react-router-dom";
 import { TimeZoneContext, SidebarContext } from "../contexts/AppContexts";
+import { getBackendVersion } from "../api/version";
 
 // const drawerWidth = 220;
 const navItems = [
@@ -43,6 +44,7 @@ export default function Sidebar() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [collapsed, setCollapsed] = useState(false);
+  const [backendVersion, setBackendVersion] = useState(null);
 
   const isCollapsed = isMobile || collapsed;
   const currentWidth = isCollapsed ? 80 : 220;
@@ -51,6 +53,17 @@ export default function Sidebar() {
   React.useEffect(() => {
     setSidebarWidth(currentWidth);
   }, [currentWidth, setSidebarWidth]);
+
+  // Obtener la versión del backend
+  useEffect(() => {
+    const fetchVersion = async () => {
+      const versionInfo = await getBackendVersion();
+      if (versionInfo) {
+        setBackendVersion(versionInfo.version);
+      }
+    };
+    fetchVersion();
+  }, []);
   return (
     <>
       <Drawer
@@ -253,6 +266,35 @@ export default function Sidebar() {
             </Tooltip>
           ))}
         </List>
+
+        {/* Versión del backend */}
+        <Box
+          sx={{
+            position: "absolute",
+            bottom: !isMobile ? 80 : 16,
+            left: 0,
+            right: 0,
+            display: "flex",
+            justifyContent: "center",
+            px: 2,
+          }}
+        >
+          <Typography
+            variant="caption"
+            color="#2de2e6"
+            sx={{
+              fontFamily: "monospace",
+              fontSize: 11,
+              opacity: 1,
+              letterSpacing: 0.5,
+              textAlign: "center",
+              textShadow: "0 0 8px #2de2e6",
+              fontWeight: 500,
+            }}
+          >
+            {backendVersion || "..."}
+          </Typography>
+        </Box>
 
         {/* Botón de colapsar - solo en desktop */}
         {!isMobile && (

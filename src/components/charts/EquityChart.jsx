@@ -98,6 +98,8 @@ export default function EquityChart({
   operations,
   showDrawdown = true,
   timeZone = "UTC",
+  height = 320,
+  simplifiedView = false,
 }) {
   const data = buildEquityDrawdownData(operations);
   const [showEquity, setShowEquity] = useState(true);
@@ -117,7 +119,14 @@ export default function EquityChart({
   }
 
   return (
-    <Box mb={4} sx={{ minWidth: "720px", width: "100%" }}>
+    <Box
+      mb={4}
+      sx={{
+        minWidth: simplifiedView ? 0 : "720px",
+        width: "100%",
+        maxWidth: "100%",
+      }}
+    >
       <Typography variant="h6" gutterBottom>
         Equity Curve{showDrawdown ? " & Drawdown" : ""}
       </Typography>
@@ -155,7 +164,7 @@ export default function EquityChart({
         </FormGroup>
       )}
       <Paper sx={{ p: 2, width: "100%" }}>
-        <ResponsiveContainer width="100%" height={320}>
+        <ResponsiveContainer width="100%" height={height}>
           <LineChart
             data={data}
             margin={{ top: 20, right: 40, left: 0, bottom: 0 }}

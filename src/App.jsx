@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import Charts from "./pages/Charts";
@@ -8,6 +8,7 @@ import Sidebar from "./components/Sidebar";
 import { Box, useTheme, useMediaQuery } from "@mui/material";
 import { DateTime } from "luxon";
 import { SidebarContext, TimeZoneContext } from "./contexts/AppContexts";
+import { getBackendVersion } from "./api/version";
 
 function App() {
   const localZone = DateTime.local().zoneName;
@@ -22,6 +23,19 @@ function App() {
   );
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+
+  // Actualizar el título de la página con la versión del backend
+  useEffect(() => {
+    const updateTitle = async () => {
+      const versionInfo = await getBackendVersion();
+      if (versionInfo && versionInfo.version) {
+        document.title = `Capital Caos - ${versionInfo.version}`;
+      } else {
+        document.title = "Capital Caos";
+      }
+    };
+    updateTitle();
+  }, []);
 
   return (
     <Router>

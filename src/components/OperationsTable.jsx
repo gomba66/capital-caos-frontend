@@ -114,7 +114,14 @@ function getWinLoss(pnl) {
   return <span style={{ color: "#aaa", fontWeight: 700 }}>FLAT</span>;
 }
 
-export default function OperationsTable({ operations, title, timeZone }) {
+export default function OperationsTable({
+  operations,
+  title,
+  timeZone,
+  binanceCount,
+  dbCount,
+  simplifiedView = false,
+}) {
   const navigate = useNavigate();
 
   // Detect if open_trades format (Binance) or closed trades (tracker)
@@ -180,11 +187,29 @@ export default function OperationsTable({ operations, title, timeZone }) {
       )
     : null;
 
+  // Mostrar contador solo para "Open Trades"
+  const showCounter = title === "Open Trades" && binanceCount !== undefined;
+
   return (
     <>
-      <Typography variant="h6" gutterBottom>
-        {title}
-      </Typography>
+      <Box display="flex" alignItems="center" gap={1} mb={1}>
+        <Typography variant="h6" gutterBottom sx={{ mb: 0 }}>
+          {title}
+        </Typography>
+        {showCounter && (
+          <Typography
+            variant="body2"
+            sx={{
+              color: "text.secondary",
+              opacity: 0.7,
+              fontFamily: "monospace",
+            }}
+          >
+            ({binanceCount}
+            {dbCount !== null && ` / ${dbCount}`})
+          </Typography>
+        )}
+      </Box>
       <TableContainer component={Paper} sx={{ mb: 4, overflowX: "auto" }}>
         <Table size="small" sx={{ minWidth: 650 }}>
           <TableHead>
@@ -201,12 +226,14 @@ export default function OperationsTable({ operations, title, timeZone }) {
               >
                 Side
               </TableCell>
-              <TableCell
-                onClick={() => handleSort("entryPrice")}
-                style={{ cursor: "pointer" }}
-              >
-                Entry
-              </TableCell>
+              {!simplifiedView && (
+                <TableCell
+                  onClick={() => handleSort("entryPrice")}
+                  style={{ cursor: "pointer" }}
+                >
+                  Entry
+                </TableCell>
+              )}
               <TableCell
                 onClick={() => handleSort("pnl")}
                 style={{ cursor: "pointer" }}
@@ -228,7 +255,7 @@ export default function OperationsTable({ operations, title, timeZone }) {
               >
                 {isOpenTrades ? "" : "Close date"}
               </TableCell>
-              {!isOpenTrades && (
+              {!isOpenTrades && !simplifiedView && (
                 <TableCell
                   onClick={() => handleSort("reason")}
                   style={{ cursor: "pointer" }}
@@ -244,18 +271,22 @@ export default function OperationsTable({ operations, title, timeZone }) {
                   Result
                 </TableCell>
               )}
-              <TableCell
-                onClick={() => handleSort("scanner")}
-                style={{ cursor: "pointer" }}
-              >
-                Scanner
-              </TableCell>
-              <TableCell
-                onClick={() => handleSort("scanner_type")}
-                style={{ cursor: "pointer" }}
-              >
-                Type
-              </TableCell>
+              {!simplifiedView && (
+                <TableCell
+                  onClick={() => handleSort("scanner")}
+                  style={{ cursor: "pointer" }}
+                >
+                  Scanner
+                </TableCell>
+              )}
+              {!simplifiedView && (
+                <TableCell
+                  onClick={() => handleSort("scanner_type")}
+                  style={{ cursor: "pointer" }}
+                >
+                  Type
+                </TableCell>
+              )}
               {isOpenTrades && <TableCell>TP Target</TableCell>}
               {isOpenTrades && <TableCell>Chart</TableCell>}
             </TableRow>
@@ -281,9 +312,11 @@ export default function OperationsTable({ operations, title, timeZone }) {
                         </span>
                       )}
                     </TableCell>
-                    <TableCell>
-                      {formatNumber(op.entry || op.entryPrice)}
-                    </TableCell>
+                    {!simplifiedView && (
+                      <TableCell>
+                        {formatNumber(op.entry || op.entryPrice)}
+                      </TableCell>
+                    )}
                     <TableCell>
                       {isOpenTrades
                         ? formatUnrealizedProfit(
@@ -302,32 +335,36 @@ export default function OperationsTable({ operations, title, timeZone }) {
                         ? ""
                         : formatDate(op.closed_at || op.closeTime, timeZone)}
                     </TableCell>
-                    {!isOpenTrades && (
+                    {!isOpenTrades && !simplifiedView && (
                       <TableCell>{formatReason(op.reason)}</TableCell>
                     )}
                     {!isOpenTrades && (
                       <TableCell>{getWinLoss(op.pnl)}</TableCell>
                     )}
-                    <TableCell>
-                      <ScannerInfo
-                        scannerInfo={op.scanner_info}
-                        compact={true}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      {op.scanner_info?.scanner_type ? (
-                        <span
-                          style={{
-                            fontSize: "0.875rem",
-                            color: "#888",
-                          }}
-                        >
-                          {op.scanner_info.scanner_type}
-                        </span>
-                      ) : (
-                        "-"
-                      )}
-                    </TableCell>
+                    {!simplifiedView && (
+                      <TableCell>
+                        <ScannerInfo
+                          scannerInfo={op.scanner_info}
+                          compact={true}
+                        />
+                      </TableCell>
+                    )}
+                    {!simplifiedView && (
+                      <TableCell>
+                        {op.scanner_info?.scanner_type ? (
+                          <span
+                            style={{
+                              fontSize: "0.875rem",
+                              color: "#888",
+                            }}
+                          >
+                            {op.scanner_info.scanner_type}
+                          </span>
+                        ) : (
+                          "-"
+                        )}
+                      </TableCell>
+                    )}
                     {isOpenTrades && (
                       <TableCell>
                         {op.take_profit_target ? (
@@ -390,7 +427,18 @@ export default function OperationsTable({ operations, title, timeZone }) {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={isOpenTrades ? 10 : 9} align="center">
+                <TableCell
+                  colSpan={
+                    simplifiedView
+                      ? isOpenTrades
+                        ? 7 // Symbol, Side, PnL, Open Time, Close date (empty), TP Target, Chart
+                        : 6 // Symbol, Side, PnL, Open date, Close date, Result
+                      : isOpenTrades
+                      ? 10 // Symbol, Side, Entry, PnL, Open Time, Close date (empty), Scanner, Type, TP Target, Chart
+                      : 10 // Symbol, Side, Entry, PnL, Open date, Close date, Reason, Result, Scanner, Type
+                  }
+                  align="center"
+                >
                   No operations found.
                 </TableCell>
               </TableRow>
@@ -400,7 +448,7 @@ export default function OperationsTable({ operations, title, timeZone }) {
           {isOpenTrades && (
             <tfoot>
               <TableRow>
-                <TableCell colSpan={3} />
+                <TableCell colSpan={simplifiedView ? 2 : 3} />
                 <TableCell
                   style={{
                     fontWeight: 700,
@@ -415,7 +463,9 @@ export default function OperationsTable({ operations, title, timeZone }) {
                   Total: {totalPnL > 0 ? "+" : totalPnL < 0 ? "-" : ""}$
                   {Math.abs(totalPnL).toFixed(2)}
                 </TableCell>
-                <TableCell colSpan={7} />
+                <TableCell
+                  colSpan={simplifiedView ? 4 : 7} // Simplified: Open Time, Close date (empty), TP Target, Chart | Normal: Open Time, Close date (empty), Scanner, Type, TP Target, Chart
+                />
               </TableRow>
             </tfoot>
           )}
