@@ -451,10 +451,33 @@ export default function OperationsTable({
                                   variant="caption"
                                   style={{ color: "#2de2a6" }}
                                 >
-                                  (~$
-                                  {Number(
-                                    op.take_profit_target.value_usd
-                                  ).toFixed(2)}
+                                  (~
+                                  {(() => {
+                                    // Convertir de USD a la moneda seleccionada
+                                    const convertedValue = convertFromUSDT(
+                                      Number(op.take_profit_target.value_usd),
+                                      currency
+                                    );
+                                    const formattedValue = formatCurrency(
+                                      convertedValue,
+                                      currency
+                                    );
+                                    return formattedValue;
+                                  })()}
+                                  {currency !== "USDT" && (
+                                    <>
+                                      {" "}
+                                      <span
+                                        style={{
+                                          color: "#aaa",
+                                          fontWeight: 400,
+                                          fontSize: "0.85em",
+                                        }}
+                                      >
+                                        ({currency})
+                                      </span>
+                                    </>
+                                  )}
                                   )
                                 </Typography>
                               )}

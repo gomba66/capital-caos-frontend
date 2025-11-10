@@ -29,6 +29,7 @@ import {
 // import { getTradeDetails } from "../../api/operations";
 import { getPriceHistory } from "../../api/priceHistory";
 import { TimeZoneContext } from "../../contexts/AppContexts";
+import { convertFromUSDT, formatCurrency } from "../../utils/currencyConverter";
 
 /**
  * Trading chart component using Lightweight Charts
@@ -53,6 +54,29 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
   const [priceData, setPriceData] = useState(null);
   const [isRealTimeEnabled, setIsRealTimeEnabled] = useState(false);
   const realTimeIntervalRef = useRef(null);
+  const [currency, setCurrency] = useState(() => {
+    return localStorage.getItem("capitalCurrency") || "USDT";
+  });
+
+  // Escuchar cambios en la moneda desde localStorage
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const newCurrency = localStorage.getItem("capitalCurrency") || "USDT";
+      setCurrency(newCurrency);
+    };
+
+    const handleCurrencyChange = () => {
+      handleStorageChange();
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("currencyChange", handleCurrencyChange);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("currencyChange", handleCurrencyChange);
+    };
+  }, []);
 
   // Function to automatically determine precision based on price value
   const getAutoPrecision = (price) => {
@@ -114,7 +138,7 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
         }
       }, 0);
     }
-  }, [tradeData, priceData]);
+  }, [tradeData, priceData, currency]);
 
   // Function to determine price precision based on symbol
   const getPricePrecision = (symbol) => {
@@ -603,7 +627,17 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
       // Use USD value of take profit if available, otherwise calculate difference
       let totalRewardFormatted;
       if (tradeData.take_profit_value_usd) {
-        totalRewardFormatted = tradeData.take_profit_value_usd.toFixed(2);
+        // Convertir de USD a la moneda seleccionada
+        const convertedValue = convertFromUSDT(
+          Number(tradeData.take_profit_value_usd),
+          currency
+        );
+        const formattedValue = formatCurrency(convertedValue, currency);
+        // Si no es USDT, agregar la moneda entre paréntesis
+        totalRewardFormatted =
+          currency !== "USDT"
+            ? `${formattedValue} (${currency})`
+            : formattedValue;
       } else {
         // Fallback: calculate price difference
         const totalReward = Math.abs(
@@ -616,7 +650,7 @@ const TradingChart = ({ symbol = "BTCUSDT", height = 400 }) => {
         color: "#4caf50",
         lineWidth: 2,
         lineStyle: 1, // Punteada
-        title: `TP $${totalRewardFormatted}`,
+        title: `TP ${totalRewardFormatted}`,
         priceLineVisible: false,
         lastValueVisible: false,
         crosshairMarkerVisible: false, // Disable crosshair marker
