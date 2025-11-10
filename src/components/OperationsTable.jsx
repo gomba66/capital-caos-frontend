@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Table,
@@ -17,6 +17,7 @@ import { ShowChart } from "@mui/icons-material";
 import { DateTime } from "luxon";
 
 import ScannerInfo from "./ScannerInfo";
+import { convertFromUSDT, formatCurrency } from "../utils/currencyConverter";
 
 function formatReason(reason) {
   if (!reason) return "-";
@@ -52,32 +53,60 @@ function formatNumber(val, decimals = 4) {
   return num.toFixed(decimals);
 }
 
-function formatUnrealizedProfit(val) {
+function formatUnrealizedProfit(val, currency = "USDT") {
   if (val === undefined || val === null || val === "") return "-";
   const num = Number(val);
   if (isNaN(num)) return val;
   const isPositive = num > 0;
   const isNegative = num < 0;
   const color = isPositive ? "#2de2a6" : isNegative ? "#ff2e63" : undefined;
+
+  // Convertir de USDT a la moneda seleccionada
+  const convertedValue = convertFromUSDT(Math.abs(num), currency);
+  const formattedValue = formatCurrency(convertedValue, currency);
   const sign = isPositive ? "+" : isNegative ? "-" : "";
+
   return (
     <span style={{ color, fontWeight: 600 }}>
-      {sign}${Math.abs(num).toFixed(2)}
+      {sign}
+      {formattedValue}
+      {currency !== "USDT" && (
+        <>
+          {" "}
+          <span style={{ color: "#aaa", fontWeight: 400, fontSize: "0.9em" }}>
+            ({currency})
+          </span>
+        </>
+      )}
     </span>
   );
 }
 
-function formatClosedPnL(val) {
+function formatClosedPnL(val, currency = "USDT") {
   if (val === undefined || val === null || val === "") return "-";
   const num = Number(val);
   if (isNaN(num)) return val;
   const isPositive = num > 0;
   const isNegative = num < 0;
   const color = isPositive ? "#2de2a6" : isNegative ? "#ff2e63" : undefined;
+
+  // Convertir de USDT a la moneda seleccionada
+  const convertedValue = convertFromUSDT(Math.abs(num), currency);
+  const formattedValue = formatCurrency(convertedValue, currency);
   const sign = isPositive ? "+" : isNegative ? "-" : "";
+
   return (
     <span style={{ color, fontWeight: 600 }}>
-      {sign}${Math.abs(num).toFixed(2)}
+      {sign}
+      {formattedValue}
+      {currency !== "USDT" && (
+        <>
+          {" "}
+          <span style={{ color: "#aaa", fontWeight: 400, fontSize: "0.9em" }}>
+            ({currency})
+          </span>
+        </>
+      )}
     </span>
   );
 }
@@ -88,6 +117,14 @@ function getSideStyle(side) {
   if (s.includes("short")) return { color: "#ff2e63", fontWeight: 700 };
   if (s.includes("long")) return { color: "#2de2a6", fontWeight: 700 };
   return { fontWeight: 700 };
+}
+
+function formatSide(side) {
+  if (!side) return "-";
+  const s = side.toLowerCase();
+  if (s.includes("short")) return "SHORT";
+  if (s.includes("long")) return "LONG";
+  return side.toUpperCase();
 }
 
 function getDurationString(start) {
@@ -123,6 +160,29 @@ export default function OperationsTable({
   simplifiedView = false,
 }) {
   const navigate = useNavigate();
+  const [currency, setCurrency] = useState(() => {
+    return localStorage.getItem("capitalCurrency") || "USDT";
+  });
+
+  // Escuchar cambios en la moneda desde localStorage
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const newCurrency = localStorage.getItem("capitalCurrency") || "USDT";
+      setCurrency(newCurrency);
+    };
+
+    const handleCurrencyChange = () => {
+      handleStorageChange();
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("currencyChange", handleCurrencyChange);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("currencyChange", handleCurrencyChange);
+    };
+  }, []);
 
   // Detect if open_trades format (Binance) or closed trades (tracker)
   const isOpenTrades =
@@ -178,7 +238,7 @@ export default function OperationsTable({
     sortedOps = [...operations].sort(getComparator(orderBy));
   }
 
-  // Sumatoria de PnL para open trades
+  // Sumatoria de PnL para open trades (en USDT)
   const totalPnL = isOpenTrades
     ? operations.reduce(
         (acc, op) =>
@@ -186,6 +246,14 @@ export default function OperationsTable({
         0
       )
     : null;
+
+  // Convertir el total PnL a la moneda seleccionada
+  const totalPnLConverted =
+    totalPnL !== null ? convertFromUSDT(Math.abs(totalPnL), currency) : null;
+  const totalPnLFormatted =
+    totalPnLConverted !== null
+      ? formatCurrency(totalPnLConverted, currency)
+      : "";
 
   // Mostrar contador solo para "Open Trades"
   const showCounter = title === "Open Trades" && binanceCount !== undefined;
@@ -305,7 +373,7 @@ export default function OperationsTable({
                       {op.symbol || "-"}
                     </TableCell>
                     <TableCell style={getSideStyle(op.side || op.positionSide)}>
-                      {op.side || op.positionSide || "-"}
+                      {formatSide(op.side || op.positionSide)}
                       {op.protected && (
                         <span title="Protected" style={{ marginLeft: 6 }}>
                           🔒
@@ -320,9 +388,10 @@ export default function OperationsTable({
                     <TableCell>
                       {isOpenTrades
                         ? formatUnrealizedProfit(
-                            op.unrealizedProfit || op.unRealizedProfit
+                            op.unrealizedProfit || op.unRealizedProfit,
+                            currency
                           )
-                        : formatClosedPnL(op.pnl)}
+                        : formatClosedPnL(op.pnl, currency)}
                     </TableCell>
 
                     <TableCell>
@@ -445,7 +514,7 @@ export default function OperationsTable({
             )}
           </TableBody>
           {/* Total PnL para open trades */}
-          {isOpenTrades && (
+          {isOpenTrades && totalPnL !== null && (
             <tfoot>
               <TableRow>
                 <TableCell colSpan={simplifiedView ? 2 : 3} />
@@ -460,8 +529,22 @@ export default function OperationsTable({
                         : undefined,
                   }}
                 >
-                  Total: {totalPnL > 0 ? "+" : totalPnL < 0 ? "-" : ""}$
-                  {Math.abs(totalPnL).toFixed(2)}
+                  Total: {totalPnL > 0 ? "+" : totalPnL < 0 ? "-" : ""}
+                  {totalPnLFormatted}
+                  {currency !== "USDT" && (
+                    <>
+                      {" "}
+                      <span
+                        style={{
+                          color: "#aaa",
+                          fontWeight: 400,
+                          fontSize: "0.9em",
+                        }}
+                      >
+                        ({currency})
+                      </span>
+                    </>
+                  )}
                 </TableCell>
                 <TableCell
                   colSpan={simplifiedView ? 4 : 7} // Simplified: Open Time, Close date (empty), TP Target, Chart | Normal: Open Time, Close date (empty), Scanner, Type, TP Target, Chart

@@ -21,6 +21,7 @@ import DashboardIcon from "@mui/icons-material/Dashboard";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import SettingsIcon from "@mui/icons-material/Settings";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import ShowChartIcon from "@mui/icons-material/ShowChart";
@@ -45,6 +46,9 @@ export default function Sidebar() {
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [collapsed, setCollapsed] = useState(false);
   const [backendVersion, setBackendVersion] = useState(null);
+  const [selectedCurrency, setSelectedCurrency] = useState(() => {
+    return localStorage.getItem("capitalCurrency") || "USDT";
+  });
 
   const isCollapsed = isMobile || collapsed;
   const currentWidth = isCollapsed ? 80 : 220;
@@ -63,6 +67,27 @@ export default function Sidebar() {
       }
     };
     fetchVersion();
+  }, []);
+
+  // Listener para cambios en la moneda
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === "capitalCurrency") {
+        setSelectedCurrency(e.newValue || "USDT");
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    const handleCurrencyChange = (e) => {
+      setSelectedCurrency(e.detail || "USDT");
+    };
+
+    window.addEventListener("currencyChange", handleCurrencyChange);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("currencyChange", handleCurrencyChange);
+    };
   }, []);
   return (
     <>
@@ -196,6 +221,76 @@ export default function Sidebar() {
               </Box>
             </Box>
           </Tooltip>
+          <Tooltip
+            title={isCollapsed ? selectedCurrency : ""}
+            placement="right"
+            arrow
+            sx={{
+              "& .MuiTooltip-tooltip": {
+                bgcolor: "rgba(24,28,47,0.95)",
+                color: "#ffd700",
+                border: "1px solid #ffd700",
+                fontSize: 12,
+                fontFamily: "monospace",
+              },
+            }}
+          >
+            <Box
+              sx={{
+                mt: 1,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                bgcolor: "rgba(255,215,0,0.15)",
+                borderRadius: isCollapsed ? 1 : 2,
+                px: isCollapsed ? 0.5 : 1.2,
+                py: isCollapsed ? 0.3 : 0.5,
+                cursor: isCollapsed ? "help" : "default",
+                border: "1px solid rgba(255,215,0,0.3)",
+                boxShadow: "0 0 8px rgba(255,215,0,0.2)",
+                transition: "all 0.3s ease-in-out",
+                "&:hover": {
+                  bgcolor: "rgba(255,215,0,0.2)",
+                  boxShadow: "0 0 12px rgba(255,215,0,0.4)",
+                },
+              }}
+            >
+              <AttachMoneyIcon
+                sx={{
+                  fontSize: isCollapsed ? 14 : 17,
+                  color: "#ffd700",
+                  mr: isCollapsed ? 0 : 0.7,
+                  transition: "all 0.3s ease-in-out",
+                  filter: "drop-shadow(0 0 4px rgba(255,215,0,0.6))",
+                }}
+              />
+              <Box
+                sx={{
+                  overflow: "hidden",
+                  transition: "all 0.3s ease-in-out",
+                  opacity: isCollapsed ? 0 : 1,
+                  maxWidth: isCollapsed ? 0 : "auto",
+                  transform: isCollapsed
+                    ? "translateX(-10px)"
+                    : "translateX(0)",
+                }}
+              >
+                <Typography
+                  variant="caption"
+                  color="#ffd700"
+                  sx={{
+                    fontWeight: 700,
+                    fontFamily: "monospace",
+                    fontSize: 13,
+                    letterSpacing: 0.5,
+                    textShadow: "0 0 8px rgba(255,215,0,0.8)",
+                  }}
+                >
+                  {selectedCurrency}
+                </Typography>
+              </Box>
+            </Box>
+          </Tooltip>
         </Box>
         <List sx={{ mt: isCollapsed ? 2 : 4 }}>
           {navItems.map((item) => (
@@ -276,6 +371,7 @@ export default function Sidebar() {
             right: 0,
             display: "flex",
             justifyContent: "center",
+            alignItems: "center",
             px: 2,
           }}
         >

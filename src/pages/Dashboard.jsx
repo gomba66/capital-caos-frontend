@@ -6,6 +6,11 @@ import { getMomentumPairs } from "../api/momentumPairs";
 import { getConfig } from "../api/config";
 import { getCapital } from "../api/capital";
 import {
+  convertFromUSDT,
+  formatCurrency,
+  getCurrencySymbol,
+} from "../utils/currencyConverter";
+import {
   Box,
   Grid,
   Card,
@@ -61,28 +66,39 @@ export default function Dashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [dbTradeCount, setDbTradeCount] = useState(null);
   const [totalCapital, setTotalCapital] = useState(1);
-  const [simplifiedView, setSimplifiedView] = useState(true);
+  const [capitalCurrency, setCapitalCurrency] = useState(() => {
+    return localStorage.getItem("capitalCurrency") || "USDT";
+  });
+  const [simplifiedView, setSimplifiedView] = useState(false);
   // const localZone = DateTime.local().zoneName;
   const { timeZone } = useContext(TimeZoneContext);
 
   // Fetch global (stats, closed, momentum)
   const fetchAll = async () => {
     setRefreshing(true);
-    const [statsData, opsData, openData, momentumData, configData, capital] =
-      await Promise.all([
-        getStats(),
-        getOperations(),
-        getOpenTrades(),
-        getMomentumPairs(),
-        getConfig(),
-        getCapital(),
-      ]);
+    const [
+      statsData,
+      opsData,
+      openData,
+      momentumData,
+      configData,
+      capitalUsdt,
+    ] = await Promise.all([
+      getStats(),
+      getOperations(),
+      getOpenTrades(),
+      getMomentumPairs(),
+      getConfig(),
+      getCapital(),
+    ]);
     setStats(statsData);
     setClosedTrades(opsData?.closed || []);
     setOpenTrades(openData?.open_trades || []);
     setMomentumPairs(momentumData?.momentum_pairs || []);
     setDbTradeCount(configData?.database?.total || null);
-    setTotalCapital(capital);
+    setTotalCapital(capitalUsdt);
+    const selectedCurrency = localStorage.getItem("capitalCurrency") || "USDT";
+    setCapitalCurrency(selectedCurrency);
     setLastUpdate(new Date());
     setRefreshing(false);
     setPrevOpenTrades(openData?.open_trades || []);
@@ -94,11 +110,35 @@ export default function Dashboard() {
     fetchAll().then(() => setLoading(false));
   }, []);
 
+  // Listener para cambios en la moneda del capital
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === "capitalCurrency") {
+        const newCurrency = e.newValue || "USDT";
+        setCapitalCurrency(newCurrency);
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    // También escuchar cambios en la misma ventana usando un evento personalizado
+    const handleCurrencyChange = (e) => {
+      const newCurrency = e.detail || "USDT";
+      setCapitalCurrency(newCurrency);
+    };
+
+    window.addEventListener("currencyChange", handleCurrencyChange);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("currencyChange", handleCurrencyChange);
+    };
+  }, []);
+
   // Auto-refresh solo de open trades cada 10s
   useEffect(() => {
     let isMounted = true;
     const fetchOpen = async () => {
-      const [openData, configData, capital] = await Promise.all([
+      const [openData, configData, capitalUsdt] = await Promise.all([
         getOpenTrades(),
         getConfig(),
         getCapital(),
@@ -107,7 +147,7 @@ export default function Dashboard() {
       const newOpen = openData?.open_trades || [];
       setOpenTrades(newOpen);
       setDbTradeCount(configData?.database?.total || null);
-      setTotalCapital(capital);
+      setTotalCapital(capitalUsdt);
       // Detectar si algún trade fue cerrado
       const prevIds = new Set(
         (prevOpenTrades || []).map((t) => t.symbol + t.side)
@@ -203,11 +243,13 @@ export default function Dashboard() {
       {/* Eliminar el selector de zona horaria aquí */}
       <Grid
         container
-        spacing={{ xs: 3, sm: 3, md: 2, lg: 2 }}
+        spacing={{ xs: 3, sm: 3, md: 2, lg: 3, xl: 3 }}
         mb={4}
         justifyContent="space-between"
         sx={{
-          maxWidth: simplifiedView ? 1200 : 1520,
+          maxWidth: simplifiedView
+            ? { xs: "100%", sm: "100%", md: 1400, lg: 1600, xl: 1800 }
+            : { xs: "100%", sm: "100%", md: 1600, lg: 1800, xl: 2000 },
           mx: "auto",
         }}
       >
@@ -219,13 +261,15 @@ export default function Dashboard() {
                   xs: "100%",
                   sm: "calc((100% - 24px) / 2)",
                   md: "calc((100% - 32px) / 3)",
-                  lg: "calc((100% - 32px) / 3)",
+                  lg: "calc((100% - 48px) / 3)",
+                  xl: "calc((100% - 48px) / 3)",
                 }
               : {
                   xs: "100%",
                   sm: "calc((100% - 24px) / 2)",
                   md: "calc((100% - 32px) / 3)",
-                  lg: "calc((100% - 32px) / 3)",
+                  lg: "calc((100% - 48px) / 3)",
+                  xl: "calc((100% - 48px) / 3)",
                 },
           }}
         >
@@ -236,13 +280,15 @@ export default function Dashboard() {
               boxShadow:
                 totalCapital === null
                   ? "0 0 16px rgba(255, 193, 7, 0.2)"
-                  : "0 0 16px #2de2e633",
+                  : "0 0 16px rgba(255, 215, 0, 0.3)",
               p: 3,
               textAlign: "center",
               minHeight: 110,
               minWidth: 125,
-              maxWidth: simplifiedView ? 400 : 320,
-              width: simplifiedView ? "100%" : "100%",
+              maxWidth: simplifiedView
+                ? { xs: "100%", sm: 400, md: 450, lg: 500, xl: 550 }
+                : { xs: "100%", sm: 320, md: 380, lg: 420, xl: 480 },
+              width: "100%",
               mx: "auto",
               display: "flex",
               flexDirection: "column",
@@ -254,7 +300,7 @@ export default function Dashboard() {
                 boxShadow:
                   totalCapital === null
                     ? "0 0 32px rgba(255, 193, 7, 0.4)"
-                    : "0 0 32px #2de2e699",
+                    : "0 0 32px rgba(255, 215, 0, 0.5)",
               },
             }}
           >
@@ -302,12 +348,12 @@ export default function Dashboard() {
               <Typography
                 variant="h4"
                 sx={{
-                  color: totalCapital === null ? "#ffc107" : "#2de2e6",
+                  color: totalCapital === null ? "#ffc107" : "#ffd700",
                   fontWeight: 700,
                   textShadow:
                     totalCapital === null
                       ? "0 0 12px #ffc107"
-                      : "0 0 12px #2de2e6",
+                      : "0 0 12px rgba(255, 215, 0, 0.8)",
                   fontSize: "2.2rem",
                   lineHeight: 1.1,
                   wordBreak: "break-word",
@@ -316,7 +362,12 @@ export default function Dashboard() {
                   whiteSpace: "nowrap",
                 }}
               >
-                ${totalCapital !== null ? totalCapital.toFixed(2) : "0.00"}
+                {totalCapital !== null
+                  ? formatCurrency(
+                      convertFromUSDT(totalCapital, capitalCurrency),
+                      capitalCurrency
+                    )
+                  : formatCurrency(0, "USDT")}
               </Typography>
             </Box>
           </Box>
@@ -337,10 +388,15 @@ export default function Dashboard() {
             // Asegurar que sea un número válido
             const numericPnl = Number(unrealizedPnl);
             if (!isNaN(numericPnl)) {
+              const convertedPnl = convertFromUSDT(numericPnl, capitalCurrency);
+              const symbol = getCurrencySymbol(capitalCurrency);
               displayValue =
                 numericPnl !== 0
-                  ? `${numericPnl > 0 ? "+" : ""}$${numericPnl.toFixed(2)}`
-                  : "$0.00";
+                  ? `${convertedPnl > 0 ? "+" : ""}${formatCurrency(
+                      convertedPnl,
+                      capitalCurrency
+                    )}`
+                  : formatCurrency(0, capitalCurrency);
               valueColor =
                 numericPnl > 0
                   ? "#27ff7e"
@@ -348,16 +404,20 @@ export default function Dashboard() {
                   ? "#ff2e63"
                   : "#fff";
             } else {
-              displayValue = "$0.00";
+              displayValue = formatCurrency(0, capitalCurrency);
               valueColor = "#fff";
             }
             textShadow = `0 0 12px ${valueColor}`;
           } else if (key === "total_pnl") {
             const pnl = Number(stats[key]);
             if (!isNaN(pnl)) {
+              const convertedPnl = convertFromUSDT(pnl, capitalCurrency);
               valueColor = pnl > 0 ? "#27ff7e" : pnl < 0 ? "#ff2e63" : "#fff";
               textShadow = `0 0 12px ${valueColor}`;
-              displayValue = `${pnl > 0 ? "+" : ""}$${pnl.toFixed(2)}`;
+              displayValue = `${convertedPnl > 0 ? "+" : ""}${formatCurrency(
+                convertedPnl,
+                capitalCurrency
+              )}`;
             } else {
               displayValue = "-";
               valueColor = "#fff";
@@ -366,12 +426,21 @@ export default function Dashboard() {
           return (
             <Grid
               sx={{
-                width: {
-                  xs: "100%",
-                  sm: "calc((100% - 24px) / 2)",
-                  md: "calc((100% - 48px) / 3)",
-                  lg: "calc((100% - 48px) / 3)",
-                },
+                width: simplifiedView
+                  ? {
+                      xs: "100%",
+                      sm: "calc((100% - 24px) / 2)",
+                      md: "calc((100% - 32px) / 3)",
+                      lg: "calc((100% - 48px) / 3)",
+                      xl: "calc((100% - 48px) / 3)",
+                    }
+                  : {
+                      xs: "100%",
+                      sm: "calc((100% - 24px) / 2)",
+                      md: "calc((100% - 32px) / 3)",
+                      lg: "calc((100% - 48px) / 3)",
+                      xl: "calc((100% - 48px) / 3)",
+                    },
               }}
               key={key}
             >
@@ -384,7 +453,9 @@ export default function Dashboard() {
                   textAlign: "center",
                   minHeight: 110,
                   minWidth: 125,
-                  maxWidth: simplifiedView ? 400 : 320,
+                  maxWidth: simplifiedView
+                    ? { xs: "100%", sm: 400, md: 450, lg: 500, xl: 550 }
+                    : { xs: "100%", sm: 320, md: 380, lg: 420, xl: 480 },
                   width: "100%",
                   mx: "auto",
                   boxSizing: "border-box",
@@ -429,14 +500,15 @@ export default function Dashboard() {
 
         {!simplifiedView && (
           <>
-            {/* Wins / Losses Combined Box */}
+            {/* Wins Box */}
             <Grid
               sx={{
                 width: {
                   xs: "100%",
                   sm: "calc((100% - 24px) / 2)",
                   md: "calc((100% - 32px) / 3)",
-                  lg: "calc((100% - 32px) / 3)",
+                  lg: "calc((100% - 48px) / 3)",
+                  xl: "calc((100% - 48px) / 3)",
                 },
               }}
             >
@@ -449,7 +521,7 @@ export default function Dashboard() {
                   textAlign: "center",
                   minHeight: 110,
                   minWidth: 125,
-                  maxWidth: 320,
+                  maxWidth: { xs: "100%", sm: 320, md: 380, lg: 420, xl: 480 },
                   width: "100%",
                   mx: "auto",
                   display: "flex",
@@ -472,51 +544,162 @@ export default function Dashboard() {
                     mb: 1,
                   }}
                 >
-                  Wins / Losses
+                  Wins
                 </Typography>
-                <Box display="flex" gap={2} alignItems="center">
-                  <Typography
-                    variant="h5"
-                    sx={{
-                      color: "#2de2e6",
-                      fontWeight: 700,
-                      textShadow: "0 0 12px #2de2e6",
-                      fontSize: "1.8rem",
-                      lineHeight: 1.1,
-                    }}
-                  >
-                    {stats?.wins || 0}
-                  </Typography>
-                  <Typography
-                    variant="h6"
-                    sx={{ color: "#666", fontWeight: 400 }}
-                  >
-                    /
-                  </Typography>
-                  <Typography
-                    variant="h5"
-                    sx={{
-                      color: "#ff2e63",
-                      fontWeight: 700,
-                      textShadow: "0 0 12px #ff2e63",
-                      fontSize: "1.8rem",
-                      lineHeight: 1.1,
-                    }}
-                  >
-                    {stats?.losses || 0}
-                  </Typography>
-                </Box>
+                <Typography
+                  variant="h4"
+                  sx={{
+                    color: "#2de2e6",
+                    fontWeight: 700,
+                    textShadow: "0 0 12px #2de2e6",
+                    fontSize: "2.2rem",
+                    lineHeight: 1.1,
+                  }}
+                >
+                  {stats?.wins || 0}
+                </Typography>
               </Box>
             </Grid>
 
-            {/* Max Win Streak / Max Loss Streak Combined Box */}
+            {/* Losses Box */}
             <Grid
               sx={{
                 width: {
                   xs: "100%",
                   sm: "calc((100% - 24px) / 2)",
                   md: "calc((100% - 32px) / 3)",
-                  lg: "calc((100% - 32px) / 3)",
+                  lg: "calc((100% - 48px) / 3)",
+                  xl: "calc((100% - 48px) / 3)",
+                },
+              }}
+            >
+              <Box
+                sx={{
+                  background: "rgba(24,28,47,0.95)",
+                  borderRadius: 3,
+                  boxShadow: "0 0 16px rgba(255, 46, 99, 0.2)",
+                  p: 3,
+                  textAlign: "center",
+                  minHeight: 110,
+                  minWidth: 125,
+                  maxWidth: { xs: "100%", sm: 320, md: 380, lg: 420, xl: 480 },
+                  width: "100%",
+                  mx: "auto",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  transition: "box-shadow 0.2s",
+                  "&:hover": {
+                    boxShadow: "0 0 32px rgba(255, 46, 99, 0.4)",
+                  },
+                }}
+              >
+                <Typography
+                  variant="subtitle2"
+                  sx={{
+                    color: "#aaa",
+                    letterSpacing: 1,
+                    textTransform: "uppercase",
+                    fontWeight: 600,
+                    mb: 1,
+                  }}
+                >
+                  Losses
+                </Typography>
+                <Typography
+                  variant="h4"
+                  sx={{
+                    color: "#ff2e63",
+                    fontWeight: 700,
+                    textShadow: "0 0 12px #ff2e63",
+                    fontSize: "2.2rem",
+                    lineHeight: 1.1,
+                  }}
+                >
+                  {stats?.losses || 0}
+                </Typography>
+              </Box>
+            </Grid>
+
+            {/* Average PnL Box */}
+            <Grid
+              sx={{
+                width: {
+                  xs: "100%",
+                  sm: "calc((100% - 24px) / 2)",
+                  md: "calc((100% - 32px) / 3)",
+                  lg: "calc((100% - 48px) / 3)",
+                  xl: "calc((100% - 48px) / 3)",
+                },
+              }}
+            >
+              <Box
+                sx={{
+                  background: "rgba(24,28,47,0.95)",
+                  borderRadius: 3,
+                  boxShadow: "0 0 16px rgba(45, 226, 230, 0.2)",
+                  p: 3,
+                  textAlign: "center",
+                  minHeight: 110,
+                  minWidth: 125,
+                  maxWidth: { xs: "100%", sm: 320, md: 380, lg: 420, xl: 480 },
+                  width: "100%",
+                  mx: "auto",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  transition: "box-shadow 0.2s",
+                  "&:hover": {
+                    boxShadow: "0 0 32px rgba(45, 226, 230, 0.4)",
+                  },
+                }}
+              >
+                <Typography
+                  variant="subtitle2"
+                  sx={{
+                    color: "#aaa",
+                    letterSpacing: 1,
+                    textTransform: "uppercase",
+                    fontWeight: 600,
+                    mb: 1,
+                  }}
+                >
+                  Average PnL
+                </Typography>
+                <Typography
+                  variant="h4"
+                  sx={{
+                    color: "#2de2e6",
+                    fontWeight: 700,
+                    textShadow: "0 0 12px #2de2e6",
+                    fontSize: "2.2rem",
+                    lineHeight: 1.1,
+                  }}
+                >
+                  {stats?.average_pnl !== undefined
+                    ? formatCurrency(
+                        convertFromUSDT(
+                          Number(stats.average_pnl),
+                          capitalCurrency
+                        ),
+                        capitalCurrency
+                      )
+                    : formatCurrency(0, capitalCurrency)}
+                </Typography>
+              </Box>
+            </Grid>
+
+            {/* Max Win Streak Box */}
+            <Grid
+              sx={{
+                width: {
+                  xs: "100%",
+                  sm: "calc((100% - 24px) / 2)",
+                  md: "calc((100% - 32px) / 3)",
+                  lg: "calc((100% - 48px) / 3)",
+                  xl: "calc((100% - 48px) / 3)",
                 },
               }}
             >
@@ -529,7 +712,7 @@ export default function Dashboard() {
                   textAlign: "center",
                   minHeight: 110,
                   minWidth: 125,
-                  maxWidth: 320,
+                  maxWidth: { xs: "100%", sm: 320, md: 380, lg: 420, xl: 480 },
                   width: "100%",
                   mx: "auto",
                   display: "flex",
@@ -552,51 +735,93 @@ export default function Dashboard() {
                     mb: 1,
                   }}
                 >
-                  Max Streaks
+                  Max Win Streak
                 </Typography>
-                <Box display="flex" gap={2} alignItems="center">
-                  <Typography
-                    variant="h5"
-                    sx={{
-                      color: "#27ff7e",
-                      fontWeight: 700,
-                      textShadow: "0 0 12px #27ff7e",
-                      fontSize: "1.8rem",
-                      lineHeight: 1.1,
-                    }}
-                  >
-                    {stats?.max_win_streak || 0}
-                  </Typography>
-                  <Typography
-                    variant="h6"
-                    sx={{ color: "#666", fontWeight: 400 }}
-                  >
-                    /
-                  </Typography>
-                  <Typography
-                    variant="h5"
-                    sx={{
-                      color: "#ff2e63",
-                      fontWeight: 700,
-                      textShadow: "0 0 12px #ff2e63",
-                      fontSize: "1.8rem",
-                      lineHeight: 1.1,
-                    }}
-                  >
-                    {stats?.max_loss_streak || 0}
-                  </Typography>
-                </Box>
+                <Typography
+                  variant="h4"
+                  sx={{
+                    color: "#27ff7e",
+                    fontWeight: 700,
+                    textShadow: "0 0 12px #27ff7e",
+                    fontSize: "2.2rem",
+                    lineHeight: 1.1,
+                  }}
+                >
+                  {stats?.max_win_streak || 0}
+                </Typography>
               </Box>
             </Grid>
 
-            {/* Total Trades / Average PnL Combined Box */}
+            {/* Max Loss Streak Box */}
             <Grid
               sx={{
                 width: {
                   xs: "100%",
                   sm: "calc((100% - 24px) / 2)",
                   md: "calc((100% - 32px) / 3)",
-                  lg: "calc((100% - 32px) / 3)",
+                  lg: "calc((100% - 48px) / 3)",
+                  xl: "calc((100% - 48px) / 3)",
+                },
+              }}
+            >
+              <Box
+                sx={{
+                  background: "rgba(24,28,47,0.95)",
+                  borderRadius: 3,
+                  boxShadow: "0 0 16px rgba(255, 46, 99, 0.2)",
+                  p: 3,
+                  textAlign: "center",
+                  minHeight: 110,
+                  minWidth: 125,
+                  maxWidth: { xs: "100%", sm: 320, md: 380, lg: 420, xl: 480 },
+                  width: "100%",
+                  mx: "auto",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  transition: "box-shadow 0.2s",
+                  "&:hover": {
+                    boxShadow: "0 0 32px rgba(255, 46, 99, 0.4)",
+                  },
+                }}
+              >
+                <Typography
+                  variant="subtitle2"
+                  sx={{
+                    color: "#aaa",
+                    letterSpacing: 1,
+                    textTransform: "uppercase",
+                    fontWeight: 600,
+                    mb: 1,
+                  }}
+                >
+                  Max Loss Streak
+                </Typography>
+                <Typography
+                  variant="h4"
+                  sx={{
+                    color: "#ff2e63",
+                    fontWeight: 700,
+                    textShadow: "0 0 12px #ff2e63",
+                    fontSize: "2.2rem",
+                    lineHeight: 1.1,
+                  }}
+                >
+                  {stats?.max_loss_streak || 0}
+                </Typography>
+              </Box>
+            </Grid>
+
+            {/* Total Trades Box */}
+            <Grid
+              sx={{
+                width: {
+                  xs: "100%",
+                  sm: "calc((100% - 24px) / 2)",
+                  md: "calc((100% - 32px) / 3)",
+                  lg: "calc((100% - 48px) / 3)",
+                  xl: "calc((100% - 48px) / 3)",
                 },
               }}
             >
@@ -609,7 +834,7 @@ export default function Dashboard() {
                   textAlign: "center",
                   minHeight: 110,
                   minWidth: 125,
-                  maxWidth: 320,
+                  maxWidth: { xs: "100%", sm: 320, md: 380, lg: 420, xl: 480 },
                   width: "100%",
                   mx: "auto",
                   display: "flex",
@@ -632,42 +857,20 @@ export default function Dashboard() {
                     mb: 1,
                   }}
                 >
-                  Trades / Avg PnL
+                  Total Trades
                 </Typography>
-                <Box display="flex" gap={2} alignItems="center">
-                  <Typography
-                    variant="h5"
-                    sx={{
-                      color: "#ffa726",
-                      fontWeight: 700,
-                      textShadow: "0 0 12px #ffa726",
-                      fontSize: "1.8rem",
-                      lineHeight: 1.1,
-                    }}
-                  >
-                    {stats?.total_trades || 0}
-                  </Typography>
-                  <Typography
-                    variant="h6"
-                    sx={{ color: "#666", fontWeight: 400 }}
-                  >
-                    /
-                  </Typography>
-                  <Typography
-                    variant="h5"
-                    sx={{
-                      color: "#2de2e6",
-                      fontWeight: 700,
-                      textShadow: "0 0 12px #2de2e6",
-                      fontSize: "1.8rem",
-                      lineHeight: 1.1,
-                    }}
-                  >
-                    {stats?.average_pnl !== undefined
-                      ? `$${Number(stats.average_pnl).toFixed(2)}`
-                      : "$0.00"}
-                  </Typography>
-                </Box>
+                <Typography
+                  variant="h4"
+                  sx={{
+                    color: "#ffa726",
+                    fontWeight: 700,
+                    textShadow: "0 0 12px #ffa726",
+                    fontSize: "2.2rem",
+                    lineHeight: 1.1,
+                  }}
+                >
+                  {stats?.total_trades || 0}
+                </Typography>
               </Box>
             </Grid>
           </>
@@ -700,6 +903,7 @@ export default function Dashboard() {
             operations={closedTrades}
             showDrawdown={false}
             timeZone={timeZone}
+            currency={capitalCurrency}
             simplifiedView={simplifiedView}
           />
         </Grid>
