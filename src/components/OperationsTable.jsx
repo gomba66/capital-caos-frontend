@@ -296,61 +296,176 @@ export default function OperationsTable({
 
   return (
     <>
-      <Box display="flex" alignItems="center" gap={1} mb={1} flexWrap="wrap">
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        mb={1}
+        flexWrap="wrap"
+        gap={2}
+      >
         <Typography variant="h6" gutterBottom sx={{ mb: 0 }}>
           {title}
         </Typography>
-        {showCounter && (
-          <Typography
-            variant="body2"
-            sx={{
-              color: "text.secondary",
-              opacity: 0.7,
-              fontFamily: "monospace",
-            }}
+
+        {title === "Open Trades" && (
+          <Box
+            display="flex"
+            alignItems="center"
+            gap={2}
+            flexWrap="wrap"
+            sx={{ ml: "auto" }}
           >
-            ({binanceCount}
-            {dbCount !== null && ` / ${dbCount}`})
-          </Typography>
-        )}
-        {title === "Open Trades" && activeSidesAndLimits && (
-          <Box display="flex" alignItems="center" gap={1} ml={1}>
-            <Typography
-              variant="body2"
-              sx={{
-                color: "text.secondary",
-                opacity: 0.7,
-                fontFamily: "monospace",
-                fontSize: "0.85rem",
-              }}
-            >
-              Limits:
-            </Typography>
-            {activeSidesAndLimits.map((item, index) => (
-              <Typography
-                key={item.side}
-                variant="body2"
-                sx={{
-                  color: item.side === "LONG" ? "#2de2a6" : "#ff2e63",
-                  opacity: 0.9,
-                  fontFamily: "monospace",
-                  fontSize: "0.85rem",
-                  fontWeight: 600,
-                }}
-              >
-                {item.side} {item.limit}
-                {index < activeSidesAndLimits.length - 1 && (
-                  <span
-                    style={{
-                      color: "rgba(255, 255, 255, 0.5)",
-                      margin: "0 4px",
+            {/* Información de trades */}
+            {showCounter && (
+              <Box display="flex" alignItems="center" gap={1.5} flexWrap="wrap">
+                <Box display="flex" alignItems="center" gap={0.5}>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: "text.secondary",
+                      opacity: 0.7,
+                      fontSize: "0.75rem",
                     }}
                   >
-                    |
-                  </span>
+                    Exchange trades:
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: "text.primary",
+                      fontFamily: "monospace",
+                      fontWeight: 600,
+                      fontSize: "0.85rem",
+                    }}
+                  >
+                    {binanceCount}
+                  </Typography>
+                </Box>
+
+                {dbCount !== null && (
+                  <>
+                    <Box
+                      sx={{
+                        width: "1px",
+                        height: "16px",
+                        bgcolor: "rgba(255, 255, 255, 0.2)",
+                      }}
+                    />
+                    <Box display="flex" alignItems="center" gap={0.5}>
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: "text.secondary",
+                          opacity: 0.7,
+                          fontSize: "0.75rem",
+                        }}
+                      >
+                        DB trades (excl. protected):
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: "text.primary",
+                          fontFamily: "monospace",
+                          fontWeight: 600,
+                          fontSize: "0.85rem",
+                        }}
+                      >
+                        {dbCount}
+                      </Typography>
+                    </Box>
+                  </>
                 )}
-              </Typography>
-            ))}
+
+                {config?.database?.protected !== undefined && (
+                  <>
+                    <Box
+                      sx={{
+                        width: "1px",
+                        height: "16px",
+                        bgcolor: "rgba(255, 255, 255, 0.2)",
+                      }}
+                    />
+                    <Box display="flex" alignItems="center" gap={0.5}>
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: "#ffd700",
+                          opacity: 0.8,
+                          fontSize: "0.75rem",
+                        }}
+                      >
+                        Protected:
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: "#ffd700",
+                          fontFamily: "monospace",
+                          fontWeight: 600,
+                          fontSize: "0.85rem",
+                        }}
+                      >
+                        {config.database.protected || 0}
+                      </Typography>
+                    </Box>
+                  </>
+                )}
+              </Box>
+            )}
+
+            {/* Límites */}
+            {activeSidesAndLimits && (
+              <>
+                {showCounter && (
+                  <Box
+                    sx={{
+                      width: "1px",
+                      height: "16px",
+                      bgcolor: "rgba(255, 255, 255, 0.2)",
+                    }}
+                  />
+                )}
+                <Box display="flex" alignItems="center" gap={1}>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: "text.secondary",
+                      opacity: 0.7,
+                      fontSize: "0.75rem",
+                    }}
+                  >
+                    Limits:
+                  </Typography>
+                  {activeSidesAndLimits.map((item, index) => (
+                    <Typography
+                      key={item.side}
+                      variant="body2"
+                      sx={{
+                        color: item.side === "LONG" ? "#2de2a6" : "#ff2e63",
+                        opacity: 0.9,
+                        fontFamily: "monospace",
+                        fontSize: "0.85rem",
+                        fontWeight: 600,
+                      }}
+                    >
+                      {item.side} {item.limit}
+                      {index < activeSidesAndLimits.length - 1 && (
+                        <span
+                          style={{
+                            color: "rgba(255, 255, 255, 0.5)",
+                            margin: "0 4px",
+                          }}
+                        >
+                          |
+                        </span>
+                      )}
+                    </Typography>
+                  ))}
+                </Box>
+              </>
+            )}
           </Box>
         )}
       </Box>
