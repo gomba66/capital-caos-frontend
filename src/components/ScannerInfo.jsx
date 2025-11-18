@@ -11,28 +11,16 @@ const ScannerInfo = ({ scannerInfo, compact = false }) => {
 
   if (compact) {
     return (
-      <Box display="flex" alignItems="center" gap={1}>
-        <Chip
-          label={scanner.toUpperCase()}
-          size="small"
-          sx={{
-            backgroundColor: "#2de2e6",
-            color: "#000",
-            fontWeight: 600,
-            fontSize: "0.75rem",
-          }}
-        />
-        <Chip
-          label={scanner_type}
-          size="small"
-          variant="outlined"
-          sx={{
-            borderColor: "#666",
-            color: "#888",
-            fontSize: "0.7rem",
-          }}
-        />
-      </Box>
+      <Chip
+        label={scanner.toUpperCase()}
+        size="small"
+        sx={{
+          backgroundColor: "#2de2e6",
+          color: "#000",
+          fontWeight: 600,
+          fontSize: "0.75rem",
+        }}
+      />
     );
   }
 
@@ -53,17 +41,6 @@ const ScannerInfo = ({ scannerInfo, compact = false }) => {
           <Info fontSize="small" sx={{ color: "#666", cursor: "help" }} />
         </Tooltip>
       </Box>
-
-      <Typography
-        variant="caption"
-        sx={{
-          color: "#888",
-          display: "block",
-          mb: 0.5,
-        }}
-      >
-        {scanner_type}
-      </Typography>
 
       {momentum_data && Object.keys(momentum_data).length > 0 && (
         <Box mt={0.5}>
