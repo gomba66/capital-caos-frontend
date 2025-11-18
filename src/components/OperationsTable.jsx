@@ -538,14 +538,6 @@ export default function OperationsTable({
                   Scanner
                 </TableCell>
               )}
-              {!simplifiedView && (
-                <TableCell
-                  onClick={() => handleSort("scanner_type")}
-                  style={{ cursor: "pointer" }}
-                >
-                  Type
-                </TableCell>
-              )}
               {isOpenTrades && <TableCell>TP Target</TableCell>}
               {isOpenTrades && <TableCell>Chart</TableCell>}
             </TableRow>
@@ -607,22 +599,6 @@ export default function OperationsTable({
                           scannerInfo={op.scanner_info}
                           compact={true}
                         />
-                      </TableCell>
-                    )}
-                    {!simplifiedView && (
-                      <TableCell>
-                        {op.scanner_info?.scanner_type ? (
-                          <span
-                            style={{
-                              fontSize: "0.875rem",
-                              color: "#888",
-                            }}
-                          >
-                            {op.scanner_info.scanner_type}
-                          </span>
-                        ) : (
-                          "-"
-                        )}
                       </TableCell>
                     )}
                     {isOpenTrades && (
