@@ -4,13 +4,11 @@ const API_URL = "/api/operations";
 
 /**
  * Obtiene todas las operaciones (abiertas y cerradas)
- * @param {number|null} limit - Límite opcional para trades cerrados. Si es null, trae todos.
  * @returns {Promise<Object|null>} Datos de operaciones
  */
-export async function getOperations(limit = null) {
+export async function getOperations() {
   try {
-    const params = limit ? { limit } : {};
-    const response = await axios.get(API_URL, { params });
+    const response = await axios.get(API_URL);
     return response.data;
   } catch (error) {
     console.error("Error fetching operations:", error);

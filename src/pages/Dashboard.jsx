@@ -74,10 +74,6 @@ export default function Dashboard() {
     const saved = localStorage.getItem("simplifiedView");
     return saved === "true";
   });
-  const [closedTradesLimit, setClosedTradesLimit] = useState(() => {
-    const saved = localStorage.getItem("closedTradesLimit");
-    return saved === "all" ? null : parseInt(saved) || 50;
-  });
   // const localZone = DateTime.local().zoneName;
   const { timeZone } = useContext(TimeZoneContext);
 
@@ -93,7 +89,7 @@ export default function Dashboard() {
       capitalUsdt,
     ] = await Promise.all([
       getStats(),
-      getOperations(closedTradesLimit),
+      getOperations(),
       getOpenTrades(),
       getMomentumPairs(),
       getConfig(),
@@ -252,34 +248,6 @@ export default function Dashboard() {
             </Typography>
           }
         />
-        <Box sx={{ ml: 3, display: "flex", alignItems: "center", gap: 1 }}>
-          <Typography variant="body2" sx={{ color: "#aaa" }}>
-            Closed Trades:
-          </Typography>
-          <select
-            value={closedTradesLimit === null ? "all" : closedTradesLimit}
-            onChange={(e) => {
-              const newValue = e.target.value;
-              const limit = newValue === "all" ? null : parseInt(newValue);
-              setClosedTradesLimit(limit);
-              localStorage.setItem("closedTradesLimit", newValue);
-              fetchAll();
-            }}
-            style={{
-              backgroundColor: "#1e1e1e",
-              color: "#aaa",
-              border: "1px solid #444",
-              borderRadius: "4px",
-              padding: "4px 8px",
-              fontSize: "14px",
-            }}
-          >
-            <option value="50">Recent 50</option>
-            <option value="100">Recent 100</option>
-            <option value="200">Recent 200</option>
-            <option value="all">All</option>
-          </select>
-        </Box>
       </Box>
 
       {/* Eliminar el selector de zona horaria aquí */}
