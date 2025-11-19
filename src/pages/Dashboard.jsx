@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from "react";
+import React, { useEffect, useState, useContext, useRef } from "react";
 import { getStats } from "../api/stats";
 import { getOperations } from "../api/operations";
 import { getOpenTrades } from "../api/openTrades";
@@ -78,8 +78,15 @@ export default function Dashboard() {
     const saved = localStorage.getItem("closedTradesLimit");
     return saved === "all" ? null : parseInt(saved) || 50;
   });
+  const isFirstRender = useRef(true);
   // const localZone = DateTime.local().zoneName;
   const { timeZone } = useContext(TimeZoneContext);
+
+  // Fetch closed trades - always uses current closedTradesLimit from state
+  const fetchClosedTrades = async () => {
+    const opsData = await getOperations(closedTradesLimit);
+    setClosedTrades(opsData?.closed || []);
+  };
 
   // Fetch global (stats, closed, momentum)
   const fetchAll = async (limitOverride = undefined) => {
@@ -121,6 +128,15 @@ export default function Dashboard() {
     setLoading(true);
     fetchAll().then(() => setLoading(false));
   }, []);
+
+  // Refetch closed trades when limit changes (skip first render)
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    fetchClosedTrades();
+  }, [closedTradesLimit]);
 
   // Listener para cambios en la moneda del capital
   useEffect(() => {
@@ -266,8 +282,7 @@ export default function Dashboard() {
               const limit = newValue === "all" ? null : parseInt(newValue);
               setClosedTradesLimit(limit);
               localStorage.setItem("closedTradesLimit", newValue);
-              // Pass the new limit directly to fetchAll to avoid stale state
-              fetchAll(limit);
+              // useEffect will trigger fetchClosedTrades automatically
             }}
             style={{
               backgroundColor: "#1e1e1e",
