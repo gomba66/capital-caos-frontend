@@ -82,8 +82,11 @@ export default function Dashboard() {
   const { timeZone } = useContext(TimeZoneContext);
 
   // Fetch global (stats, closed, momentum)
-  const fetchAll = async () => {
+  const fetchAll = async (limitOverride = undefined) => {
     setRefreshing(true);
+    // Use limitOverride if provided, otherwise use state value
+    const effectiveLimit =
+      limitOverride !== undefined ? limitOverride : closedTradesLimit;
     const [
       statsData,
       opsData,
@@ -93,7 +96,7 @@ export default function Dashboard() {
       capitalUsdt,
     ] = await Promise.all([
       getStats(),
-      getOperations(closedTradesLimit),
+      getOperations(effectiveLimit),
       getOpenTrades(),
       getMomentumPairs(),
       getConfig(),
@@ -263,7 +266,8 @@ export default function Dashboard() {
               const limit = newValue === "all" ? null : parseInt(newValue);
               setClosedTradesLimit(limit);
               localStorage.setItem("closedTradesLimit", newValue);
-              fetchAll();
+              // Pass the new limit directly to fetchAll to avoid stale state
+              fetchAll(limit);
             }}
             style={{
               backgroundColor: "#1e1e1e",
