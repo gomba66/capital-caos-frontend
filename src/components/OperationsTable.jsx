@@ -18,6 +18,7 @@ import { DateTime } from "luxon";
 
 import ScannerInfo from "./ScannerInfo";
 import { convertFromUSDT, formatCurrency } from "../utils/currencyConverter";
+import { useSymbolStatistics } from "../hooks/useSymbolStatistics";
 
 function formatReason(reason) {
   if (!reason) return "-";
@@ -164,6 +165,18 @@ export default function OperationsTable({
   const [currency, setCurrency] = useState(() => {
     return localStorage.getItem("capitalCurrency") || "USDT";
   });
+
+  // Fetch all symbol statistics for performance data
+  const { data: symbolStats, loading: statsLoading } = useSymbolStatistics();
+
+  // Create a map for quick lookup of symbol stats
+  const symbolStatsMap = React.useMemo(() => {
+    if (!symbolStats || !Array.isArray(symbolStats)) return {};
+    return symbolStats.reduce((acc, stat) => {
+      acc[stat.symbol] = stat;
+      return acc;
+    }, {});
+  }, [symbolStats]);
 
   // Escuchar cambios en la moneda desde localStorage
   useEffect(() => {
@@ -538,6 +551,34 @@ export default function OperationsTable({
                   Scanner
                 </TableCell>
               )}
+              {isOpenTrades && !simplifiedView && (
+                <>
+                  <TableCell
+                    style={{ cursor: "pointer" }}
+                    onClick={() => handleSort("historicalTrades")}
+                  >
+                    <Tooltip title="Total historical trades for this symbol">
+                      <span>Hist. Trades</span>
+                    </Tooltip>
+                  </TableCell>
+                  <TableCell
+                    style={{ cursor: "pointer" }}
+                    onClick={() => handleSort("winRate")}
+                  >
+                    <Tooltip title="Historical win rate percentage">
+                      <span>Win Rate</span>
+                    </Tooltip>
+                  </TableCell>
+                  <TableCell
+                    style={{ cursor: "pointer" }}
+                    onClick={() => handleSort("totalPnl")}
+                  >
+                    <Tooltip title="Total historical PnL for this symbol">
+                      <span>Total PnL</span>
+                    </Tooltip>
+                  </TableCell>
+                </>
+              )}
               {isOpenTrades && <TableCell>TP Target</TableCell>}
               {isOpenTrades && <TableCell>Chart</TableCell>}
             </TableRow>
@@ -600,6 +641,85 @@ export default function OperationsTable({
                           compact={true}
                         />
                       </TableCell>
+                    )}
+                    {isOpenTrades && !simplifiedView && (
+                      <>
+                        <TableCell>
+                          {symbolStatsMap[op.symbol] ? (
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                fontFamily: "monospace",
+                                color: "text.secondary",
+                              }}
+                            >
+                              {symbolStatsMap[op.symbol].total_trades}
+                            </Typography>
+                          ) : (
+                            <Typography
+                              variant="body2"
+                              sx={{ color: "text.disabled" }}
+                            >
+                              -
+                            </Typography>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {symbolStatsMap[op.symbol] ? (
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                fontFamily: "monospace",
+                                fontWeight: 600,
+                                color:
+                                  symbolStatsMap[op.symbol].win_rate >= 50
+                                    ? "#2de2a6"
+                                    : symbolStatsMap[op.symbol].win_rate >= 30
+                                    ? "#ffd700"
+                                    : "#ff2e63",
+                              }}
+                            >
+                              {symbolStatsMap[op.symbol].win_rate.toFixed(1)}%
+                            </Typography>
+                          ) : (
+                            <Typography
+                              variant="body2"
+                              sx={{ color: "text.disabled" }}
+                            >
+                              -
+                            </Typography>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {symbolStatsMap[op.symbol] ? (
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                fontFamily: "monospace",
+                                fontWeight: 600,
+                                color:
+                                  symbolStatsMap[op.symbol].total_pnl > 0
+                                    ? "#2de2a6"
+                                    : symbolStatsMap[op.symbol].total_pnl < 0
+                                    ? "#ff2e63"
+                                    : "text.secondary",
+                              }}
+                            >
+                              {symbolStatsMap[op.symbol].total_pnl > 0
+                                ? "+"
+                                : ""}
+                              {symbolStatsMap[op.symbol].total_pnl.toFixed(2)}
+                            </Typography>
+                          ) : (
+                            <Typography
+                              variant="body2"
+                              sx={{ color: "text.disabled" }}
+                            >
+                              -
+                            </Typography>
+                          )}
+                        </TableCell>
+                      </>
                     )}
                     {isOpenTrades && (
                       <TableCell>
@@ -693,7 +813,7 @@ export default function OperationsTable({
                         ? 7 // Symbol, Side, PnL, Open Time, Close date (empty), TP Target, Chart
                         : 6 // Symbol, Side, PnL, Open date, Close date, Result
                       : isOpenTrades
-                      ? 10 // Symbol, Side, Entry, PnL, Open Time, Close date (empty), Scanner, Type, TP Target, Chart
+                      ? 13 // Symbol, Side, Entry, PnL, Open Time, Close date (empty), Scanner, Hist.Trades, WinRate, TotalPnL, TP Target, Chart
                       : 10 // Symbol, Side, Entry, PnL, Open date, Close date, Reason, Result, Scanner, Type
                   }
                   align="center"
