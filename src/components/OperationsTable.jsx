@@ -237,6 +237,37 @@ export default function OperationsTable({
           ? Number(b.unrealizedProfit || b.unRealizedProfit)
           : Number(b.pnl);
       }
+      // Si es winRate, obtener del symbolStatsMap
+      if (col === "winRate") {
+        const statsA = symbolStatsMap[a.symbol];
+        const statsB = symbolStatsMap[b.symbol];
+
+        if (!statsA && !statsB) return 0;
+        if (!statsA) return 1;
+        if (!statsB) return -1;
+
+        const isLongA = a.side === "LONG";
+        const isLongB = b.side === "LONG";
+
+        const sideCountA = isLongA ? statsA.long_count : statsA.short_count;
+        const sideCountB = isLongB ? statsB.long_count : statsB.short_count;
+
+        const winRateA =
+          sideCountA > 0
+            ? isLongA
+              ? statsA.long_win_rate
+              : statsA.short_win_rate
+            : statsA.win_rate;
+        const winRateB =
+          sideCountB > 0
+            ? isLongB
+              ? statsB.long_win_rate
+              : statsB.short_win_rate
+            : statsB.win_rate;
+
+        aVal = winRateA;
+        bVal = winRateB;
+      }
       if (aVal === undefined || aVal === null) return 1;
       if (bVal === undefined || bVal === null) return -1;
       if (typeof aVal === "string" && !isNaN(Number(aVal))) aVal = Number(aVal);
@@ -498,7 +529,31 @@ export default function OperationsTable({
               >
                 Side
               </TableCell>
-              {!simplifiedView && (
+              <TableCell
+                onClick={() => handleSort("pnl")}
+                style={{ cursor: "pointer" }}
+              >
+                {isOpenTrades ? "Unrealized PnL" : "PnL"}
+              </TableCell>
+              {!isOpenTrades && (
+                <TableCell
+                  onClick={() => handleSort("pnl")}
+                  style={{ cursor: "pointer" }}
+                >
+                  Result
+                </TableCell>
+              )}
+              {!isOpenTrades && !simplifiedView && (
+                <TableCell
+                  style={{ cursor: "pointer" }}
+                  onClick={() => handleSort("winRate")}
+                >
+                  <Tooltip title="Historical win rate percentage for this symbol">
+                    <span>Win Rate</span>
+                  </Tooltip>
+                </TableCell>
+              )}
+              {(isOpenTrades || simplifiedView) && !simplifiedView && (
                 <TableCell
                   onClick={() => handleSort("entryPrice")}
                   style={{ cursor: "pointer" }}
@@ -506,12 +561,16 @@ export default function OperationsTable({
                   Entry
                 </TableCell>
               )}
-              <TableCell
-                onClick={() => handleSort("pnl")}
-                style={{ cursor: "pointer" }}
-              >
-                {isOpenTrades ? "Unrealized PnL" : "PnL"}
-              </TableCell>
+              {isOpenTrades && !simplifiedView && (
+                <TableCell
+                  style={{ cursor: "pointer" }}
+                  onClick={() => handleSort("winRate")}
+                >
+                  <Tooltip title="Historical win rate percentage for this symbol">
+                    <span>Win Rate</span>
+                  </Tooltip>
+                </TableCell>
+              )}
 
               <TableCell
                 onClick={() =>
@@ -535,14 +594,6 @@ export default function OperationsTable({
                   Reason
                 </TableCell>
               )}
-              {!isOpenTrades && (
-                <TableCell
-                  onClick={() => handleSort("pnl")}
-                  style={{ cursor: "pointer" }}
-                >
-                  Result
-                </TableCell>
-              )}
               {!simplifiedView && (
                 <TableCell
                   onClick={() => handleSort("scanner")}
@@ -551,34 +602,7 @@ export default function OperationsTable({
                   Scanner
                 </TableCell>
               )}
-              {isOpenTrades && !simplifiedView && (
-                <>
-                  <TableCell
-                    style={{ cursor: "pointer" }}
-                    onClick={() => handleSort("historicalTrades")}
-                  >
-                    <Tooltip title="Total historical trades for this symbol">
-                      <span>Hist. Trades</span>
-                    </Tooltip>
-                  </TableCell>
-                  <TableCell
-                    style={{ cursor: "pointer" }}
-                    onClick={() => handleSort("winRate")}
-                  >
-                    <Tooltip title="Historical win rate percentage">
-                      <span>Win Rate</span>
-                    </Tooltip>
-                  </TableCell>
-                  <TableCell
-                    style={{ cursor: "pointer" }}
-                    onClick={() => handleSort("totalPnl")}
-                  >
-                    <Tooltip title="Total historical PnL for this symbol">
-                      <span>Total PnL</span>
-                    </Tooltip>
-                  </TableCell>
-                </>
-              )}
+
               {isOpenTrades && <TableCell>TP Target</TableCell>}
               {isOpenTrades && <TableCell>Chart</TableCell>}
             </TableRow>
@@ -604,11 +628,6 @@ export default function OperationsTable({
                         </span>
                       )}
                     </TableCell>
-                    {!simplifiedView && (
-                      <TableCell>
-                        {formatNumber(op.entry || op.entryPrice)}
-                      </TableCell>
-                    )}
                     <TableCell>
                       {isOpenTrades
                         ? formatUnrealizedProfit(
@@ -617,6 +636,122 @@ export default function OperationsTable({
                           )
                         : formatClosedPnL(op.pnl, currency)}
                     </TableCell>
+                    {!isOpenTrades && (
+                      <TableCell>{getWinLoss(op.pnl)}</TableCell>
+                    )}
+                    {!isOpenTrades && !simplifiedView && (
+                      <TableCell>
+                        {symbolStatsMap[op.symbol] ? (
+                          (() => {
+                            const stats = symbolStatsMap[op.symbol];
+                            const isLong = op.side === "LONG";
+                            const sideCount = isLong
+                              ? stats.long_count
+                              : stats.short_count;
+
+                            // Calculate win rate for this specific direction using exact data
+                            let displayWinRate = stats.win_rate;
+                            let displayTrades = `${stats.total_trades}`;
+
+                            if (sideCount > 0) {
+                              // Use exact win rate for this direction from backend
+                              const sideWinRate = isLong
+                                ? stats.long_win_rate
+                                : stats.short_win_rate;
+                              displayWinRate = sideWinRate;
+                              displayTrades = `${sideCount} ${
+                                isLong ? "L" : "S"
+                              }`;
+                            }
+
+                            return (
+                              <Typography
+                                variant="body2"
+                                sx={{
+                                  fontFamily: "monospace",
+                                  fontWeight: 600,
+                                  color:
+                                    displayWinRate >= 50
+                                      ? "#2de2a6"
+                                      : displayWinRate >= 30
+                                      ? "#ffd700"
+                                      : "#ff2e63",
+                                }}
+                                title={`Based on ${displayTrades} trades`}
+                              >
+                                {displayWinRate.toFixed(1)}%
+                              </Typography>
+                            );
+                          })()
+                        ) : (
+                          <Typography
+                            variant="body2"
+                            sx={{ color: "text.disabled" }}
+                          >
+                            -
+                          </Typography>
+                        )}
+                      </TableCell>
+                    )}
+                    {(isOpenTrades || simplifiedView) && !simplifiedView && (
+                      <TableCell>
+                        {formatNumber(op.entry || op.entryPrice)}
+                      </TableCell>
+                    )}
+                    {isOpenTrades && !simplifiedView && (
+                      <TableCell>
+                        {symbolStatsMap[op.symbol] ? (
+                          (() => {
+                            const stats = symbolStatsMap[op.symbol];
+                            const isLong = op.side === "LONG";
+                            const sideCount = isLong
+                              ? stats.long_count
+                              : stats.short_count;
+
+                            // Calculate win rate for this specific direction using exact data
+                            let displayWinRate = stats.win_rate;
+                            let displayTrades = `${stats.total_trades}`;
+
+                            if (sideCount > 0) {
+                              // Use exact win rate for this direction from backend
+                              const sideWinRate = isLong
+                                ? stats.long_win_rate
+                                : stats.short_win_rate;
+                              displayWinRate = sideWinRate;
+                              displayTrades = `${sideCount} ${
+                                isLong ? "L" : "S"
+                              }`;
+                            }
+
+                            return (
+                              <Typography
+                                variant="body2"
+                                sx={{
+                                  fontFamily: "monospace",
+                                  fontWeight: 600,
+                                  color:
+                                    displayWinRate >= 50
+                                      ? "#2de2a6"
+                                      : displayWinRate >= 30
+                                      ? "#ffd700"
+                                      : "#ff2e63",
+                                }}
+                                title={`Based on ${displayTrades} trades`}
+                              >
+                                {displayWinRate.toFixed(1)}%
+                              </Typography>
+                            );
+                          })()
+                        ) : (
+                          <Typography
+                            variant="body2"
+                            sx={{ color: "text.disabled" }}
+                          >
+                            -
+                          </Typography>
+                        )}
+                      </TableCell>
+                    )}
 
                     <TableCell>
                       {isOpenTrades
@@ -631,9 +766,6 @@ export default function OperationsTable({
                     {!isOpenTrades && !simplifiedView && (
                       <TableCell>{formatReason(op.reason)}</TableCell>
                     )}
-                    {!isOpenTrades && (
-                      <TableCell>{getWinLoss(op.pnl)}</TableCell>
-                    )}
                     {!simplifiedView && (
                       <TableCell>
                         <ScannerInfo
@@ -641,134 +773,6 @@ export default function OperationsTable({
                           compact={true}
                         />
                       </TableCell>
-                    )}
-                    {isOpenTrades && !simplifiedView && (
-                      <>
-                        <TableCell>
-                          {symbolStatsMap[op.symbol] ? (
-                            <Typography
-                              variant="body2"
-                              sx={{
-                                fontFamily: "monospace",
-                                color: "text.secondary",
-                              }}
-                            >
-                              {symbolStatsMap[op.symbol].total_trades}
-                            </Typography>
-                          ) : (
-                            <Typography
-                              variant="body2"
-                              sx={{ color: "text.disabled" }}
-                            >
-                              -
-                            </Typography>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {symbolStatsMap[op.symbol] ? (
-                            (() => {
-                              const stats = symbolStatsMap[op.symbol];
-                              const isLong = op.side === "LONG";
-                              const sideCount = isLong
-                                ? stats.long_count
-                                : stats.short_count;
-                              const sidePnl = isLong
-                                ? stats.long_pnl
-                                : stats.short_pnl;
-
-                              // Calculate win rate for this specific direction using exact data
-                              let displayWinRate = stats.win_rate;
-                              let displayTrades = `${stats.total_trades}`;
-
-                              if (sideCount > 0) {
-                                // Use exact win rate for this direction from backend
-                                const sideWinRate = isLong
-                                  ? stats.long_win_rate
-                                  : stats.short_win_rate;
-                                displayWinRate = sideWinRate;
-                                displayTrades = `${sideCount} ${
-                                  isLong ? "L" : "S"
-                                }`;
-                              }
-
-                              return (
-                                <Typography
-                                  variant="body2"
-                                  sx={{
-                                    fontFamily: "monospace",
-                                    fontWeight: 600,
-                                    color:
-                                      displayWinRate >= 50
-                                        ? "#2de2a6"
-                                        : displayWinRate >= 30
-                                        ? "#ffd700"
-                                        : "#ff2e63",
-                                  }}
-                                  title={`Based on ${displayTrades} trades`}
-                                >
-                                  {displayWinRate.toFixed(1)}%
-                                </Typography>
-                              );
-                            })()
-                          ) : (
-                            <Typography
-                              variant="body2"
-                              sx={{ color: "text.disabled" }}
-                            >
-                              -
-                            </Typography>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {symbolStatsMap[op.symbol] ? (
-                            <Typography
-                              variant="body2"
-                              sx={{
-                                fontFamily: "monospace",
-                                fontWeight: 600,
-                                color:
-                                  symbolStatsMap[op.symbol].total_pnl > 0
-                                    ? "#2de2a6"
-                                    : symbolStatsMap[op.symbol].total_pnl < 0
-                                    ? "#ff2e63"
-                                    : "text.secondary",
-                              }}
-                            >
-                              {symbolStatsMap[op.symbol].total_pnl > 0
-                                ? "+"
-                                : symbolStatsMap[op.symbol].total_pnl < 0
-                                ? "-"
-                                : ""}
-                              {formatCurrency(
-                                convertFromUSDT(
-                                  Math.abs(symbolStatsMap[op.symbol].total_pnl),
-                                  currency
-                                ),
-                                currency
-                              )}
-                              {currency !== "USDT" && (
-                                <span
-                                  style={{
-                                    color: "#aaa",
-                                    fontWeight: 400,
-                                    fontSize: "0.85em",
-                                    marginLeft: 4,
-                                  }}
-                                >
-                                  ({currency})
-                                </span>
-                              )}
-                            </Typography>
-                          ) : (
-                            <Typography
-                              variant="body2"
-                              sx={{ color: "text.disabled" }}
-                            >
-                              -
-                            </Typography>
-                          )}
-                        </TableCell>
-                      </>
                     )}
                     {isOpenTrades && (
                       <TableCell>
