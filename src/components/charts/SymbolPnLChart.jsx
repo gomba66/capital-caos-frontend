@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   BarChart,
   Bar,
@@ -9,8 +9,18 @@ import {
   ResponsiveContainer,
   Cell,
 } from "recharts";
-import { Paper, Typography, Box, CircularProgress } from "@mui/material";
+import {
+  Paper,
+  Typography,
+  Box,
+  CircularProgress,
+  ToggleButtonGroup,
+  ToggleButton,
+  TextField,
+  MenuItem,
+} from "@mui/material";
 import { useSymbolStatistics } from "../../hooks/useSymbolStatistics";
+import { convertFromUSDT, formatCurrency } from "../../utils/currencyConverter";
 
 /**
  * SymbolPnLChart - Displays historical total PnL per symbol
@@ -18,6 +28,31 @@ import { useSymbolStatistics } from "../../hooks/useSymbolStatistics";
  */
 export default function SymbolPnLChart() {
   const { data: symbolStats, loading, error } = useSymbolStatistics();
+  const [currency, setCurrency] = useState(() => {
+    return localStorage.getItem("capitalCurrency") || "USDT";
+  });
+  const [sortOrder, setSortOrder] = useState("reliability"); // "desc", "asc", or "reliability"
+  const [displayCount, setDisplayCount] = useState(20); // Number of symbols to show
+
+  // Escuchar cambios en la moneda desde localStorage
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const newCurrency = localStorage.getItem("capitalCurrency") || "USDT";
+      setCurrency(newCurrency);
+    };
+
+    const handleCurrencyChange = () => {
+      handleStorageChange();
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("currencyChange", handleCurrencyChange);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("currencyChange", handleCurrencyChange);
+    };
+  }, []);
 
   // Si está cargando, mostrar loader
   if (loading) {
@@ -57,24 +92,52 @@ export default function SymbolPnLChart() {
     );
   }
 
-  // Sort by total PnL descending to show best performers first
-  const sortedStats = [...symbolStats].sort(
-    (a, b) => b.total_pnl - a.total_pnl
-  );
+  // Sort by total PnL based on selected order
+  const sortedStats = [...symbolStats].sort((a, b) => {
+    if (sortOrder === "reliability") {
+      // Reliability score: considers trade count, win rate, and total PnL
+      // Formula: (total_trades^0.5) * win_rate * total_pnl / 100
+      // This gives more weight to symbols with more trades and higher win rates
+      const scoreA =
+        (Math.sqrt(a.total_trades) * a.win_rate * Math.abs(a.total_pnl)) / 100;
+      const scoreB =
+        (Math.sqrt(b.total_trades) * b.win_rate * Math.abs(b.total_pnl)) / 100;
+      return scoreB - scoreA;
+    } else if (sortOrder === "desc") {
+      return b.total_pnl - a.total_pnl;
+    } else {
+      return a.total_pnl - b.total_pnl;
+    }
+  });
 
-  // Limit to top 20 symbols for better visualization
-  const displayStats = sortedStats.slice(0, 20);
+  // Display selected number of symbols
+  const displayStats = sortedStats.slice(0, displayCount);
 
-  // Prepare data for recharts
-  const chartData = displayStats.map((stat) => ({
-    symbol: stat.symbol,
-    totalPnL: stat.total_pnl,
-    winRate: stat.win_rate,
-    totalTrades: stat.total_trades,
-    winCount: stat.win_count,
-    lossCount: stat.loss_count,
-    avgPnL: stat.avg_pnl,
-  }));
+  // Prepare data for recharts with currency conversion
+  const chartData = displayStats.map((stat) => {
+    // Determine best direction
+    const longPnl = stat.long_pnl || 0;
+    const shortPnl = stat.short_pnl || 0;
+    const bestDirection =
+      longPnl > shortPnl ? "LONG" : shortPnl > longPnl ? "SHORT" : "BOTH";
+
+    return {
+      symbol: stat.symbol,
+      totalPnL: convertFromUSDT(stat.total_pnl, currency),
+      totalPnLUSDT: stat.total_pnl, // Keep original for tooltip
+      winRate: stat.win_rate,
+      totalTrades: stat.total_trades,
+      winCount: stat.win_count,
+      lossCount: stat.loss_count,
+      avgPnL: convertFromUSDT(stat.avg_pnl, currency),
+      avgPnLUSDT: stat.avg_pnl,
+      longCount: stat.long_count || 0,
+      shortCount: stat.short_count || 0,
+      longPnL: convertFromUSDT(longPnl, currency),
+      shortPnL: convertFromUSDT(shortPnl, currency),
+      bestDirection: bestDirection,
+    };
+  });
 
   // Custom tooltip
   const CustomTooltip = ({ active, payload }) => {
@@ -98,7 +161,11 @@ export default function SymbolPnLChart() {
             variant="caption"
             sx={{ color: "#fff", display: "block" }}
           >
-            Total PnL: {data.totalPnL.toFixed(2)} USDT
+            Total PnL: {data.totalPnLUSDT < 0 ? "-" : ""}
+            {formatCurrency(Math.abs(data.totalPnL), currency)}
+            {currency !== "USDT" && (
+              <span style={{ color: "#aaa", marginLeft: 4 }}>({currency})</span>
+            )}
           </Typography>
           <Typography
             variant="caption"
@@ -110,19 +177,32 @@ export default function SymbolPnLChart() {
             variant="caption"
             sx={{ color: "#aaa", display: "block" }}
           >
-            Total Trades: {data.totalTrades}
+            Total Trades: {data.totalTrades} ({data.longCount} L /{" "}
+            {data.shortCount} S)
           </Typography>
           <Typography
             variant="caption"
             sx={{ color: "#aaa", display: "block" }}
           >
-            Wins: {data.winCount} | Losses: {data.lossCount}
+            Best Direction:{" "}
+            <span style={{ color: "#2de2e6" }}>{data.bestDirection}</span>
           </Typography>
           <Typography
             variant="caption"
             sx={{ color: "#aaa", display: "block" }}
           >
-            Avg PnL: {data.avgPnL.toFixed(2)} USDT
+            Long PnL: {formatCurrency(Math.abs(data.longPnL), currency)} | Short
+            PnL: {formatCurrency(Math.abs(data.shortPnL), currency)}
+          </Typography>
+          <Typography
+            variant="caption"
+            sx={{ color: "#aaa", display: "block" }}
+          >
+            Avg PnL: {data.avgPnLUSDT < 0 ? "-" : ""}
+            {formatCurrency(Math.abs(data.avgPnL), currency)}
+            {currency !== "USDT" && (
+              <span style={{ color: "#aaa", marginLeft: 4 }}>({currency})</span>
+            )}
           </Typography>
         </Paper>
       );
@@ -130,11 +210,12 @@ export default function SymbolPnLChart() {
     return null;
   };
 
-  // Calculate summary statistics
+  // Calculate summary statistics with currency conversion
   const totalSymbols = symbolStats.length;
   const profitableSymbols = symbolStats.filter((s) => s.total_pnl > 0).length;
   const losingSymbols = symbolStats.filter((s) => s.total_pnl < 0).length;
   const totalPnL = symbolStats.reduce((sum, s) => sum + s.total_pnl, 0);
+  const totalPnLConverted = convertFromUSDT(totalPnL, currency);
 
   return (
     <Paper sx={{ p: 3, backgroundColor: "#1a1a2e", minHeight: 400 }}>
@@ -145,34 +226,147 @@ export default function SymbolPnLChart() {
         mb={2}
       >
         <Typography variant="h6" sx={{ color: "#fff" }}>
-          Historical PnL by Symbol (Top 20)
+          Historical PnL by Symbol
         </Typography>
+        <Box display="flex" gap={2} alignItems="center">
+          {/* Sort Order Toggle */}
+          <ToggleButtonGroup
+            value={sortOrder}
+            exclusive
+            onChange={(e, newOrder) => {
+              if (newOrder !== null) setSortOrder(newOrder);
+            }}
+            size="small"
+            sx={{
+              "& .MuiToggleButton-root": {
+                color: "#aaa",
+                borderColor: "#2de2e6",
+                backgroundColor: "transparent",
+                "&:hover": {
+                  backgroundColor: "rgba(45, 226, 230, 0.08)",
+                  borderColor: "#2de2e6",
+                },
+                "&.Mui-selected": {
+                  backgroundColor: "rgba(45, 226, 230, 0.2)",
+                  color: "#2de2e6",
+                  borderColor: "#2de2e6",
+                  "&:hover": {
+                    backgroundColor: "rgba(45, 226, 230, 0.3)",
+                  },
+                },
+              },
+            }}
+          >
+            <ToggleButton value="reliability">By Reliability</ToggleButton>
+            <ToggleButton value="desc">Best PnL</ToggleButton>
+            <ToggleButton value="asc">Worst PnL</ToggleButton>
+          </ToggleButtonGroup>
+
+          {/* Display Count Selector */}
+          <TextField
+            select
+            value={displayCount}
+            onChange={(e) => setDisplayCount(Number(e.target.value))}
+            size="small"
+            sx={{
+              minWidth: 100,
+              "& .MuiOutlinedInput-root": {
+                color: "#fff",
+                "& fieldset": {
+                  borderColor: "#2de2e6",
+                },
+                "&:hover fieldset": {
+                  borderColor: "#2de2e6",
+                },
+                "&.Mui-focused fieldset": {
+                  borderColor: "#2de2e6",
+                },
+              },
+              "& .MuiInputLabel-root": {
+                color: "#aaa",
+              },
+            }}
+          >
+            <MenuItem value={10}>Top 10</MenuItem>
+            <MenuItem value={20}>Top 20</MenuItem>
+            <MenuItem value={50}>Top 50</MenuItem>
+            <MenuItem value={100}>Top 100</MenuItem>
+            <MenuItem value={symbolStats.length}>
+              All ({symbolStats.length})
+            </MenuItem>
+          </TextField>
+        </Box>
+      </Box>
+
+      {/* Summary Statistics */}
+      <Box display="flex" gap={3} mb={3}>
         <Box display="flex" gap={3}>
-          <Box textAlign="center">
+          <Box
+            textAlign="center"
+            sx={{
+              px: 2,
+              py: 1,
+              backgroundColor: "transparent",
+              borderRadius: 1,
+            }}
+          >
             <Typography variant="caption" sx={{ color: "#aaa" }}>
               Total Symbols
             </Typography>
-            <Typography variant="h6" sx={{ color: "#2de2e6" }}>
+            <Typography
+              variant="h6"
+              sx={{ color: "#2de2e6", textShadow: "none" }}
+            >
               {totalSymbols}
             </Typography>
           </Box>
-          <Box textAlign="center">
+          <Box
+            textAlign="center"
+            sx={{
+              px: 2,
+              py: 1,
+              backgroundColor: "transparent",
+              borderRadius: 1,
+            }}
+          >
             <Typography variant="caption" sx={{ color: "#aaa" }}>
               Profitable
             </Typography>
-            <Typography variant="h6" sx={{ color: "#2de2a6" }}>
+            <Typography
+              variant="h6"
+              sx={{ color: "#2de2a6", textShadow: "none" }}
+            >
               {profitableSymbols}
             </Typography>
           </Box>
-          <Box textAlign="center">
+          <Box
+            textAlign="center"
+            sx={{
+              px: 2,
+              py: 1,
+              backgroundColor: "transparent",
+              borderRadius: 1,
+            }}
+          >
             <Typography variant="caption" sx={{ color: "#aaa" }}>
               Losing
             </Typography>
-            <Typography variant="h6" sx={{ color: "#ff2e63" }}>
+            <Typography
+              variant="h6"
+              sx={{ color: "#ff2e63", textShadow: "none" }}
+            >
               {losingSymbols}
             </Typography>
           </Box>
-          <Box textAlign="center">
+          <Box
+            textAlign="center"
+            sx={{
+              px: 2,
+              py: 1,
+              backgroundColor: "transparent",
+              borderRadius: 1,
+            }}
+          >
             <Typography variant="caption" sx={{ color: "#aaa" }}>
               Total PnL
             </Typography>
@@ -181,10 +375,18 @@ export default function SymbolPnLChart() {
               sx={{
                 color:
                   totalPnL > 0 ? "#2de2a6" : totalPnL < 0 ? "#ff2e63" : "#aaa",
+                textShadow: "none",
               }}
             >
-              {totalPnL > 0 ? "+" : ""}
-              {totalPnL.toFixed(2)} USDT
+              {totalPnL > 0 ? "+" : totalPnL < 0 ? "-" : ""}
+              {formatCurrency(Math.abs(totalPnLConverted), currency)}
+              {currency !== "USDT" && (
+                <span
+                  style={{ color: "#aaa", fontSize: "0.8em", marginLeft: 4 }}
+                >
+                  ({currency})
+                </span>
+              )}
             </Typography>
           </Box>
         </Box>
@@ -209,14 +411,24 @@ export default function SymbolPnLChart() {
           <YAxis
             tick={{ fill: "#aaa" }}
             label={{
-              value: "PnL (USDT)",
+              value: `PnL (${currency})`,
               angle: -90,
               position: "insideLeft",
               fill: "#aaa",
             }}
           />
-          <Tooltip content={<CustomTooltip />} />
-          <Bar dataKey="totalPnL" radius={[4, 4, 0, 0]}>
+          <Tooltip content={<CustomTooltip />} cursor={false} />
+          <Bar
+            dataKey="totalPnL"
+            radius={[4, 4, 0, 0]}
+            activeBar={{
+              style: {
+                filter:
+                  "drop-shadow(0 0 16px #fff) drop-shadow(0 0 12px currentColor)",
+                opacity: 1,
+              },
+            }}
+          >
             {chartData.map((entry, index) => (
               <Cell
                 key={`cell-${index}`}
