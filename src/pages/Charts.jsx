@@ -11,6 +11,7 @@ import WeeklyPerformanceChart from "../components/charts/WeeklyPerformanceChart"
 import MonthlyPerformanceChart from "../components/charts/MonthlyPerformanceChart";
 import WeeklyMonthlyPerformanceChart from "../components/charts/WeeklyMonthlyPerformanceChart";
 import ScannerPerformanceChart from "../components/charts/ScannerPerformanceChart";
+import SymbolPnLChart from "../components/charts/SymbolPnLChart";
 import { TimeZoneContext } from "../contexts/AppContexts";
 
 export default function Charts() {
@@ -95,6 +96,11 @@ export default function Charts() {
       {/* 4. Análisis de Rendimiento por Scanner */}
       <Box sx={{ mt: 4 }}>
         <ScannerPerformanceChart operations={closedTrades} />
+      </Box>
+
+      {/* 5. Análisis de Rendimiento por Símbolo */}
+      <Box sx={{ mt: 4 }}>
+        <SymbolPnLChart />
       </Box>
     </Box>
   );
