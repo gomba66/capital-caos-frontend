@@ -1,17 +1,5 @@
 import { useState, useEffect } from "react";
 
-// Get API base URL from window location or fallback
-const getApiBaseUrl = () => {
-  if (typeof window !== "undefined") {
-    const { protocol, hostname } = window.location;
-    // Si estamos en producción, usar el mismo host pero puerto 8000
-    if (hostname !== "localhost" && hostname !== "127.0.0.1") {
-      return `${protocol}//${hostname}:8000`;
-    }
-  }
-  return "http://localhost:8000";
-};
-
 /**
  * Custom hook to fetch symbol statistics from the backend
  * @param {string|null} symbol - Optional symbol to filter by. If null, fetches all symbols.
@@ -26,10 +14,9 @@ export const useSymbolStatistics = (symbol = null) => {
     const fetchStats = async () => {
       try {
         setLoading(true);
-        const API_BASE_URL = getApiBaseUrl();
         const url = symbol
-          ? `${API_BASE_URL}/api/symbol-statistics/${symbol}`
-          : `${API_BASE_URL}/api/symbol-statistics`;
+          ? `/api/symbol-statistics/${symbol}`
+          : `/api/symbol-statistics`;
 
         const response = await fetch(url);
 
@@ -75,10 +62,7 @@ export const useSymbolPerformanceSummary = () => {
     const fetchSummary = async () => {
       try {
         setLoading(true);
-        const API_BASE_URL = getApiBaseUrl();
-        const response = await fetch(
-          `${API_BASE_URL}/api/symbol-performance-summary`
-        );
+        const response = await fetch(`/api/symbol-performance-summary`);
 
         if (!response.ok) {
           console.warn(
