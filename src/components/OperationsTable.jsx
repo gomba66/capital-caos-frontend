@@ -666,21 +666,50 @@ export default function OperationsTable({
                         </TableCell>
                         <TableCell>
                           {symbolStatsMap[op.symbol] ? (
-                            <Typography
-                              variant="body2"
-                              sx={{
-                                fontFamily: "monospace",
-                                fontWeight: 600,
-                                color:
-                                  symbolStatsMap[op.symbol].win_rate >= 50
-                                    ? "#2de2a6"
-                                    : symbolStatsMap[op.symbol].win_rate >= 30
-                                    ? "#ffd700"
-                                    : "#ff2e63",
-                              }}
-                            >
-                              {symbolStatsMap[op.symbol].win_rate.toFixed(1)}%
-                            </Typography>
+                            (() => {
+                              const stats = symbolStatsMap[op.symbol];
+                              const isLong = op.side === "LONG";
+                              const sideCount = isLong
+                                ? stats.long_count
+                                : stats.short_count;
+                              const sidePnl = isLong
+                                ? stats.long_pnl
+                                : stats.short_pnl;
+
+                              // Calculate win rate for this specific direction using exact data
+                              let displayWinRate = stats.win_rate;
+                              let displayTrades = `${stats.total_trades}`;
+
+                              if (sideCount > 0) {
+                                // Use exact win rate for this direction from backend
+                                const sideWinRate = isLong
+                                  ? stats.long_win_rate
+                                  : stats.short_win_rate;
+                                displayWinRate = sideWinRate;
+                                displayTrades = `${sideCount} ${
+                                  isLong ? "L" : "S"
+                                }`;
+                              }
+
+                              return (
+                                <Typography
+                                  variant="body2"
+                                  sx={{
+                                    fontFamily: "monospace",
+                                    fontWeight: 600,
+                                    color:
+                                      displayWinRate >= 50
+                                        ? "#2de2a6"
+                                        : displayWinRate >= 30
+                                        ? "#ffd700"
+                                        : "#ff2e63",
+                                  }}
+                                  title={`Based on ${displayTrades} trades`}
+                                >
+                                  {displayWinRate.toFixed(1)}%
+                                </Typography>
+                              );
+                            })()
                           ) : (
                             <Typography
                               variant="body2"
@@ -707,8 +736,28 @@ export default function OperationsTable({
                             >
                               {symbolStatsMap[op.symbol].total_pnl > 0
                                 ? "+"
+                                : symbolStatsMap[op.symbol].total_pnl < 0
+                                ? "-"
                                 : ""}
-                              {symbolStatsMap[op.symbol].total_pnl.toFixed(2)}
+                              {formatCurrency(
+                                convertFromUSDT(
+                                  Math.abs(symbolStatsMap[op.symbol].total_pnl),
+                                  currency
+                                ),
+                                currency
+                              )}
+                              {currency !== "USDT" && (
+                                <span
+                                  style={{
+                                    color: "#aaa",
+                                    fontWeight: 400,
+                                    fontSize: "0.85em",
+                                    marginLeft: 4,
+                                  }}
+                                >
+                                  ({currency})
+                                </span>
+                              )}
                             </Typography>
                           ) : (
                             <Typography
