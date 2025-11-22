@@ -553,14 +553,6 @@ export default function OperationsTable({
                   </Tooltip>
                 </TableCell>
               )}
-              {(isOpenTrades || simplifiedView) && !simplifiedView && (
-                <TableCell
-                  onClick={() => handleSort("entryPrice")}
-                  style={{ cursor: "pointer" }}
-                >
-                  Entry
-                </TableCell>
-              )}
               {isOpenTrades && !simplifiedView && (
                 <TableCell
                   style={{ cursor: "pointer" }}
@@ -691,11 +683,6 @@ export default function OperationsTable({
                             -
                           </Typography>
                         )}
-                      </TableCell>
-                    )}
-                    {(isOpenTrades || simplifiedView) && !simplifiedView && (
-                      <TableCell>
-                        {formatNumber(op.entry || op.entryPrice)}
                       </TableCell>
                     )}
                     {isOpenTrades && !simplifiedView && (
