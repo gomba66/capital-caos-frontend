@@ -91,6 +91,7 @@ export default function MomentumPairsTable({
           <TableHead>
             <TableRow>
               <TableCell>Symbol</TableCell>
+              <TableCell>Scanner</TableCell>
               <TableCell>Change %</TableCell>
               <TableCell>Volume</TableCell>
               <TableCell>Type</TableCell>
@@ -136,6 +137,90 @@ export default function MomentumPairsTable({
                             .includes("short") && " 📉"}
                         </>
                       )}
+                    </TableCell>
+                    <TableCell>
+                      {(() => {
+                        const scanner = pair.scanner || "unknown";
+                        const scannerType = pair.scanner_type || "";
+
+                        // Mapear scanners a emojis y colores
+                        const scannerConfig = {
+                          explosive: {
+                            emoji: "💥",
+                            color: "#ff6b6b",
+                            label: "Explosive",
+                          },
+                          performance_scanner: {
+                            emoji: "📊",
+                            color: "#4ecdc4",
+                            label: "Performance",
+                          },
+                          unified: {
+                            emoji: "🔄",
+                            color: "#95e1d3",
+                            label: "Unified",
+                          },
+                          original: {
+                            emoji: "⚡",
+                            color: "#f38181",
+                            label: "Original",
+                          },
+                          aggressive: {
+                            emoji: "🔥",
+                            color: "#ff9f43",
+                            label: "Aggressive",
+                          },
+                          volume_momentum: {
+                            emoji: "📈",
+                            color: "#54a0ff",
+                            label: "Volume",
+                          },
+                          breakout_momentum: {
+                            emoji: "🚀",
+                            color: "#00d2d3",
+                            label: "Breakout",
+                          },
+                          weekly_performance: {
+                            emoji: "📅",
+                            color: "#a29bfe",
+                            label: "Weekly",
+                          },
+                        };
+
+                        const config = scannerConfig[scanner] || {
+                          emoji: "❓",
+                          color: "#888",
+                          label: scanner,
+                        };
+
+                        return (
+                          <Tooltip
+                            title={`${config.label}${
+                              scannerType ? ` - ${scannerType}` : ""
+                            }`}
+                            arrow
+                            placement="top"
+                          >
+                            <span
+                              style={{
+                                color: config.color,
+                                fontWeight: 600,
+                                cursor: "help",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "4px",
+                              }}
+                            >
+                              <span style={{ fontSize: "16px" }}>
+                                {config.emoji}
+                              </span>
+                              <span style={{ fontSize: "11px" }}>
+                                {config.label}
+                              </span>
+                            </span>
+                          </Tooltip>
+                        );
+                      })()}
                     </TableCell>
                     <TableCell>
                       {pair.change_30m !== undefined
@@ -201,7 +286,7 @@ export default function MomentumPairsTable({
               })
             ) : (
               <TableRow>
-                <TableCell colSpan={6} align="center">
+                <TableCell colSpan={7} align="center">
                   No momentum pairs found.
                 </TableCell>
               </TableRow>
