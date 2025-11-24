@@ -292,12 +292,34 @@ export default function OperationsTable({
       )
     : null;
 
+  // Sumatoria de TP targets potenciales (en USDT)
+  const totalTPTarget = isOpenTrades
+    ? operations.reduce((acc, op) => {
+        if (op.take_profit_target) {
+          const targetValue =
+            typeof op.take_profit_target === "object"
+              ? Number(op.take_profit_target.value_usd) || 0
+              : 0;
+          return acc + targetValue;
+        }
+        return acc;
+      }, 0)
+    : null;
+
   // Convertir el total PnL a la moneda seleccionada
   const totalPnLConverted =
     totalPnL !== null ? convertFromUSDT(Math.abs(totalPnL), currency) : null;
   const totalPnLFormatted =
     totalPnLConverted !== null
       ? formatCurrency(totalPnLConverted, currency)
+      : "";
+
+  // Convertir el total TP Target a la moneda seleccionada
+  const totalTPTargetConverted =
+    totalTPTarget !== null ? convertFromUSDT(totalTPTarget, currency) : null;
+  const totalTPTargetFormatted =
+    totalTPTargetConverted !== null
+      ? formatCurrency(totalTPTargetConverted, currency)
       : "";
 
   // Mostrar contador solo para "Open Trades"
@@ -405,54 +427,50 @@ export default function OperationsTable({
                           fontSize: "0.75rem",
                         }}
                       >
-                        DB trades (excl. protected):
+                        DB trades:
                       </Typography>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          color: "text.primary",
-                          fontFamily: "monospace",
-                          fontWeight: 600,
-                          fontSize: "0.85rem",
-                        }}
+                      <Tooltip
+                        title={
+                          config?.database?.protected > 0
+                            ? `${config.database.protected} protected of ${
+                                dbCount + (config.database.protected || 0)
+                              } total`
+                            : ""
+                        }
                       >
-                        {dbCount}
-                      </Typography>
-                    </Box>
-                  </>
-                )}
-
-                {config?.database?.protected !== undefined && (
-                  <>
-                    <Box
-                      sx={{
-                        width: "1px",
-                        height: "16px",
-                        bgcolor: "rgba(255, 255, 255, 0.2)",
-                      }}
-                    />
-                    <Box display="flex" alignItems="center" gap={0.5}>
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          color: "#ffd700",
-                          opacity: 0.8,
-                          fontSize: "0.75rem",
-                        }}
-                      >
-                        Protected:
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          color: "#ffd700",
-                          fontFamily: "monospace",
-                          fontWeight: 600,
-                          fontSize: "0.85rem",
-                        }}
-                      >
-                        {config.database.protected || 0}
-                      </Typography>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color:
+                              config?.database?.protected > 0
+                                ? "#ff9800"
+                                : "text.primary",
+                            fontFamily: "monospace",
+                            fontWeight: 600,
+                            fontSize: "0.85rem",
+                            cursor:
+                              config?.database?.protected > 0
+                                ? "help"
+                                : "default",
+                          }}
+                        >
+                          {dbCount + (config?.database?.protected || 0)}
+                        </Typography>
+                      </Tooltip>
+                      {binanceCount !==
+                        dbCount + (config?.database?.protected || 0) && (
+                        <Tooltip title="DB trades count doesn't match Exchange trades">
+                          <span
+                            style={{
+                              color: "#ff9800",
+                              fontSize: "1rem",
+                              marginLeft: "4px",
+                            }}
+                          >
+                            ⚠️
+                          </span>
+                        </Tooltip>
+                      )}
                     </Box>
                   </>
                 )}
@@ -543,17 +561,8 @@ export default function OperationsTable({
                   Result
                 </TableCell>
               )}
-              {!isOpenTrades && !simplifiedView && (
-                <TableCell
-                  style={{ cursor: "pointer" }}
-                  onClick={() => handleSort("winRate")}
-                >
-                  <Tooltip title="Historical win rate percentage for this symbol">
-                    <span>Win Rate</span>
-                  </Tooltip>
-                </TableCell>
-              )}
-              {isOpenTrades && !simplifiedView && (
+              {isOpenTrades && <TableCell>TP Target</TableCell>}
+              {!simplifiedView && (
                 <TableCell
                   style={{ cursor: "pointer" }}
                   onClick={() => handleSort("winRate")}
@@ -594,8 +603,6 @@ export default function OperationsTable({
                   Scanner
                 </TableCell>
               )}
-
-              {isOpenTrades && <TableCell>TP Target</TableCell>}
               {isOpenTrades && <TableCell>Chart</TableCell>}
             </TableRow>
           </TableHead>
@@ -631,61 +638,68 @@ export default function OperationsTable({
                     {!isOpenTrades && (
                       <TableCell>{getWinLoss(op.pnl)}</TableCell>
                     )}
-                    {!isOpenTrades && !simplifiedView && (
+                    {isOpenTrades && (
                       <TableCell>
-                        {symbolStatsMap[op.symbol] ? (
-                          (() => {
-                            const stats = symbolStatsMap[op.symbol];
-                            const isLong = op.side === "LONG";
-                            const sideCount = isLong
-                              ? stats.long_count
-                              : stats.short_count;
-
-                            // Calculate win rate for this specific direction using exact data
-                            let displayWinRate = stats.win_rate;
-                            let displayTrades = `${stats.total_trades}`;
-
-                            if (sideCount > 0) {
-                              // Use exact win rate for this direction from backend
-                              const sideWinRate = isLong
-                                ? stats.long_win_rate
-                                : stats.short_win_rate;
-                              displayWinRate = sideWinRate;
-                              displayTrades = `${sideCount} ${
-                                isLong ? "L" : "S"
-                              }`;
-                            }
-
-                            return (
+                        {op.take_profit_target ? (
+                          typeof op.take_profit_target === "object" ? (
+                            <Box>
                               <Typography
                                 variant="body2"
-                                sx={{
-                                  fontFamily: "monospace",
-                                  fontWeight: 600,
-                                  color:
-                                    displayWinRate >= 50
-                                      ? "#2de2a6"
-                                      : displayWinRate >= 30
-                                      ? "#ffd700"
-                                      : "#ff2e63",
-                                }}
-                                title={`Based on ${displayTrades} trades`}
+                                sx={{ fontWeight: 600, color: "#2de2e6" }}
                               >
-                                {displayWinRate.toFixed(1)}%
+                                {Number(op.take_profit_target.ratio).toFixed(2)}
+                                x{" "}
                               </Typography>
-                            );
-                          })()
+                              {op.take_profit_target.value_usd && (
+                                <Typography
+                                  variant="caption"
+                                  style={{ color: "#2de2a6" }}
+                                >
+                                  (~
+                                  {(() => {
+                                    // Convertir de USD a la moneda seleccionada
+                                    const convertedValue = convertFromUSDT(
+                                      Number(op.take_profit_target.value_usd),
+                                      currency
+                                    );
+                                    const formattedValue = formatCurrency(
+                                      convertedValue,
+                                      currency
+                                    );
+                                    return formattedValue;
+                                  })()}
+                                  {currency !== "USDT" && (
+                                    <>
+                                      {" "}
+                                      <span
+                                        style={{
+                                          color: "#aaa",
+                                          fontWeight: 400,
+                                          fontSize: "0.85em",
+                                        }}
+                                      >
+                                        ({currency})
+                                      </span>
+                                    </>
+                                  )}
+                                  )
+                                </Typography>
+                              )}
+                            </Box>
+                          ) : (
+                            <Typography
+                              variant="body2"
+                              sx={{ fontWeight: 600, color: "#2de2e6" }}
+                            >
+                              {Number(op.take_profit_target).toFixed(2)}x{" "}
+                            </Typography>
+                          )
                         ) : (
-                          <Typography
-                            variant="body2"
-                            sx={{ color: "text.disabled" }}
-                          >
-                            -
-                          </Typography>
+                          "-"
                         )}
                       </TableCell>
                     )}
-                    {isOpenTrades && !simplifiedView && (
+                    {!simplifiedView && (
                       <TableCell>
                         {symbolStatsMap[op.symbol] ? (
                           (() => {
@@ -763,67 +777,6 @@ export default function OperationsTable({
                     )}
                     {isOpenTrades && (
                       <TableCell>
-                        {op.take_profit_target ? (
-                          typeof op.take_profit_target === "object" ? (
-                            <Box>
-                              <Typography
-                                variant="body2"
-                                sx={{ fontWeight: 600, color: "#2de2e6" }}
-                              >
-                                {Number(op.take_profit_target.ratio).toFixed(2)}
-                                x{" "}
-                              </Typography>
-                              {op.take_profit_target.value_usd && (
-                                <Typography
-                                  variant="caption"
-                                  style={{ color: "#2de2a6" }}
-                                >
-                                  (~
-                                  {(() => {
-                                    // Convertir de USD a la moneda seleccionada
-                                    const convertedValue = convertFromUSDT(
-                                      Number(op.take_profit_target.value_usd),
-                                      currency
-                                    );
-                                    const formattedValue = formatCurrency(
-                                      convertedValue,
-                                      currency
-                                    );
-                                    return formattedValue;
-                                  })()}
-                                  {currency !== "USDT" && (
-                                    <>
-                                      {" "}
-                                      <span
-                                        style={{
-                                          color: "#aaa",
-                                          fontWeight: 400,
-                                          fontSize: "0.85em",
-                                        }}
-                                      >
-                                        ({currency})
-                                      </span>
-                                    </>
-                                  )}
-                                  )
-                                </Typography>
-                              )}
-                            </Box>
-                          ) : (
-                            <Typography
-                              variant="body2"
-                              sx={{ fontWeight: 600, color: "#2de2e6" }}
-                            >
-                              {Number(op.take_profit_target).toFixed(2)}x{" "}
-                            </Typography>
-                          )
-                        ) : (
-                          "-"
-                        )}
-                      </TableCell>
-                    )}
-                    {isOpenTrades && (
-                      <TableCell>
                         <Tooltip title={`View ${op.symbol} chart`}>
                           <IconButton
                             size="small"
@@ -867,7 +820,7 @@ export default function OperationsTable({
           {isOpenTrades && totalPnL !== null && (
             <tfoot>
               <TableRow>
-                <TableCell colSpan={simplifiedView ? 2 : 3} />
+                <TableCell colSpan={2} />
                 <TableCell
                   style={{
                     fontWeight: 700,
@@ -895,9 +848,51 @@ export default function OperationsTable({
                       </span>
                     </>
                   )}
+                  {totalTPTarget > 0 && (
+                    <>
+                      {" "}
+                      <span
+                        style={{
+                          color: "#4ecdc4",
+                          fontWeight: 600,
+                          fontSize: "0.85em",
+                        }}
+                      >
+                        ({((totalPnL / totalTPTarget) * 100).toFixed(1)}%)
+                      </span>
+                    </>
+                  )}
                 </TableCell>
                 <TableCell
-                  colSpan={simplifiedView ? 4 : 7} // Simplified: Open Time, Close date (empty), TP Target, Chart | Normal: Open Time, Close date (empty), Scanner, Type, TP Target, Chart
+                  style={{
+                    fontWeight: 700,
+                    color: "#4ecdc4",
+                  }}
+                >
+                  {totalTPTarget > 0 ? (
+                    <>
+                      Target: ~{totalTPTargetFormatted}
+                      {currency !== "USDT" && (
+                        <>
+                          {" "}
+                          <span
+                            style={{
+                              color: "#aaa",
+                              fontWeight: 400,
+                              fontSize: "0.9em",
+                            }}
+                          >
+                            ({currency})
+                          </span>
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    "-"
+                  )}
+                </TableCell>
+                <TableCell
+                  colSpan={simplifiedView ? 4 : 5} // Simplified: Open Time, Close date (empty), Chart | Normal: Win Rate, Open Time, Close date (empty), Scanner, Chart
                 />
               </TableRow>
             </tfoot>

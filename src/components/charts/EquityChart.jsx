@@ -1,5 +1,5 @@
 // test comment
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   convertFromUSDT,
   formatCurrency,
@@ -25,6 +25,8 @@ import {
   FormGroup,
   FormControlLabel,
   Checkbox,
+  Button,
+  ButtonGroup,
 } from "@mui/material";
 import { DateTime } from "luxon";
 
@@ -110,7 +112,33 @@ export default function EquityChart({
   const data = buildEquityDrawdownData(operations);
   const [showEquity, setShowEquity] = useState(true);
   const [showDrawdownState, setShowDrawdown] = useState(true);
+  const [visibleRange, setVisibleRange] = useState({
+    start: 0,
+    end: data.length - 1,
+  });
+  const [selectedButton, setSelectedButton] = useState("all");
+  const prevDataLengthRef = useRef(data.length);
+  const chartContainerRef = useRef(null);
   const effectiveShowDrawdown = showDrawdown && showDrawdownState;
+
+  // Mantener el rango visible cuando los datos se actualizan
+  useEffect(() => {
+    if (data.length !== prevDataLengthRef.current) {
+      // Si hay nuevos datos, ajustar el rango para mantener la misma vista relativa
+      const oldLength = prevDataLengthRef.current;
+      const newLength = data.length;
+
+      if (oldLength > 0 && visibleRange.end === oldLength - 1) {
+        // Si estábamos viendo hasta el final, seguir viendo hasta el final
+        setVisibleRange({ start: visibleRange.start, end: newLength - 1 });
+      }
+
+      prevDataLengthRef.current = newLength;
+    }
+  }, [data.length]);
+
+  // Filtrar datos según el rango visible
+  const visibleData = data.slice(visibleRange.start, visibleRange.end + 1);
 
   // Determinar color de la ReferenceLine según el último equity
   const lastEquity = data.length ? data[data.length - 1].equity : 0;
@@ -169,10 +197,183 @@ export default function EquityChart({
           />
         </FormGroup>
       )}
-      <Paper sx={{ p: 2, width: "100%" }}>
+
+      {/* Controles de zoom */}
+      <Box sx={{ mb: 2, display: "flex", gap: 0.5 }}>
+        <button
+          style={{
+            minWidth: "45px",
+            padding: "4px 8px",
+            fontSize: "0.875rem",
+            color: selectedButton === "7d" ? "#2de2e6" : "#888",
+            borderColor: selectedButton === "7d" ? "#2de2e6" : "#444",
+            border: "1px solid",
+            backgroundColor:
+              selectedButton === "7d"
+                ? "rgba(45, 226, 230, 0.08)"
+                : "transparent",
+            cursor: "pointer",
+            borderRadius: "4px",
+            fontFamily: "inherit",
+            transition: "all 0.2s",
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.backgroundColor = "rgba(45, 226, 230, 0.08)";
+            e.target.style.color = "#2de2e6";
+            e.target.style.borderColor = "#2de2e6";
+          }}
+          onMouseLeave={(e) => {
+            if (selectedButton !== "7d") {
+              e.target.style.backgroundColor = "transparent";
+              e.target.style.color = "#888";
+              e.target.style.borderColor = "#444";
+            }
+          }}
+          onClick={() => {
+            setSelectedButton("7d");
+            const now = DateTime.now();
+            const cutoffDate = now.minus({ days: 7 });
+            const startIdx = data.findIndex(
+              (d) => DateTime.fromISO(d.date) >= cutoffDate
+            );
+            setVisibleRange({
+              start: startIdx >= 0 ? startIdx : 0,
+              end: data.length - 1,
+            });
+          }}
+        >
+          7d
+        </button>
+        <button
+          style={{
+            minWidth: "45px",
+            padding: "4px 8px",
+            fontSize: "0.875rem",
+            color: selectedButton === "30d" ? "#2de2e6" : "#888",
+            borderColor: selectedButton === "30d" ? "#2de2e6" : "#444",
+            border: "1px solid",
+            backgroundColor:
+              selectedButton === "30d"
+                ? "rgba(45, 226, 230, 0.08)"
+                : "transparent",
+            cursor: "pointer",
+            borderRadius: "4px",
+            fontFamily: "inherit",
+            transition: "all 0.2s",
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.backgroundColor = "rgba(45, 226, 230, 0.08)";
+            e.target.style.color = "#2de2e6";
+            e.target.style.borderColor = "#2de2e6";
+          }}
+          onMouseLeave={(e) => {
+            if (selectedButton !== "30d") {
+              e.target.style.backgroundColor = "transparent";
+              e.target.style.color = "#888";
+              e.target.style.borderColor = "#444";
+            }
+          }}
+          onClick={() => {
+            setSelectedButton("30d");
+            const now = DateTime.now();
+            const cutoffDate = now.minus({ days: 30 });
+            const startIdx = data.findIndex(
+              (d) => DateTime.fromISO(d.date) >= cutoffDate
+            );
+            setVisibleRange({
+              start: startIdx >= 0 ? startIdx : 0,
+              end: data.length - 1,
+            });
+          }}
+        >
+          30d
+        </button>
+        <button
+          style={{
+            minWidth: "45px",
+            padding: "4px 8px",
+            fontSize: "0.875rem",
+            color: selectedButton === "90d" ? "#2de2e6" : "#888",
+            borderColor: selectedButton === "90d" ? "#2de2e6" : "#444",
+            border: "1px solid",
+            backgroundColor:
+              selectedButton === "90d"
+                ? "rgba(45, 226, 230, 0.08)"
+                : "transparent",
+            cursor: "pointer",
+            borderRadius: "4px",
+            fontFamily: "inherit",
+            transition: "all 0.2s",
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.backgroundColor = "rgba(45, 226, 230, 0.08)";
+            e.target.style.color = "#2de2e6";
+            e.target.style.borderColor = "#2de2e6";
+          }}
+          onMouseLeave={(e) => {
+            if (selectedButton !== "90d") {
+              e.target.style.backgroundColor = "transparent";
+              e.target.style.color = "#888";
+              e.target.style.borderColor = "#444";
+            }
+          }}
+          onClick={() => {
+            setSelectedButton("90d");
+            const now = DateTime.now();
+            const cutoffDate = now.minus({ days: 90 });
+            const startIdx = data.findIndex(
+              (d) => DateTime.fromISO(d.date) >= cutoffDate
+            );
+            setVisibleRange({
+              start: startIdx >= 0 ? startIdx : 0,
+              end: data.length - 1,
+            });
+          }}
+        >
+          90d
+        </button>
+        <button
+          style={{
+            minWidth: "45px",
+            padding: "4px 8px",
+            fontSize: "0.875rem",
+            color: selectedButton === "all" ? "#2de2e6" : "#888",
+            borderColor: selectedButton === "all" ? "#2de2e6" : "#444",
+            border: "1px solid",
+            backgroundColor:
+              selectedButton === "all"
+                ? "rgba(45, 226, 230, 0.08)"
+                : "transparent",
+            cursor: "pointer",
+            borderRadius: "4px",
+            fontFamily: "inherit",
+            transition: "all 0.2s",
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.backgroundColor = "rgba(45, 226, 230, 0.08)";
+            e.target.style.color = "#2de2e6";
+            e.target.style.borderColor = "#2de2e6";
+          }}
+          onMouseLeave={(e) => {
+            if (selectedButton !== "all") {
+              e.target.style.backgroundColor = "transparent";
+              e.target.style.color = "#888";
+              e.target.style.borderColor = "#444";
+            }
+          }}
+          onClick={() => {
+            setSelectedButton("all");
+            setVisibleRange({ start: 0, end: data.length - 1 });
+          }}
+        >
+          All
+        </button>
+      </Box>
+
+      <Paper ref={chartContainerRef} sx={{ p: 2, width: "100%" }}>
         <ResponsiveContainer width="100%" height={height}>
           <LineChart
-            data={data}
+            data={visibleData}
             margin={{ top: 20, right: 40, left: 0, bottom: 0 }}
           >
             <CartesianGrid strokeDasharray="3 3" stroke="#444" />
