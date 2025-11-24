@@ -62,12 +62,10 @@ export default function Dashboard() {
   const [momentumPairs, setMomentumPairs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState(null);
-  const [prevOpenTrades, setPrevOpenTrades] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [dbTradeCount, setDbTradeCount] = useState(null);
   const [config, setConfig] = useState(null);
   const [totalCapital, setTotalCapital] = useState(1);
-  const [prevTotalCapital, setPrevTotalCapital] = useState(1);
   const [capitalCurrency, setCapitalCurrency] = useState(() => {
     return localStorage.getItem("capitalCurrency") || "USDT";
   });
@@ -103,12 +101,10 @@ export default function Dashboard() {
     setDbTradeCount(configData?.database?.total || null);
     setConfig(configData);
     setTotalCapital(capitalUsdt);
-    setPrevTotalCapital(capitalUsdt);
     const selectedCurrency = localStorage.getItem("capitalCurrency") || "USDT";
     setCapitalCurrency(selectedCurrency);
     setLastUpdate(new Date());
     setRefreshing(false);
-    setPrevOpenTrades(openData?.open_trades || []);
   };
 
   // Primer fetch global al montar
@@ -141,10 +137,9 @@ export default function Dashboard() {
     };
   }, []);
 
-  // Auto-refresh solo de open trades cada 10s
+  // Auto-refresh de open trades cada 10s
   useEffect(() => {
     let isMounted = true;
-    let pollingTimeout = null;
     
     const fetchOpen = async () => {
       const [openData, configData, capitalUsdt] = await Promise.all([
@@ -154,70 +149,40 @@ export default function Dashboard() {
       ]);
       if (!isMounted) return;
       
-      const newOpen = openData?.open_trades || [];
-      setOpenTrades(newOpen);
+      setOpenTrades(openData?.open_trades || []);
       setDbTradeCount(configData?.database?.total || null);
       setConfig(configData);
-      
-      // Calcular PnL no realizado total actual
-      const currentUnrealizedPnL = newOpen.reduce(
-        (acc, trade) => acc + (Number(trade.unrealizedProfit || trade.unRealizedProfit) || 0),
-        0
-      );
-      
-      // Calcular cambio en capital
-      const capitalChange = capitalUsdt - prevTotalCapital;
-      const capitalChangePercent = Math.abs((capitalChange / prevTotalCapital) * 100);
-      
-      // Si hay un cambio > 0.3% en el capital
-      if (capitalChangePercent > 0.3) {
-        // Calcular el cambio en PnL no realizado
-        const prevUnrealizedPnL = prevOpenTrades.reduce(
-          (acc, trade) => acc + (Number(trade.unrealizedProfit || trade.unRealizedProfit) || 0),
-          0
-        );
-        const unrealizedPnLChange = currentUnrealizedPnL - prevUnrealizedPnL;
-        
-        // El cambio neto esperado considera:
-        // 1. Cambio en capital
-        // 2. Menos el cambio en unrealized PnL (porque esto no es realizado aún)
-        // 3. Margen de error por fees, funding rates, etc. (~0.1% del cambio en capital)
-        const expectedNetChange = capitalChange - unrealizedPnLChange;
-        const tolerance = Math.abs(capitalChange) * 0.001; // 0.1% de tolerancia para fees y otros factores
-        
-        // Verificar si necesitamos refrescar basándonos en el cambio significativo
-        // Si el cambio es considerable y estamos fuera de la tolerancia, refrescar
-        const needsSync = Math.abs(expectedNetChange) > tolerance;
-        
-        if (needsSync) {
-          // Refrescar todo para sincronizar
-          await fetchAll();
-          
-          // Continuar polling hasta que estén alineados
-          if (isMounted) {
-            pollingTimeout = setTimeout(fetchOpen, 2000); // Poll más rápido durante sincronización
-            return;
-          }
-        } else {
-          // Ya están alineados (dentro de tolerancia), actualizar referencia
-          setTotalCapital(capitalUsdt);
-          setPrevTotalCapital(capitalUsdt);
-        }
-      } else {
-        // Cambio menor al 1%, solo actualizar capital
-        setTotalCapital(capitalUsdt);
-      }
-      
-      setPrevOpenTrades(newOpen);
+      setTotalCapital(capitalUsdt);
     };
     
     const id = setInterval(fetchOpen, 10000);
     return () => {
       isMounted = false;
       clearInterval(id);
-      if (pollingTimeout) clearTimeout(pollingTimeout);
     };
-  }, [prevOpenTrades, prevTotalCapital, stats]);
+  }, []);
+
+  // Auto-refresh de closed trades (operaciones) cada 60s
+  useEffect(() => {
+    let isMounted = true;
+    
+    const fetchClosedTrades = async () => {
+      const [statsData, opsData] = await Promise.all([
+        getStats(),
+        getOperations(),
+      ]);
+      if (!isMounted) return;
+      
+      setStats(statsData);
+      setClosedTrades(opsData?.closed || []);
+    };
+    
+    const id = setInterval(fetchClosedTrades, 60000); // Cada 60 segundos
+    return () => {
+      isMounted = false;
+      clearInterval(id);
+    };
+  }, []);
 
   if (loading) {
     return (
