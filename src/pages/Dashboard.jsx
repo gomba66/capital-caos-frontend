@@ -140,7 +140,7 @@ export default function Dashboard() {
   // Auto-refresh de open trades cada 10s
   useEffect(() => {
     let isMounted = true;
-    
+
     const fetchOpen = async () => {
       const [openData, configData, capitalUsdt] = await Promise.all([
         getOpenTrades(),
@@ -148,13 +148,13 @@ export default function Dashboard() {
         getCapital(),
       ]);
       if (!isMounted) return;
-      
+
       setOpenTrades(openData?.open_trades || []);
       setDbTradeCount(configData?.database?.total || null);
       setConfig(configData);
       setTotalCapital(capitalUsdt);
     };
-    
+
     const id = setInterval(fetchOpen, 10000);
     return () => {
       isMounted = false;
@@ -165,18 +165,19 @@ export default function Dashboard() {
   // Auto-refresh de closed trades (operaciones) cada 60s
   useEffect(() => {
     let isMounted = true;
-    
+
     const fetchClosedTrades = async () => {
       const [statsData, opsData] = await Promise.all([
         getStats(),
         getOperations(),
       ]);
       if (!isMounted) return;
-      
+
       setStats(statsData);
       setClosedTrades(opsData?.closed || []);
+      setLastUpdate(new Date());
     };
-    
+
     const id = setInterval(fetchClosedTrades, 60000); // Cada 60 segundos
     return () => {
       isMounted = false;
