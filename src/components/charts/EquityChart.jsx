@@ -32,7 +32,7 @@ import { DateTime } from "luxon";
 
 function buildEquityDrawdownData(operations) {
   let equity = 0;
-  let peak = 0;
+  let peak = -Infinity; // Inicializar en -Infinity para que el primer valor siempre sea mayor
 
   const filteredOps = (operations || [])
     .filter((op) => op.closed_at || op.closeTime)
@@ -66,11 +66,37 @@ function buildEquityDrawdownData(operations) {
     pnl: 0,
     symbol: "Starting Point",
   };
+  
+  // Inicializar peak en 0 (el punto de inicio)
+  peak = 0;
+  
+  // Encontrar el equity máximo para determinar un capital base razonable
+  // Esto nos ayuda a calcular el drawdown de forma significativa
+  let maxEquity = 0;
+  filteredOps.forEach((op) => {
+    maxEquity += Number(op.pnl || 0);
+    if (maxEquity > peak) {
+      peak = maxEquity;
+    }
+  });
+  
+  // Si nunca hubo ganancias (peak <= 0), usar un capital base de 100 para el cálculo del drawdown
+  const capitalBase = peak > 0 ? peak : 100;
+  
+  // Resetear para el cálculo real
+  equity = 0;
+  peak = 0;
 
   const equityData = filteredOps.map((op) => {
     equity += Number(op.pnl || 0);
-    peak = Math.max(peak, equity);
-    const drawdown = peak > 0 ? ((equity - peak) / peak) * 100 : 0;
+    // Actualizar peak si el equity actual es mayor
+    if (equity > peak) {
+      peak = equity;
+    }
+    // Drawdown como porcentaje del capital base (peak histórico o 100)
+    // Cuando equity < peak, el drawdown es negativo
+    const drawdown = ((equity - peak) / capitalBase) * 100;
+    
     return {
       date: op.closed_at || op.closeTime,
       equity: Number(equity.toFixed(4)),
