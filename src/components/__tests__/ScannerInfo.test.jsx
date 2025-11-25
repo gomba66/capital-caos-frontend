@@ -24,7 +24,6 @@ describe("ScannerInfo", () => {
     renderWithProviders(<ScannerInfo scannerInfo={mockScannerInfo} />);
 
     expect(screen.getByText("aggressive")).toBeInTheDocument();
-    expect(screen.getByText("MOMENTUM_AGGRESSIVE")).toBeInTheDocument();
     expect(screen.getByText("Cambio 5m: 3.5%")).toBeInTheDocument();
     expect(screen.getByText("Volumen: 1,000,000")).toBeInTheDocument();
     expect(screen.getByText("Cambio 30m: 5.2%")).toBeInTheDocument();
@@ -36,7 +35,6 @@ describe("ScannerInfo", () => {
     );
 
     expect(screen.getByText("AGGRESSIVE")).toBeInTheDocument();
-    expect(screen.getByText("MOMENTUM_AGGRESSIVE")).toBeInTheDocument();
     // En modo compacto no se muestran los detalles de momentum_data
     expect(screen.queryByText("Cambio 5m: 3.5%")).not.toBeInTheDocument();
   });
@@ -64,7 +62,6 @@ describe("ScannerInfo", () => {
     );
 
     expect(screen.getByText("original")).toBeInTheDocument();
-    expect(screen.getByText("MOMENTUM_ORIGINAL")).toBeInTheDocument();
     // No debería mostrar detalles de momentum
     expect(screen.queryByText("Cambio 5m:")).not.toBeInTheDocument();
   });

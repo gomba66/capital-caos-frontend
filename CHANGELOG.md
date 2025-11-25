@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+### 🧪 Corrección de Tests (2024-11-25)
+
+**Actualización de tests para reflejar cambios en componentes**
+
+- Eliminadas verificaciones de columna 'Entry' que fue removida del OperationsTable
+- Tests de ordenamiento ahora usan columna 'PnL' en lugar de 'Entry'
+- Eliminadas verificaciones de `scanner_type` que no se renderiza en la UI de ScannerInfo
+- Simplificado test de valores no numéricos en formatNumber
+- Corregido uso de `getAllByText` para elementos que aparecen múltiples veces
+
+---
+
 ### 🔄 Smart Refresh para Closed Trades (2024-11-25)
 
 **Implementado sistema de refresco inteligente basado en cambios de capital**
