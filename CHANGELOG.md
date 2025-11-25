@@ -2,6 +2,21 @@
 
 ## [Unreleased]
 
+### ✨ Added
+
+### 🐛 Fixed
+
+### 🎨 Enhanced
+
+### 🔧 Technical
+
+### 📱 Mobile Features
+
+### 🖥️ Desktop Features
+
+## [v0.1.10] - 2025-11-25
+
+
 ### 🧹 Corrección de Linting (2024-11-25)
 
 **Resolución de errores de ESLint**
