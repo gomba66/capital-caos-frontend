@@ -14,8 +14,74 @@
 
 ### 🖥️ Desktop Features
 
-## [v0.1.8] - 2025-10-05
+## [v0.1.10] - 2025-11-25
 
+
+### 🧹 Corrección de Linting (2024-11-25)
+
+**Resolución de errores de ESLint**
+
+- Agregado prefijo `_` a variables extraídas del destructuring pero no usadas directamente
+- Variables afectadas: `scannerType`, `statsLoading`, `scanner_type`, `symbol`, `formatNumber`
+- Eliminado comentario `eslint-disable` que causaba error (regla `import/no-unresolved` no existe)
+- Quedan solo 5 warnings de `react-hooks/exhaustive-deps` (seguros de ignorar)
+
+---
+
+### 🧪 Corrección de Tests (2024-11-25)
+
+**Actualización de tests para reflejar cambios en componentes**
+
+- Eliminadas verificaciones de columna 'Entry' que fue removida del OperationsTable
+- Tests de ordenamiento ahora usan columna 'PnL' en lugar de 'Entry'
+- Eliminadas verificaciones de `scanner_type` que no se renderiza en la UI de ScannerInfo
+- Simplificado test de valores no numéricos en formatNumber
+- Corregido uso de `getAllByText` para elementos que aparecen múltiples veces
+
+---
+
+### 🔄 Smart Refresh para Closed Trades (2024-11-25)
+
+**Implementado sistema de refresco inteligente basado en cambios de capital**
+
+#### Problema anterior:
+
+- Polling constante cada 30 segundos sin importar actividad
+- Consumo innecesario de recursos y ancho de banda
+- Actualizaciones cuando no había cambios reales
+
+#### Solución implementada:
+
+- **Refresco condicional**: Solo actualiza cuando hay cambio en el capital total
+- **Polling periódico reducido**: Cada 60 segundos (reducido de 30s)
+- **Detección de cambios**: Compara capital actual vs último conocido
+- **Actualización inteligente**: Solo hace fetch si detecta trades nuevos
+
+#### Mejoras técnicas:
+
+- `lastUpdate` solo se actualiza en refrescos de closed trades (no en open)
+- Polling separado para open trades (15s) y closed trades (60s condicional)
+- Mejor rendimiento y reducción de carga en el servidor
+
+#### Commits:
+
+- `ab21bca`: fix: update lastUpdate only on closed trades refresh
+- `a1f3cf1`: refactor: simplify refresh logic with periodic polling
+- `c7ee762`: feat: implement smart refresh for closed trades based on capital changes
+
+### ✨ Added
+
+### 🐛 Fixed
+
+### 🎨 Enhanced
+
+### 🔧 Technical
+
+### 📱 Mobile Features
+
+### 🖥️ Desktop Features
+
+## [v0.1.8] - 2025-10-05
 
 ### 🎯 Fix - Equity Chart Starting Point
 

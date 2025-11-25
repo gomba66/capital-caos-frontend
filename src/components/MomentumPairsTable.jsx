@@ -148,7 +148,7 @@ export default function MomentumPairsTable({
                       <TableCell>
                         {(() => {
                           const scanner = pair.scanner || "unknown";
-                          const scannerType = pair.scanner_type || "";
+                          const _scannerType = pair.scanner_type || "";
 
                           // Mapear scanners a labels simples
                           const scannerLabels = {

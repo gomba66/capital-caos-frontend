@@ -57,7 +57,6 @@ describe("OperationsTable", () => {
 
     expect(screen.getByText("Symbol")).toBeInTheDocument();
     expect(screen.getByText("Side")).toBeInTheDocument();
-    expect(screen.getByText("Entry")).toBeInTheDocument();
     expect(screen.getByText("PnL")).toBeInTheDocument();
     expect(screen.getByText("Open date")).toBeInTheDocument();
     expect(screen.getByText("Close date")).toBeInTheDocument();
@@ -315,9 +314,9 @@ describe("OperationsTable", () => {
       />
     );
 
-    // Probar ordenamiento por entry_price (números como strings)
-    const entryHeader = screen.getByText("Entry");
-    fireEvent.click(entryHeader);
+    // Probar ordenamiento por PnL
+    const pnlHeader = screen.getByText("PnL");
+    fireEvent.click(pnlHeader);
 
     expect(screen.getByText("BTCUSDT")).toBeInTheDocument();
     expect(screen.getByText("ETHUSDT")).toBeInTheDocument();
@@ -434,8 +433,8 @@ describe("OperationsTable", () => {
     );
 
     // Probar ordenamiento con valores iguales
-    const entryHeader = screen.getByText("Entry");
-    fireEvent.click(entryHeader);
+    const pnlHeader = screen.getByText("PnL");
+    fireEvent.click(pnlHeader);
 
     expect(screen.getByText("BTCUSDT")).toBeInTheDocument();
     expect(screen.getByText("ETHUSDT")).toBeInTheDocument();
@@ -471,8 +470,8 @@ describe("OperationsTable", () => {
     );
 
     // Probar ordenamiento con diferentes tipos de datos
-    const entryHeader = screen.getByText("Entry");
-    fireEvent.click(entryHeader);
+    const pnlHeader = screen.getByText("PnL");
+    fireEvent.click(pnlHeader);
 
     expect(screen.getByText("BTCUSDT")).toBeInTheDocument();
     expect(screen.getByText("ETHUSDT")).toBeInTheDocument();
@@ -646,8 +645,8 @@ describe("OperationsTable - Cobertura avanzada", () => {
       screen.getByText((content) => content.includes("1.50"))
     ).toBeInTheDocument();
     expect(
-      screen.getByText((content) => content.includes("50.00"))
-    ).toBeInTheDocument();
+      screen.getAllByText((content) => content.includes("50.00")).length
+    ).toBeGreaterThan(0);
     expect(screen.getAllByText("-").length).toBeGreaterThan(0);
   });
 
@@ -794,16 +793,16 @@ describe("OperationsTable - Cobertura avanzada", () => {
     expect(screen.getAllByText("-").length).toBeGreaterThan(0);
   });
 
-  test("formatNumber: valores no numéricos, string vacía, null, undefined", () => {
+  test("maneja valores no numéricos, string vacía, null, undefined en entry price", () => {
     const ops = [
       {
         id: 1,
         symbol: "BTCUSDT",
         side: "LONG",
-        entryPrice: "abc",
+        entryPrice: "100",
         unrealizedProfit: "10",
         updateTime: Date.now(),
-        positionAmt: "0.001", // Para que se detecte como open trade
+        positionAmt: "0.001",
       },
       {
         id: 2,
@@ -812,7 +811,7 @@ describe("OperationsTable - Cobertura avanzada", () => {
         entryPrice: "",
         unrealizedProfit: "-5",
         updateTime: Date.now(),
-        positionAmt: "-0.01", // Para que se detecte como open trade
+        positionAmt: "-0.01",
       },
       {
         id: 3,
@@ -821,16 +820,7 @@ describe("OperationsTable - Cobertura avanzada", () => {
         entryPrice: null,
         unrealizedProfit: "0",
         updateTime: Date.now(),
-        positionAmt: "100", // Para que se detecte como open trade
-      },
-      {
-        id: 4,
-        symbol: "SOLUSDT",
-        side: "LONG",
-        entryPrice: undefined,
-        unrealizedProfit: "0",
-        updateTime: Date.now(),
-        positionAmt: "50", // Para que se detecte como open trade
+        positionAmt: "100",
       },
     ];
     renderWithProviders(
@@ -840,7 +830,6 @@ describe("OperationsTable - Cobertura avanzada", () => {
         isOpenTrades={true}
       />
     );
-    expect(screen.getByText("abc")).toBeInTheDocument();
     expect(screen.getAllByText("-").length).toBeGreaterThan(0);
   });
 

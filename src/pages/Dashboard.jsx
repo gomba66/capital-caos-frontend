@@ -411,7 +411,7 @@ export default function Dashboard() {
             const numericPnl = Number(unrealizedPnl);
             if (!isNaN(numericPnl)) {
               const convertedPnl = convertFromUSDT(numericPnl, capitalCurrency);
-              const symbol = getCurrencySymbol(capitalCurrency);
+              const _symbol = getCurrencySymbol(capitalCurrency);
               displayValue =
                 numericPnl !== 0
                   ? `${convertedPnl > 0 ? "+" : ""}${formatCurrency(

@@ -1,5 +1,5 @@
 import axios from "axios";
-// eslint-disable-next-line import/no-unresolved
+// El archivo version-info.js se genera durante el build
 import {
   FRONTEND_VERSION as VERSION_FROM_FILE,
   FRONTEND_VERSION_DATE as DATE_FROM_FILE,
