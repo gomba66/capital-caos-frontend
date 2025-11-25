@@ -7,7 +7,7 @@ const ScannerInfo = ({ scannerInfo, compact = false }) => {
     return <span style={{ color: "#888" }}>-</span>;
   }
 
-  const { scanner, scanner_type, momentum_data } = scannerInfo;
+  const { scanner, scanner_type: _scanner_type, momentum_data } = scannerInfo;
 
   if (compact) {
     return (

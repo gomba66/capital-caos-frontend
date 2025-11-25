@@ -47,7 +47,7 @@ function formatDate(date, timeZone) {
   return dt.setZone(timeZone).toFormat("dd/MM/yy - h:mm:ss a");
 }
 
-function formatNumber(val, decimals = 4) {
+function _formatNumber(val, decimals = 4) {
   if (val === undefined || val === null || val === "") return "-";
   const num = Number(val);
   if (isNaN(num)) return val;
@@ -167,7 +167,7 @@ export default function OperationsTable({
   });
 
   // Fetch all symbol statistics for performance data
-  const { data: symbolStats, loading: statsLoading } = useSymbolStatistics();
+  const { data: symbolStats, loading: _statsLoading } = useSymbolStatistics();
 
   // Create a map for quick lookup of symbol stats
   const symbolStatsMap = React.useMemo(() => {

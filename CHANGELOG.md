@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+### 🧹 Corrección de Linting (2024-11-25)
+
+**Resolución de errores de ESLint**
+
+- Agregado prefijo `_` a variables extraídas del destructuring pero no usadas directamente
+- Variables afectadas: `scannerType`, `statsLoading`, `scanner_type`, `symbol`, `formatNumber`
+- Eliminado comentario `eslint-disable` que causaba error (regla `import/no-unresolved` no existe)
+- Quedan solo 5 warnings de `react-hooks/exhaustive-deps` (seguros de ignorar)
+
+---
+
 ### 🧪 Corrección de Tests (2024-11-25)
 
 **Actualización de tests para reflejar cambios en componentes**
