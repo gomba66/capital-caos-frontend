@@ -2,6 +2,35 @@
 
 ## [Unreleased]
 
+### 🔄 Smart Refresh para Closed Trades (2024-11-25)
+
+**Implementado sistema de refresco inteligente basado en cambios de capital**
+
+#### Problema anterior:
+
+- Polling constante cada 30 segundos sin importar actividad
+- Consumo innecesario de recursos y ancho de banda
+- Actualizaciones cuando no había cambios reales
+
+#### Solución implementada:
+
+- **Refresco condicional**: Solo actualiza cuando hay cambio en el capital total
+- **Polling periódico reducido**: Cada 60 segundos (reducido de 30s)
+- **Detección de cambios**: Compara capital actual vs último conocido
+- **Actualización inteligente**: Solo hace fetch si detecta trades nuevos
+
+#### Mejoras técnicas:
+
+- `lastUpdate` solo se actualiza en refrescos de closed trades (no en open)
+- Polling separado para open trades (15s) y closed trades (60s condicional)
+- Mejor rendimiento y reducción de carga en el servidor
+
+#### Commits:
+
+- `ab21bca`: fix: update lastUpdate only on closed trades refresh
+- `a1f3cf1`: refactor: simplify refresh logic with periodic polling
+- `c7ee762`: feat: implement smart refresh for closed trades based on capital changes
+
 ### ✨ Added
 
 ### 🐛 Fixed
@@ -15,7 +44,6 @@
 ### 🖥️ Desktop Features
 
 ## [v0.1.8] - 2025-10-05
-
 
 ### 🎯 Fix - Equity Chart Starting Point
 
