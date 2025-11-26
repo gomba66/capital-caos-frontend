@@ -44,7 +44,7 @@ export default function Sidebar() {
   const { setSidebarWidth } = useContext(SidebarContext);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
   const [backendVersion, setBackendVersion] = useState(null);
   const [selectedCurrency, setSelectedCurrency] = useState(() => {
     return localStorage.getItem("capitalCurrency") || "USDT";

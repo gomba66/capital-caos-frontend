@@ -141,12 +141,12 @@ describe("Dashboard", () => {
 
     // Esperar a que se carguen los datos
     await waitFor(() => {
-      expect(screen.getByText("Trading Dashboard")).toBeInTheDocument();
+      expect(screen.getByText("Simplified View")).toBeInTheDocument();
     });
 
     // Verificar que se muestran los componentes principales
-    expect(screen.getByText("Trading Dashboard")).toBeInTheDocument();
-    expect(screen.getByText("Total Trades")).toBeInTheDocument();
+    expect(screen.getByText("Simplified View")).toBeInTheDocument();
+    expect(screen.getByText("Total Capital")).toBeInTheDocument();
   });
 
   test("handles empty data", async () => {
@@ -202,10 +202,10 @@ describe("Dashboard", () => {
 
     // Esperar a que se carguen los datos
     await waitFor(() => {
-      expect(screen.getByText("Trading Dashboard")).toBeInTheDocument();
+      expect(screen.getByText("Simplified View")).toBeInTheDocument();
     });
 
     // Verificar que la página se renderiza sin la propiedad closed
-    expect(screen.getByText("Trading Dashboard")).toBeInTheDocument();
+    expect(screen.getByText("Simplified View")).toBeInTheDocument();
   });
 });

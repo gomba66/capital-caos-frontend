@@ -71,7 +71,7 @@ export default function Dashboard() {
   });
   const [simplifiedView, setSimplifiedView] = useState(() => {
     const saved = localStorage.getItem("simplifiedView");
-    return saved === "true";
+    return saved !== null ? saved === "true" : true;
   });
   // const localZone = DateTime.local().zoneName;
   const { timeZone } = useContext(TimeZoneContext);
@@ -204,19 +204,6 @@ export default function Dashboard() {
 
   return (
     <Box p={{ xs: 2, sm: 3, md: 4 }}>
-      <Typography
-        variant="h4"
-        gutterBottom
-        sx={{
-          color: "#2de2e6",
-          fontWeight: 700,
-          textShadow: "0 0 8px #2de2e6",
-          letterSpacing: 1,
-          fontSize: { xs: "1.5rem", sm: "2rem", md: "2.125rem" },
-        }}
-      >
-        Trading Dashboard
-      </Typography>
       <Box
         sx={{
           display: "flex",
@@ -927,6 +914,7 @@ export default function Dashboard() {
             timeZone={timeZone}
             currency={capitalCurrency}
             simplifiedView={simplifiedView}
+            height={simplifiedView ? 416 : 350}
           />
         </Grid>
 

@@ -66,10 +66,10 @@ function buildEquityDrawdownData(operations) {
     pnl: 0,
     symbol: "Starting Point",
   };
-  
+
   // Inicializar peak en 0 (el punto de inicio)
   peak = 0;
-  
+
   // Encontrar el equity máximo para determinar un capital base razonable
   // Esto nos ayuda a calcular el drawdown de forma significativa
   let maxEquity = 0;
@@ -79,10 +79,10 @@ function buildEquityDrawdownData(operations) {
       peak = maxEquity;
     }
   });
-  
+
   // Si nunca hubo ganancias (peak <= 0), usar un capital base de 100 para el cálculo del drawdown
   const capitalBase = peak > 0 ? peak : 100;
-  
+
   // Resetear para el cálculo real
   equity = 0;
   peak = 0;
@@ -96,7 +96,7 @@ function buildEquityDrawdownData(operations) {
     // Drawdown como porcentaje del capital base (peak histórico o 100)
     // Cuando equity < peak, el drawdown es negativo
     const drawdown = ((equity - peak) / capitalBase) * 100;
-    
+
     return {
       date: op.closed_at || op.closeTime,
       equity: Number(equity.toFixed(4)),
@@ -120,7 +120,15 @@ function formatDateLuxon(date, timeZone = "UTC") {
   return dt.setZone(timeZone).toFormat("dd/MM/yy - h:mm:ss a");
 }
 
-const axisStyle = { fill: "#fff", fontWeight: 600 };
+const getAxisStyle = (currency) => {
+  // Currencies with large values need smaller font
+  const needsSmallFont = ["COP", "CLP", "IDR", "KRW", "JPY"].includes(currency);
+  return {
+    fill: "#fff",
+    fontWeight: 600,
+    fontSize: needsSmallFont ? 13 : 14,
+  };
+};
 const tooltipStyle = {
   backgroundColor: "#23243a",
   border: "1px solid #2de2e6",
@@ -131,7 +139,7 @@ export default function EquityChart({
   operations,
   showDrawdown = true,
   timeZone = "UTC",
-  height = 320,
+  height = 416,
   simplifiedView = false,
   currency = "USDT",
 }) {
@@ -142,10 +150,27 @@ export default function EquityChart({
     start: 0,
     end: data.length - 1,
   });
-  const [selectedButton, setSelectedButton] = useState("all");
+  const [selectedButton, setSelectedButton] = useState("7d");
   const prevDataLengthRef = useRef(data.length);
   const chartContainerRef = useRef(null);
   const effectiveShowDrawdown = showDrawdown && showDrawdownState;
+  const hasInitialized = useRef(false);
+
+  // Aplicar filtro de 7d por default al montar
+  useEffect(() => {
+    if (!hasInitialized.current && data.length > 0 && selectedButton === "7d") {
+      const now = DateTime.now();
+      const cutoffDate = now.minus({ days: 7 });
+      const startIdx = data.findIndex(
+        (d) => DateTime.fromISO(d.date) >= cutoffDate
+      );
+      setVisibleRange({
+        start: startIdx >= 0 ? startIdx : 0,
+        end: data.length - 1,
+      });
+      hasInitialized.current = true;
+    }
+  }, [data.length, selectedButton]);
 
   // Mantener el rango visible cuando los datos se actualizan
   useEffect(() => {
@@ -407,18 +432,13 @@ export default function EquityChart({
               dataKey="date"
               tickFormatter={(date) => formatDateLuxon(date, timeZone)}
               minTickGap={20}
-              tick={axisStyle}
+              tick={getAxisStyle(currency)}
               axisLine={{ stroke: "#2de2e6" }}
             />
             <YAxis
               yAxisId="left"
-              label={{
-                value: "Equity",
-                angle: -90,
-                position: "insideLeft",
-                fill: "#fff",
-              }}
-              tick={axisStyle}
+              width={["COP", "CLP", "IDR", "KRW"].includes(currency) ? 85 : 70}
+              tick={getAxisStyle(currency)}
               axisLine={{ stroke: "#2de2e6" }}
               tickFormatter={(value) => {
                 const converted = convertFromUSDT(value, currency);
@@ -439,7 +459,7 @@ export default function EquityChart({
                   fill: "#fff",
                 }}
                 domain={["auto", 0]}
-                tick={axisStyle}
+                tick={getAxisStyle(currency)}
                 axisLine={{ stroke: "#ff2e63" }}
               />
             )}
