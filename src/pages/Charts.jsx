@@ -11,13 +11,14 @@ import WeeklyPerformanceChart from "../components/charts/WeeklyPerformanceChart"
 import MonthlyPerformanceChart from "../components/charts/MonthlyPerformanceChart";
 import WeeklyMonthlyPerformanceChart from "../components/charts/WeeklyMonthlyPerformanceChart";
 import SymbolPnLChart from "../components/charts/SymbolPnLChart";
-import { TimeZoneContext } from "../contexts/AppContexts";
+import { TimeZoneContext, CurrencyContext } from "../contexts/AppContexts";
 
 export default function Charts() {
   const [closedTrades, setClosedTrades] = useState([]);
   const [winrates, setWinrates] = useState(null);
   const [loading, setLoading] = useState(true);
   const { timeZone } = useContext(TimeZoneContext);
+  const { currency } = useContext(CurrencyContext);
 
   useEffect(() => {
     async function fetchOps() {
@@ -63,6 +64,7 @@ export default function Charts() {
         operations={closedTrades}
         showDrawdown={true}
         timeZone={timeZone}
+        currency={currency}
       />
 
       {/* 2. Métricas Clave (2x2 grid) */}

@@ -10,3 +10,8 @@ export const TimeZoneContext = React.createContext({
   timeZone: DateTime.local().zoneName,
   setTimeZone: () => {},
 });
+
+export const CurrencyContext = React.createContext({
+  currency: "USDT",
+  setCurrency: () => {},
+});

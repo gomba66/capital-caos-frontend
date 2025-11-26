@@ -36,7 +36,7 @@ import EquityChart from "../components/charts/EquityChart";
 import ProfitFactorChart from "../components/charts/ProfitFactorChart";
 import WinrateChart from "../components/charts/WinrateChart";
 import { DateTime } from "luxon";
-import { TimeZoneContext } from "../contexts/AppContexts";
+import { TimeZoneContext, CurrencyContext } from "../contexts/AppContexts";
 
 const statLabels = {
   total_pnl: "Total PnL",
@@ -66,15 +66,13 @@ export default function Dashboard() {
   const [dbTradeCount, setDbTradeCount] = useState(null);
   const [config, setConfig] = useState(null);
   const [totalCapital, setTotalCapital] = useState(1);
-  const [capitalCurrency, setCapitalCurrency] = useState(() => {
-    return localStorage.getItem("capitalCurrency") || "USDT";
-  });
   const [simplifiedView, setSimplifiedView] = useState(() => {
     const saved = localStorage.getItem("simplifiedView");
     return saved !== null ? saved === "true" : true;
   });
   // const localZone = DateTime.local().zoneName;
   const { timeZone } = useContext(TimeZoneContext);
+  const { currency: capitalCurrency, setCurrency: setCapitalCurrency } = useContext(CurrencyContext);
 
   // Fetch global (stats, closed, momentum)
   const fetchAll = async () => {
