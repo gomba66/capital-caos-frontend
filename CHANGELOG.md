@@ -4,6 +4,21 @@
 
 ### ✨ Added
 
+### 🐛 Fixed
+
+### 🎨 Enhanced
+
+### 🔧 Technical
+
+### 📱 Mobile Features
+
+### 🖥️ Desktop Features
+
+## [v0.1.12] - 2025-11-26
+
+
+### ✨ Added
+
 - **Equity Chart 1-Day Filter** - Added "1d" button to equity chart for viewing last 24 hours of trading activity
 
 ### 🐛 Fixed
