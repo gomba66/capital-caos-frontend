@@ -20,12 +20,14 @@
 
 ### 🐛 Fixed
 
+- **Equity Chart Currency Tooltip** - Fixed tooltip to respect selected currency (was always showing USDT values). Now correctly converts and formats values based on the currency selected in the dashboard (COP, USD, MXN, etc.)
 - **Equity Chart 7-Day Filter** - Fixed equity chart to actually display 7-day data when component mounts (was showing "all" data despite 7d button being selected)
 - **Y-Axis Labels for Large Currencies** - Fixed Y-axis labels being cut off for currencies with large values (COP, CLP, IDR, KRW) by increasing axis width from 70px to 85px and adjusting font size to 13px for better readability
 - **Simplified View Default** - Simplified view default works correctly for new users (existing users retain their localStorage preference)
 
 ### 🎨 Enhanced
 
+- **Global Currency Context** - Created CurrencyContext to synchronize currency selection across all components (Dashboard, Charts, etc.)
 - **Simplified View Default** - Simplified view is now enabled by default for better initial user experience
 - **Sidebar Collapsed by Default** - Sidebar is now collapsed by default for cleaner initial layout
 - **Remove Dashboard Title** - Removed redundant "Trading Dashboard" title to save vertical space
@@ -34,6 +36,7 @@
 
 ### 🔧 Technical
 
+- **Currency Context Implementation** - Added CurrencyContext in AppContexts.jsx with automatic localStorage synchronization
 - **Dashboard Test Updates** - Updated Dashboard tests to reflect removed "Trading Dashboard" title; tests now check for "Simplified View" and "Total Capital" instead
 
 ### 📱 Mobile Features
