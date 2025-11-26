@@ -476,13 +476,13 @@ export default function EquityChart({
               labelStyle={{ color: "#2de2e6", fontWeight: 700 }}
               itemStyle={{ color: "#fff" }}
               formatter={(value, name) => {
-                if (name === "equity") {
+                if (name === "Equity") {
                   const convertedValue = convertFromUSDT(
                     Number(value),
                     currency
                   );
                   return [formatCurrency(convertedValue, currency), "Equity"];
-                } else if (name === "drawdown") {
+                } else if (name === "drawdown" || name === "Drawdown (%)") {
                   return [`${Number(value).toFixed(2)}%`, "Drawdown (%)"];
                 }
                 return [value, name];
