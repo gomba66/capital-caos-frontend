@@ -12,6 +12,8 @@
 
 ### 🔧 Technical
 
+- **Charts Tests** - Fixed Charts.test.jsx to properly mock getStats and getSymbolStatistics API calls to prevent test failures
+
 ### 📱 Mobile Features
 
 ### 🖥️ Desktop Features

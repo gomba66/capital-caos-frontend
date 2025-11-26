@@ -4,11 +4,18 @@ import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { BrowserRouter } from "react-router-dom";
 import Charts from "../Charts";
 import { getOperations } from "../../api/operations";
+import { getStats } from "../../api/stats";
+import { getSymbolStatistics } from "../../api/stats";
 import { TimeZoneContext, SidebarContext } from "../../contexts/AppContexts";
 
 // Mock de las APIs
 vi.mock("../../api/operations", () => ({
   getOperations: vi.fn(),
+}));
+
+vi.mock("../../api/stats", () => ({
+  getStats: vi.fn(),
+  getSymbolStatistics: vi.fn(),
 }));
 
 const theme = createTheme();
@@ -72,6 +79,8 @@ describe("Charts", () => {
   test("renders charts page with data after loading", async () => {
     // Mock API para que retorne datos
     getOperations.mockResolvedValue(mockOperations);
+    getStats.mockResolvedValue({});
+    getSymbolStatistics.mockResolvedValue([]);
 
     act(() => {
       renderWithProviders(<Charts />);
@@ -89,6 +98,8 @@ describe("Charts", () => {
   test("handles empty data", async () => {
     // Mock API para que retorne datos vacíos
     getOperations.mockResolvedValue({ closed: [] });
+    getStats.mockResolvedValue({});
+    getSymbolStatistics.mockResolvedValue([]);
 
     act(() => {
       renderWithProviders(<Charts />);
