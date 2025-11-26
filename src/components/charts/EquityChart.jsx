@@ -256,6 +256,50 @@ export default function EquityChart({
             minWidth: "45px",
             padding: "4px 8px",
             fontSize: "0.875rem",
+            color: selectedButton === "1d" ? "#2de2e6" : "#888",
+            borderColor: selectedButton === "1d" ? "#2de2e6" : "#444",
+            border: "1px solid",
+            backgroundColor:
+              selectedButton === "1d"
+                ? "rgba(45, 226, 230, 0.08)"
+                : "transparent",
+            cursor: "pointer",
+            borderRadius: "4px",
+            fontFamily: "inherit",
+            transition: "all 0.2s",
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.backgroundColor = "rgba(45, 226, 230, 0.08)";
+            e.target.style.color = "#2de2e6";
+            e.target.style.borderColor = "#2de2e6";
+          }}
+          onMouseLeave={(e) => {
+            if (selectedButton !== "1d") {
+              e.target.style.backgroundColor = "transparent";
+              e.target.style.color = "#888";
+              e.target.style.borderColor = "#444";
+            }
+          }}
+          onClick={() => {
+            setSelectedButton("1d");
+            const now = DateTime.now();
+            const cutoffDate = now.minus({ days: 1 });
+            const startIdx = data.findIndex(
+              (d) => DateTime.fromISO(d.date) >= cutoffDate
+            );
+            setVisibleRange({
+              start: startIdx >= 0 ? startIdx : 0,
+              end: data.length - 1,
+            });
+          }}
+        >
+          1d
+        </button>
+        <button
+          style={{
+            minWidth: "45px",
+            padding: "4px 8px",
+            fontSize: "0.875rem",
             color: selectedButton === "7d" ? "#2de2e6" : "#888",
             borderColor: selectedButton === "7d" ? "#2de2e6" : "#444",
             border: "1px solid",
