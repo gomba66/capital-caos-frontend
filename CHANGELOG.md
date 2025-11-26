@@ -4,6 +4,8 @@
 
 ### ✨ Added
 
+- **Equity Chart 1-Day Filter** - Added "1d" button to equity chart for viewing last 24 hours of trading activity
+
 ### 🐛 Fixed
 
 ### 🎨 Enhanced
