@@ -14,10 +14,36 @@
 
 ### 🖥️ Desktop Features
 
+## [v0.1.11] - 2025-11-26
+
+
+### ✨ Added
+
+### 🐛 Fixed
+
+- **Equity Chart 7-Day Filter** - Fixed equity chart to actually display 7-day data when component mounts (was showing "all" data despite 7d button being selected)
+- **Y-Axis Labels for Large Currencies** - Fixed Y-axis labels being cut off for currencies with large values (COP, CLP, IDR, KRW) by increasing axis width from 70px to 85px and adjusting font size to 13px for better readability
+- **Simplified View Default** - Simplified view default works correctly for new users (existing users retain their localStorage preference)
+
+### 🎨 Enhanced
+
+- **Simplified View Default** - Simplified view is now enabled by default for better initial user experience
+- **Sidebar Collapsed by Default** - Sidebar is now collapsed by default for cleaner initial layout
+- **Remove Dashboard Title** - Removed redundant "Trading Dashboard" title to save vertical space
+- **Equity Chart Improvements** - Defaults to 7-day view instead of "all time" for more focused analysis; height adjusted for optimal viewing (416px simplified view, 350px full view); removed "Equity" label from Y-axis for cleaner appearance; increased axis font size to 14px (13px for large-value currencies)
+- **Win Rate Always Visible** - Win Rate column is now always visible regardless of simplified/detailed view mode
+
+### 🔧 Technical
+
+- **Dashboard Test Updates** - Updated Dashboard tests to reflect removed "Trading Dashboard" title; tests now check for "Simplified View" and "Total Capital" instead
+
+### 📱 Mobile Features
+
+### 🖥️ Desktop Features
+
 ## [v0.1.10] - 2025-11-25
 
-
-### 🧹 Corrección de Linting (2024-11-25)
+### 🧹 Corrección de Linting (2025-11-25)
 
 **Resolución de errores de ESLint**
 
@@ -28,7 +54,7 @@
 
 ---
 
-### 🧪 Corrección de Tests (2024-11-25)
+### 🧪 Corrección de Tests (2025-11-25)
 
 **Actualización de tests para reflejar cambios en componentes**
 
@@ -40,7 +66,7 @@
 
 ---
 
-### 🔄 Smart Refresh para Closed Trades (2024-11-25)
+### 🔄 Smart Refresh para Closed Trades (2025-11-25)
 
 **Implementado sistema de refresco inteligente basado en cambios de capital**
 

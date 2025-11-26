@@ -562,16 +562,14 @@ export default function OperationsTable({
                 </TableCell>
               )}
               {isOpenTrades && <TableCell>TP Target</TableCell>}
-              {!simplifiedView && (
-                <TableCell
-                  style={{ cursor: "pointer" }}
-                  onClick={() => handleSort("winRate")}
-                >
-                  <Tooltip title="Historical win rate percentage for this symbol">
-                    <span>Win Rate</span>
-                  </Tooltip>
-                </TableCell>
-              )}
+              <TableCell
+                style={{ cursor: "pointer" }}
+                onClick={() => handleSort("winRate")}
+              >
+                <Tooltip title="Historical win rate percentage for this symbol">
+                  <span>Win Rate</span>
+                </Tooltip>
+              </TableCell>
 
               <TableCell
                 onClick={() =>
@@ -699,60 +697,58 @@ export default function OperationsTable({
                         )}
                       </TableCell>
                     )}
-                    {!simplifiedView && (
-                      <TableCell>
-                        {symbolStatsMap[op.symbol] ? (
-                          (() => {
-                            const stats = symbolStatsMap[op.symbol];
-                            const isLong = op.side === "LONG";
-                            const sideCount = isLong
-                              ? stats.long_count
-                              : stats.short_count;
+                    <TableCell>
+                      {symbolStatsMap[op.symbol] ? (
+                        (() => {
+                          const stats = symbolStatsMap[op.symbol];
+                          const isLong = op.side === "LONG";
+                          const sideCount = isLong
+                            ? stats.long_count
+                            : stats.short_count;
 
-                            // Calculate win rate for this specific direction using exact data
-                            let displayWinRate = stats.win_rate;
-                            let displayTrades = `${stats.total_trades}`;
+                          // Calculate win rate for this specific direction using exact data
+                          let displayWinRate = stats.win_rate;
+                          let displayTrades = `${stats.total_trades}`;
 
-                            if (sideCount > 0) {
-                              // Use exact win rate for this direction from backend
-                              const sideWinRate = isLong
-                                ? stats.long_win_rate
-                                : stats.short_win_rate;
-                              displayWinRate = sideWinRate;
-                              displayTrades = `${sideCount} ${
-                                isLong ? "L" : "S"
-                              }`;
-                            }
+                          if (sideCount > 0) {
+                            // Use exact win rate for this direction from backend
+                            const sideWinRate = isLong
+                              ? stats.long_win_rate
+                              : stats.short_win_rate;
+                            displayWinRate = sideWinRate;
+                            displayTrades = `${sideCount} ${
+                              isLong ? "L" : "S"
+                            }`;
+                          }
 
-                            return (
-                              <Typography
-                                variant="body2"
-                                sx={{
-                                  fontFamily: "monospace",
-                                  fontWeight: 600,
-                                  color:
-                                    displayWinRate >= 50
-                                      ? "#2de2a6"
-                                      : displayWinRate >= 30
-                                      ? "#ffd700"
-                                      : "#ff2e63",
-                                }}
-                                title={`Based on ${displayTrades} trades`}
-                              >
-                                {displayWinRate.toFixed(1)}%
-                              </Typography>
-                            );
-                          })()
-                        ) : (
-                          <Typography
-                            variant="body2"
-                            sx={{ color: "text.disabled" }}
-                          >
-                            -
-                          </Typography>
-                        )}
-                      </TableCell>
-                    )}
+                          return (
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                fontFamily: "monospace",
+                                fontWeight: 600,
+                                color:
+                                  displayWinRate >= 50
+                                    ? "#2de2a6"
+                                    : displayWinRate >= 30
+                                    ? "#ffd700"
+                                    : "#ff2e63",
+                              }}
+                              title={`Based on ${displayTrades} trades`}
+                            >
+                              {displayWinRate.toFixed(1)}%
+                            </Typography>
+                          );
+                        })()
+                      ) : (
+                        <Typography
+                          variant="body2"
+                          sx={{ color: "text.disabled" }}
+                        >
+                          -
+                        </Typography>
+                      )}
+                    </TableCell>
 
                     <TableCell>
                       {isOpenTrades
