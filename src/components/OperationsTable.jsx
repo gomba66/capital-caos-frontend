@@ -206,8 +206,23 @@ export default function OperationsTable({
       operations[0].status === "open");
 
   // Estado para ordenamiento
-  const [orderBy, setOrderBy] = useState(null);
-  const [order, setOrder] = useState("asc");
+  // Para open trades, ordenar por defecto por Open Time (updateTime) descendente (más recientes primero)
+  const [orderBy, setOrderBy] = useState(() => {
+    const isOpen =
+      operations &&
+      operations.length > 0 &&
+      (operations[0].positionAmt !== undefined ||
+        operations[0].status === "open");
+    return isOpen ? "updateTime" : null;
+  });
+  const [order, setOrder] = useState(() => {
+    const isOpen =
+      operations &&
+      operations.length > 0 &&
+      (operations[0].positionAmt !== undefined ||
+        operations[0].status === "open");
+    return isOpen ? "desc" : "asc";
+  });
 
   // Función para navegar al gráfico de trading
   const handleSymbolClick = (symbol) => {
@@ -236,6 +251,25 @@ export default function OperationsTable({
         bVal = isOpenTrades
           ? Number(b.unrealizedProfit || b.unRealizedProfit)
           : Number(b.pnl);
+      }
+      // Si es updateTime o timestamp, convertir a número (timestamp en ms)
+      if (col === "updateTime" || col === "timestamp" || col === "closeTime") {
+        if (typeof aVal === "string") {
+          const parsed = Date.parse(aVal);
+          aVal = isNaN(parsed) ? 0 : parsed;
+        } else if (typeof aVal === "number") {
+          // Ya es un timestamp
+        } else {
+          aVal = 0;
+        }
+        if (typeof bVal === "string") {
+          const parsed = Date.parse(bVal);
+          bVal = isNaN(parsed) ? 0 : parsed;
+        } else if (typeof bVal === "number") {
+          // Ya es un timestamp
+        } else {
+          bVal = 0;
+        }
       }
       // Si es winRate, obtener del symbolStatsMap
       if (col === "winRate") {

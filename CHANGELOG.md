@@ -14,8 +14,26 @@
 
 ### 🖥️ Desktop Features
 
-## [v0.1.12] - 2025-11-26
+## [v0.1.13] - 2025-11-28
 
+
+### ✨ Added
+
+### 🐛 Fixed
+
+- **RiskLevelsInfo unused import** - Eliminada importación no utilizada de useState
+
+### 🎨 Enhanced
+
+- **Open Trades Default Sorting** - La tabla de open trades ahora se ordena automáticamente por Open Time (más recientes primero) por defecto para facilitar la visualización de los trades más nuevos
+
+### 🔧 Technical
+
+### 📱 Mobile Features
+
+### 🖥️ Desktop Features
+
+## [v0.1.12] - 2025-11-26
 
 ### ✨ Added
 
