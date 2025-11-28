@@ -6,6 +6,21 @@
 
 ### 🐛 Fixed
 
+### 🎨 Enhanced
+
+### 🔧 Technical
+
+### 📱 Mobile Features
+
+### 🖥️ Desktop Features
+
+## [v0.1.13] - 2025-11-28
+
+
+### ✨ Added
+
+### 🐛 Fixed
+
 - **RiskLevelsInfo unused import** - Eliminada importación no utilizada de useState
 
 ### 🎨 Enhanced
@@ -19,7 +34,6 @@
 ### 🖥️ Desktop Features
 
 ## [v0.1.12] - 2025-11-26
-
 
 ### ✨ Added
 
