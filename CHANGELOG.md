@@ -6,6 +6,8 @@
 
 ### 🐛 Fixed
 
+- **RiskLevelsInfo unused import** - Eliminada importación no utilizada de useState
+
 ### 🎨 Enhanced
 
 - **Open Trades Default Sorting** - La tabla de open trades ahora se ordena automáticamente por Open Time (más recientes primero) por defecto para facilitar la visualización de los trades más nuevos
