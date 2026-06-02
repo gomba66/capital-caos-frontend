@@ -66,6 +66,13 @@ export default function Dashboard() {
   const [dbTradeCount, setDbTradeCount] = useState(null);
   const [config, setConfig] = useState(null);
   const [totalCapital, setTotalCapital] = useState(1);
+<<<<<<< Updated upstream
+=======
+  const [brokerMode, setBrokerMode] = useState("real");
+  const [capitalCurrency, setCapitalCurrency] = useState(() => {
+    return localStorage.getItem("capitalCurrency") || "USDT";
+  });
+>>>>>>> Stashed changes
   const [simplifiedView, setSimplifiedView] = useState(() => {
     const saved = localStorage.getItem("simplifiedView");
     return saved !== null ? saved === "true" : true;
@@ -99,6 +106,12 @@ export default function Dashboard() {
     setDbTradeCount(configData?.database?.total || null);
     setConfig(configData);
     setTotalCapital(capitalUsdt);
+    const modeFromApi =
+      configData?.broker_mode ||
+      openData?.broker_mode ||
+      statsData?.broker_mode ||
+      "real";
+    setBrokerMode(String(modeFromApi).toLowerCase());
     const selectedCurrency = localStorage.getItem("capitalCurrency") || "USDT";
     setCapitalCurrency(selectedCurrency);
     setLastUpdate(new Date());
@@ -151,6 +164,9 @@ export default function Dashboard() {
       setDbTradeCount(configData?.database?.total || null);
       setConfig(configData);
       setTotalCapital(capitalUsdt);
+      const modeFromApi =
+        configData?.broker_mode || openData?.broker_mode || brokerMode || "real";
+      setBrokerMode(String(modeFromApi).toLowerCase());
     };
 
     const id = setInterval(fetchOpen, 10000);
@@ -173,6 +189,9 @@ export default function Dashboard() {
 
       setStats(statsData);
       setClosedTrades(opsData?.closed || []);
+      if (statsData?.broker_mode) {
+        setBrokerMode(String(statsData.broker_mode).toLowerCase());
+      }
       setLastUpdate(new Date());
     };
 
@@ -202,6 +221,50 @@ export default function Dashboard() {
 
   return (
     <Box p={{ xs: 2, sm: 3, md: 4 }}>
+<<<<<<< Updated upstream
+=======
+      <Typography
+        variant="h4"
+        gutterBottom
+        sx={{
+          color: "#2de2e6",
+          fontWeight: 700,
+          textShadow: "0 0 8px #2de2e6",
+          letterSpacing: 1,
+          fontSize: { xs: "1.5rem", sm: "2rem", md: "2.125rem" },
+        }}
+      >
+        Trading Dashboard
+      </Typography>
+      <Box sx={{ mb: 2 }}>
+        <Typography
+          variant="body2"
+          sx={{
+            display: "inline-block",
+            px: 1.2,
+            py: 0.4,
+            borderRadius: 1,
+            fontWeight: 700,
+            letterSpacing: 0.6,
+            border:
+              brokerMode === "paper"
+                ? "1px solid rgba(255, 193, 7, 0.8)"
+                : "1px solid rgba(45, 226, 230, 0.8)",
+            background:
+              brokerMode === "paper"
+                ? "rgba(255, 193, 7, 0.14)"
+                : "rgba(45, 226, 230, 0.14)",
+            color: brokerMode === "paper" ? "#ffd166" : "#2de2e6",
+            textShadow:
+              brokerMode === "paper"
+                ? "0 0 8px rgba(255, 209, 102, 0.65)"
+                : "0 0 8px rgba(45, 226, 230, 0.65)",
+          }}
+        >
+          Broker Mode: {brokerMode === "paper" ? "PAPER" : "REAL"}
+        </Typography>
+      </Box>
+>>>>>>> Stashed changes
       <Box
         sx={{
           display: "flex",
