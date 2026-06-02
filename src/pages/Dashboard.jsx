@@ -66,20 +66,18 @@ export default function Dashboard() {
   const [dbTradeCount, setDbTradeCount] = useState(null);
   const [config, setConfig] = useState(null);
   const [totalCapital, setTotalCapital] = useState(1);
-<<<<<<< Updated upstream
-=======
   const [brokerMode, setBrokerMode] = useState("real");
   const [capitalCurrency, setCapitalCurrency] = useState(() => {
     return localStorage.getItem("capitalCurrency") || "USDT";
   });
->>>>>>> Stashed changes
   const [simplifiedView, setSimplifiedView] = useState(() => {
     const saved = localStorage.getItem("simplifiedView");
     return saved !== null ? saved === "true" : true;
   });
   // const localZone = DateTime.local().zoneName;
   const { timeZone } = useContext(TimeZoneContext);
-  const { currency: capitalCurrency, setCurrency: setCapitalCurrency } = useContext(CurrencyContext);
+  const { currency: capitalCurrency, setCurrency: setCapitalCurrency } =
+    useContext(CurrencyContext);
 
   // Fetch global (stats, closed, momentum)
   const fetchAll = async () => {
@@ -165,7 +163,10 @@ export default function Dashboard() {
       setConfig(configData);
       setTotalCapital(capitalUsdt);
       const modeFromApi =
-        configData?.broker_mode || openData?.broker_mode || brokerMode || "real";
+        configData?.broker_mode ||
+        openData?.broker_mode ||
+        brokerMode ||
+        "real";
       setBrokerMode(String(modeFromApi).toLowerCase());
     };
 
@@ -221,8 +222,6 @@ export default function Dashboard() {
 
   return (
     <Box p={{ xs: 2, sm: 3, md: 4 }}>
-<<<<<<< Updated upstream
-=======
       <Typography
         variant="h4"
         gutterBottom
@@ -264,7 +263,6 @@ export default function Dashboard() {
           Broker Mode: {brokerMode === "paper" ? "PAPER" : "REAL"}
         </Typography>
       </Box>
->>>>>>> Stashed changes
       <Box
         sx={{
           display: "flex",
@@ -435,7 +433,7 @@ export default function Dashboard() {
                 {totalCapital !== null
                   ? formatCurrency(
                       convertFromUSDT(totalCapital, capitalCurrency),
-                      capitalCurrency
+                      capitalCurrency,
                     )
                   : formatCurrency(0, "USDT")}
               </Typography>
@@ -464,15 +462,15 @@ export default function Dashboard() {
                 numericPnl !== 0
                   ? `${convertedPnl > 0 ? "+" : ""}${formatCurrency(
                       convertedPnl,
-                      capitalCurrency
+                      capitalCurrency,
                     )}`
                   : formatCurrency(0, capitalCurrency);
               valueColor =
                 numericPnl > 0
                   ? "#27ff7e"
                   : numericPnl < 0
-                  ? "#ff2e63"
-                  : "#fff";
+                    ? "#ff2e63"
+                    : "#fff";
             } else {
               displayValue = formatCurrency(0, capitalCurrency);
               valueColor = "#fff";
@@ -486,7 +484,7 @@ export default function Dashboard() {
               textShadow = `0 0 12px ${valueColor}`;
               displayValue = `${convertedPnl > 0 ? "+" : ""}${formatCurrency(
                 convertedPnl,
-                capitalCurrency
+                capitalCurrency,
               )}`;
             } else {
               displayValue = "-";
@@ -752,9 +750,9 @@ export default function Dashboard() {
                     ? formatCurrency(
                         convertFromUSDT(
                           Number(stats.average_pnl),
-                          capitalCurrency
+                          capitalCurrency,
                         ),
-                        capitalCurrency
+                        capitalCurrency,
                       )
                     : formatCurrency(0, capitalCurrency)}
                 </Typography>
