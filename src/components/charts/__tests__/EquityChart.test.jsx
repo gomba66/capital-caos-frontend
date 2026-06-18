@@ -195,4 +195,36 @@ describe("EquityChart", () => {
       document.querySelector(".recharts-responsive-container")
     ).toBeInTheDocument();
   });
+
+  test("shows 3d button when history covers at least 3 days", () => {
+    const operationsWithFourDays = [
+      {
+        closed_at: "2024-01-01T10:00:00Z",
+        pnl: 10,
+        symbol: "BTCUSDT",
+      },
+      {
+        closed_at: "2024-01-05T10:00:00Z",
+        pnl: 20,
+        symbol: "ETHUSDT",
+      },
+    ];
+
+    renderWithTheme(<EquityChart operations={operationsWithFourDays} />);
+
+    expect(screen.getByRole("button", { name: "3d" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "1d" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "All" })).toBeInTheDocument();
+  });
+
+  test("hides ranges that exceed available history", () => {
+    renderWithTheme(<EquityChart operations={mockOperations} />);
+
+    expect(screen.getByRole("button", { name: "1d" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "3d" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "7d" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "30d" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "90d" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "All" })).toBeInTheDocument();
+  });
 });

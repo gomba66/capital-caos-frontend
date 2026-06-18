@@ -9,6 +9,7 @@
 - **RiskLevelsInfo unused import** - Eliminada importación no utilizada de useState
 
 ### 🎨 Enhanced
+- **Equity chart dynamic time-range buttons: added 3d and hide ranges without enough historical data**
 
 - **Open Trades Default Sorting** - La tabla de open trades ahora se ordena automáticamente por Open Time (más recientes primero) por defecto para facilitar la visualización de los trades más nuevos
 
