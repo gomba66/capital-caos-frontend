@@ -1,5 +1,5 @@
 // test comment
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import {
   convertFromUSDT,
   formatCurrency,
@@ -135,6 +135,15 @@ const tooltipStyle = {
   color: "#fff",
 };
 
+const RANGE_OPTIONS = [
+  { id: "1d", label: "1d", days: 1 },
+  { id: "3d", label: "3d", days: 3 },
+  { id: "7d", label: "7d", days: 7 },
+  { id: "30d", label: "30d", days: 30 },
+  { id: "90d", label: "90d", days: 90 },
+  { id: "all", label: "All", days: null },
+];
+
 export default function EquityChart({
   operations,
   showDrawdown = true,
@@ -154,22 +163,83 @@ export default function EquityChart({
   const prevDataLengthRef = useRef(data.length);
   const chartContainerRef = useRef(null);
   const effectiveShowDrawdown = showDrawdown && showDrawdownState;
-  const hasInitialized = useRef(false);
-
-  // Aplicar filtro de 7d por default al montar
-  useEffect(() => {
-    if (!hasInitialized.current && data.length > 0 && selectedButton === "7d") {
-      const now = DateTime.now();
-      const cutoffDate = now.minus({ days: 7 });
-      const startIdx = data.findIndex(
-        (d) => DateTime.fromISO(d.date) >= cutoffDate
-      );
-      setVisibleRange({
-        start: startIdx >= 0 ? startIdx : 0,
-        end: data.length - 1,
-      });
-      hasInitialized.current = true;
+  const availableRangeOptions = useMemo(() => {
+    if (data.length < 2) {
+      return RANGE_OPTIONS.filter((option) => option.id === "all");
     }
+
+    const firstDate = DateTime.fromISO(data[0]?.date || "");
+    const lastDate = DateTime.fromISO(data[data.length - 1]?.date || "");
+
+    if (!firstDate.isValid || !lastDate.isValid) {
+      return RANGE_OPTIONS.filter((option) => option.id === "all");
+    }
+
+    const coverageDays = lastDate.diff(firstDate, "days").days;
+
+    return RANGE_OPTIONS.filter(
+      (option) => option.days === null || coverageDays >= option.days
+    );
+  }, [data]);
+
+  const applyRangeSelection = (rangeId) => {
+    setSelectedButton(rangeId);
+
+    if (rangeId === "all") {
+      setVisibleRange({ start: 0, end: data.length - 1 });
+      return;
+    }
+
+    const selectedRange = RANGE_OPTIONS.find((option) => option.id === rangeId);
+    if (!selectedRange?.days) {
+      return;
+    }
+
+    const cutoffDate = DateTime.now().minus({ days: selectedRange.days });
+    const startIdx = data.findIndex((d) => DateTime.fromISO(d.date) >= cutoffDate);
+    setVisibleRange({
+      start: startIdx >= 0 ? startIdx : 0,
+      end: data.length - 1,
+    });
+  };
+
+  // Si el rango seleccionado deja de estar disponible, usar un fallback válido.
+  useEffect(() => {
+    if (availableRangeOptions.some((option) => option.id === selectedButton)) {
+      return;
+    }
+
+    const preferredOrder = ["7d", "3d", "1d", "all"];
+    const fallbackSelection =
+      preferredOrder.find((id) =>
+        availableRangeOptions.some((option) => option.id === id)
+      ) || "all";
+
+    setSelectedButton(fallbackSelection);
+  }, [availableRangeOptions, selectedButton]);
+
+  // Aplicar el rango seleccionado cuando cambia la selección o llegan nuevos datos.
+  useEffect(() => {
+    if (!data.length) {
+      return;
+    }
+
+    if (selectedButton === "all") {
+      setVisibleRange({ start: 0, end: data.length - 1 });
+      return;
+    }
+
+    const selectedRange = RANGE_OPTIONS.find((option) => option.id === selectedButton);
+    if (!selectedRange?.days) {
+      return;
+    }
+
+    const cutoffDate = DateTime.now().minus({ days: selectedRange.days });
+    const startIdx = data.findIndex((d) => DateTime.fromISO(d.date) >= cutoffDate);
+    setVisibleRange({
+      start: startIdx >= 0 ? startIdx : 0,
+      end: data.length - 1,
+    });
   }, [data.length, selectedButton]);
 
   // Mantener el rango visible cuando los datos se actualizan
@@ -251,218 +321,43 @@ export default function EquityChart({
 
       {/* Controles de zoom */}
       <Box sx={{ mb: 2, display: "flex", gap: 0.5 }}>
-        <button
-          style={{
-            minWidth: "45px",
-            padding: "4px 8px",
-            fontSize: "0.875rem",
-            color: selectedButton === "1d" ? "#2de2e6" : "#888",
-            borderColor: selectedButton === "1d" ? "#2de2e6" : "#444",
-            border: "1px solid",
-            backgroundColor:
-              selectedButton === "1d"
-                ? "rgba(45, 226, 230, 0.08)"
-                : "transparent",
-            cursor: "pointer",
-            borderRadius: "4px",
-            fontFamily: "inherit",
-            transition: "all 0.2s",
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.backgroundColor = "rgba(45, 226, 230, 0.08)";
-            e.target.style.color = "#2de2e6";
-            e.target.style.borderColor = "#2de2e6";
-          }}
-          onMouseLeave={(e) => {
-            if (selectedButton !== "1d") {
-              e.target.style.backgroundColor = "transparent";
-              e.target.style.color = "#888";
-              e.target.style.borderColor = "#444";
-            }
-          }}
-          onClick={() => {
-            setSelectedButton("1d");
-            const now = DateTime.now();
-            const cutoffDate = now.minus({ days: 1 });
-            const startIdx = data.findIndex(
-              (d) => DateTime.fromISO(d.date) >= cutoffDate
-            );
-            setVisibleRange({
-              start: startIdx >= 0 ? startIdx : 0,
-              end: data.length - 1,
-            });
-          }}
-        >
-          1d
-        </button>
-        <button
-          style={{
-            minWidth: "45px",
-            padding: "4px 8px",
-            fontSize: "0.875rem",
-            color: selectedButton === "7d" ? "#2de2e6" : "#888",
-            borderColor: selectedButton === "7d" ? "#2de2e6" : "#444",
-            border: "1px solid",
-            backgroundColor:
-              selectedButton === "7d"
-                ? "rgba(45, 226, 230, 0.08)"
-                : "transparent",
-            cursor: "pointer",
-            borderRadius: "4px",
-            fontFamily: "inherit",
-            transition: "all 0.2s",
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.backgroundColor = "rgba(45, 226, 230, 0.08)";
-            e.target.style.color = "#2de2e6";
-            e.target.style.borderColor = "#2de2e6";
-          }}
-          onMouseLeave={(e) => {
-            if (selectedButton !== "7d") {
-              e.target.style.backgroundColor = "transparent";
-              e.target.style.color = "#888";
-              e.target.style.borderColor = "#444";
-            }
-          }}
-          onClick={() => {
-            setSelectedButton("7d");
-            const now = DateTime.now();
-            const cutoffDate = now.minus({ days: 7 });
-            const startIdx = data.findIndex(
-              (d) => DateTime.fromISO(d.date) >= cutoffDate
-            );
-            setVisibleRange({
-              start: startIdx >= 0 ? startIdx : 0,
-              end: data.length - 1,
-            });
-          }}
-        >
-          7d
-        </button>
-        <button
-          style={{
-            minWidth: "45px",
-            padding: "4px 8px",
-            fontSize: "0.875rem",
-            color: selectedButton === "30d" ? "#2de2e6" : "#888",
-            borderColor: selectedButton === "30d" ? "#2de2e6" : "#444",
-            border: "1px solid",
-            backgroundColor:
-              selectedButton === "30d"
-                ? "rgba(45, 226, 230, 0.08)"
-                : "transparent",
-            cursor: "pointer",
-            borderRadius: "4px",
-            fontFamily: "inherit",
-            transition: "all 0.2s",
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.backgroundColor = "rgba(45, 226, 230, 0.08)";
-            e.target.style.color = "#2de2e6";
-            e.target.style.borderColor = "#2de2e6";
-          }}
-          onMouseLeave={(e) => {
-            if (selectedButton !== "30d") {
-              e.target.style.backgroundColor = "transparent";
-              e.target.style.color = "#888";
-              e.target.style.borderColor = "#444";
-            }
-          }}
-          onClick={() => {
-            setSelectedButton("30d");
-            const now = DateTime.now();
-            const cutoffDate = now.minus({ days: 30 });
-            const startIdx = data.findIndex(
-              (d) => DateTime.fromISO(d.date) >= cutoffDate
-            );
-            setVisibleRange({
-              start: startIdx >= 0 ? startIdx : 0,
-              end: data.length - 1,
-            });
-          }}
-        >
-          30d
-        </button>
-        <button
-          style={{
-            minWidth: "45px",
-            padding: "4px 8px",
-            fontSize: "0.875rem",
-            color: selectedButton === "90d" ? "#2de2e6" : "#888",
-            borderColor: selectedButton === "90d" ? "#2de2e6" : "#444",
-            border: "1px solid",
-            backgroundColor:
-              selectedButton === "90d"
-                ? "rgba(45, 226, 230, 0.08)"
-                : "transparent",
-            cursor: "pointer",
-            borderRadius: "4px",
-            fontFamily: "inherit",
-            transition: "all 0.2s",
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.backgroundColor = "rgba(45, 226, 230, 0.08)";
-            e.target.style.color = "#2de2e6";
-            e.target.style.borderColor = "#2de2e6";
-          }}
-          onMouseLeave={(e) => {
-            if (selectedButton !== "90d") {
-              e.target.style.backgroundColor = "transparent";
-              e.target.style.color = "#888";
-              e.target.style.borderColor = "#444";
-            }
-          }}
-          onClick={() => {
-            setSelectedButton("90d");
-            const now = DateTime.now();
-            const cutoffDate = now.minus({ days: 90 });
-            const startIdx = data.findIndex(
-              (d) => DateTime.fromISO(d.date) >= cutoffDate
-            );
-            setVisibleRange({
-              start: startIdx >= 0 ? startIdx : 0,
-              end: data.length - 1,
-            });
-          }}
-        >
-          90d
-        </button>
-        <button
-          style={{
-            minWidth: "45px",
-            padding: "4px 8px",
-            fontSize: "0.875rem",
-            color: selectedButton === "all" ? "#2de2e6" : "#888",
-            borderColor: selectedButton === "all" ? "#2de2e6" : "#444",
-            border: "1px solid",
-            backgroundColor:
-              selectedButton === "all"
-                ? "rgba(45, 226, 230, 0.08)"
-                : "transparent",
-            cursor: "pointer",
-            borderRadius: "4px",
-            fontFamily: "inherit",
-            transition: "all 0.2s",
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.backgroundColor = "rgba(45, 226, 230, 0.08)";
-            e.target.style.color = "#2de2e6";
-            e.target.style.borderColor = "#2de2e6";
-          }}
-          onMouseLeave={(e) => {
-            if (selectedButton !== "all") {
-              e.target.style.backgroundColor = "transparent";
-              e.target.style.color = "#888";
-              e.target.style.borderColor = "#444";
-            }
-          }}
-          onClick={() => {
-            setSelectedButton("all");
-            setVisibleRange({ start: 0, end: data.length - 1 });
-          }}
-        >
-          All
-        </button>
+        {availableRangeOptions.map((option) => (
+          <button
+            key={option.id}
+            style={{
+              minWidth: "45px",
+              padding: "4px 8px",
+              fontSize: "0.875rem",
+              color: selectedButton === option.id ? "#2de2e6" : "#888",
+              borderColor: selectedButton === option.id ? "#2de2e6" : "#444",
+              borderWidth: "1px",
+              borderStyle: "solid",
+              backgroundColor:
+                selectedButton === option.id
+                  ? "rgba(45, 226, 230, 0.08)"
+                  : "transparent",
+              cursor: "pointer",
+              borderRadius: "4px",
+              fontFamily: "inherit",
+              transition: "all 0.2s",
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = "rgba(45, 226, 230, 0.08)";
+              e.target.style.color = "#2de2e6";
+              e.target.style.borderColor = "#2de2e6";
+            }}
+            onMouseLeave={(e) => {
+              if (selectedButton !== option.id) {
+                e.target.style.backgroundColor = "transparent";
+                e.target.style.color = "#888";
+                e.target.style.borderColor = "#444";
+              }
+            }}
+            onClick={() => applyRangeSelection(option.id)}
+          >
+            {option.label}
+          </button>
+        ))}
       </Box>
 
       <Paper ref={chartContainerRef} sx={{ p: 2, width: "100%" }}>
