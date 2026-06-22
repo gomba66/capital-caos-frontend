@@ -8,7 +8,17 @@ import {
   MenuItem,
   Divider,
   Paper,
+  TextField,
+  Button,
+  Alert,
+  CircularProgress,
+  Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
+import InfoIcon from "@mui/icons-material/Info";
 import { TimeZoneContext } from "../contexts/AppContexts";
 import { DateTime } from "luxon";
 import {
@@ -17,6 +27,10 @@ import {
   getFrontendVersionDate,
 } from "../api/version";
 import { getConfig } from "../api/config";
+import {
+  getCommissionRate,
+  setCommissionRate,
+} from "../api/paperBroker";
 
 const commonTimeZones = [
   "UTC",
@@ -39,6 +53,14 @@ export default function Settings() {
   const [currency, setCurrency] = useState(() => {
     return localStorage.getItem("capitalCurrency") || "USDT";
   });
+  const [commissionRate, setCommissionRateState] = useState(null);
+  const [newCommissionRate, setNewCommissionRate] = useState("");
+  const [commissionLoading, setCommissionLoading] = useState(false);
+  const [commissionMessage, setCommissionMessage] = useState(null);
+  const [commissionDialogOpen, setCommissionDialogOpen] = useState(false);
+  const [recalculateChecked, setRecalculateChecked] = useState(true);
+  const [brokerMode, setBrokerMode] = useState(null);
+
   const frontendVersion = getFrontendVersion();
   const frontendVersionDate = getFrontendVersionDate();
 
@@ -54,6 +76,16 @@ export default function Settings() {
       setConfig(configData);
     };
     fetchConfig();
+
+    const fetchCommissionRate = async () => {
+      const rateData = await getCommissionRate();
+      if (rateData) {
+        setCommissionRateState(rateData);
+        setBrokerMode(rateData.broker_mode);
+        setNewCommissionRate(rateData.commission_rate_bps.toString());
+      }
+    };
+    fetchCommissionRate();
   }, []);
 
   const handleZoneChange = (e) => {
@@ -69,6 +101,48 @@ export default function Settings() {
     window.dispatchEvent(
       new CustomEvent("currencyChange", { detail: newCurrency })
     );
+  };
+
+  const handleUpdateCommission = async () => {
+    const rateBps = parseFloat(newCommissionRate);
+    if (isNaN(rateBps) || rateBps < 0 || rateBps > 1000) {
+      setCommissionMessage({
+        type: "error",
+        text: "Commission rate must be between 0 and 1000 bps",
+      });
+      return;
+    }
+
+    setCommissionLoading(true);
+    setCommissionMessage(null);
+
+    try {
+      const result = await setCommissionRate(rateBps, recalculateChecked);
+      if (result && result.success) {
+        setCommissionMessage({
+          type: "success",
+          text: `Commission rate updated: ${result.old_rate_bps}bps → ${result.new_rate_bps}bps${
+            result.recalculation
+              ? ` | ${result.recalculation.total_updated} trades recalculated`
+              : ""
+          }`,
+        });
+        setCommissionRateState(result);
+        setCommissionDialogOpen(false);
+      } else {
+        setCommissionMessage({
+          type: "error",
+          text: result?.error || "Failed to update commission rate",
+        });
+      }
+    } catch (error) {
+      setCommissionMessage({
+        type: "error",
+        text: `Error: ${error.message}`,
+      });
+    } finally {
+      setCommissionLoading(false);
+    }
   };
 
   return (
@@ -372,6 +446,151 @@ export default function Settings() {
           )}
         </Paper>
       </Box>
+
+      <Divider sx={{ my: 4 }} />
+
+      {brokerMode === "paper" && (
+        <>
+          <Typography variant="h6" gutterBottom>
+            Paper Broker Commission
+          </Typography>
+          <Box sx={{ display: "flex", justifyContent: "flex-start", mt: 2 }}>
+            <Paper
+              elevation={2}
+              sx={{
+                p: 2,
+                backgroundColor: "rgba(255, 255, 255, 0.05)",
+                maxWidth: 400,
+                width: "100%",
+              }}
+            >
+              {commissionRate ? (
+                <Box display="flex" flexDirection="column" gap={2}>
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <Box display="flex" flexDirection="column" gap={0.5} flex={1}>
+                      <Box display="flex" justifyContent="space-between">
+                        <Typography variant="body2" color="text.secondary">
+                          Current Rate:
+                        </Typography>
+                        <Typography variant="body2" fontWeight="bold">
+                          {commissionRate.commission_rate_bps} bps (
+                          {(
+                            commissionRate.commission_rate_bps / 100
+                          ).toFixed(2)}
+                          %)
+                        </Typography>
+                      </Box>
+                      <Typography variant="caption" color="text.secondary">
+                        Broker Mode:{" "}
+                        <span style={{ fontWeight: "bold", color: "#ffd700" }}>
+                          {commissionRate.broker_mode}
+                        </span>
+                      </Typography>
+                    </Box>
+                    <Tooltip title="Commission is applied to entry and exit. 5 bps = 0.05%">
+                      <InfoIcon sx={{ fontSize: "1.2rem", color: "#2de2e6" }} />
+                    </Tooltip>
+                  </Box>
+
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    size="small"
+                    onClick={() => setCommissionDialogOpen(true)}
+                    sx={{
+                      backgroundColor: "#2de2e6",
+                      color: "#000",
+                      fontWeight: "bold",
+                      "&:hover": {
+                        backgroundColor: "#1da9af",
+                      },
+                    }}
+                  >
+                    Update Commission
+                  </Button>
+
+                  {commissionMessage && (
+                    <Alert
+                      severity={commissionMessage.type}
+                      onClose={() => setCommissionMessage(null)}
+                    >
+                      {commissionMessage.text}
+                    </Alert>
+                  )}
+                </Box>
+              ) : (
+                <Typography variant="body2" color="text.secondary">
+                  Loading commission rate...
+                </Typography>
+              )}
+            </Paper>
+          </Box>
+
+          {/* Commission Update Dialog */}
+          <Dialog open={commissionDialogOpen} onClose={() => setCommissionDialogOpen(false)} maxWidth="sm" fullWidth>
+            <DialogTitle>Update Commission Rate</DialogTitle>
+            <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 2 }}>
+              <Typography variant="body2" color="text.secondary">
+                Enter commission rate in basis points (0-1000).
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Example: 5 bps = 0.05% commission on entry and exit
+              </Typography>
+              <TextField
+                label="Commission Rate (bps)"
+                type="number"
+                value={newCommissionRate}
+                onChange={(e) => setNewCommissionRate(e.target.value)}
+                inputProps={{ min: "0", max: "1000", step: "0.1" }}
+                fullWidth
+                size="small"
+              />
+              <Box display="flex" alignItems="center" gap={1}>
+                <input
+                  type="checkbox"
+                  checked={recalculateChecked}
+                  onChange={(e) => setRecalculateChecked(e.target.checked)}
+                  id="recalculate-checkbox"
+                />
+                <label htmlFor="recalculate-checkbox">
+                  <Typography variant="body2" color="text.secondary">
+                    Recalculate all historical trades
+                  </Typography>
+                </label>
+              </Box>
+              {commissionMessage && (
+                <Alert severity={commissionMessage.type}>{commissionMessage.text}</Alert>
+              )}
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setCommissionDialogOpen(false)}>Cancel</Button>
+              <Button
+                onClick={handleUpdateCommission}
+                disabled={commissionLoading}
+                variant="contained"
+                sx={{
+                  backgroundColor: "#2de2e6",
+                  color: "#000",
+                  fontWeight: "bold",
+                  "&:hover": {
+                    backgroundColor: "#1da9af",
+                  },
+                }}
+              >
+                {commissionLoading ? (
+                  <>
+                    <CircularProgress size={20} sx={{ mr: 1 }} /> Updating...
+                  </>
+                ) : (
+                  "Update"
+                )}
+              </Button>
+            </DialogActions>
+          </Dialog>
+
+          <Divider sx={{ my: 4 }} />
+        </>
+      )}
     </Box>
   );
 }
