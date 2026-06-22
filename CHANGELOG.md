@@ -3,6 +3,21 @@
 ## [Unreleased]
 
 ### ✨ Added
+
+### 🐛 Fixed
+
+### 🎨 Enhanced
+
+### 🔧 Technical
+
+### 📱 Mobile Features
+
+### 🖥️ Desktop Features
+
+## [v0.1.15] - 2026-06-22
+
+
+### ✨ Added
 - **Dashboard: Include Fees toggle shows capital and PnL net of commissions (paper mode only)**
 - **Settings page: update commission rate (bps) with historical recalculation**
 - **paper trading commission UI and fees toggle in dashboard**
