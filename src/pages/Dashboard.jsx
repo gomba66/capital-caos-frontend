@@ -5,6 +5,7 @@ import { getOpenTrades } from "../api/openTrades";
 import { getMomentumPairs } from "../api/momentumPairs";
 import { getConfig } from "../api/config";
 import { getCapital } from "../api/capital";
+import { getCommissionRate } from "../api/paperBroker";
 import {
   convertFromUSDT,
   formatCurrency,
@@ -30,6 +31,7 @@ import {
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import WarningIcon from "@mui/icons-material/Warning";
+import InfoIcon from "@mui/icons-material/Info";
 import OperationsTable from "../components/OperationsTable";
 import MomentumPairsTable from "../components/MomentumPairsTable";
 import EquityChart from "../components/charts/EquityChart";
@@ -70,9 +72,16 @@ export default function Dashboard() {
     const saved = localStorage.getItem("simplifiedView");
     return saved !== null ? saved === "true" : true;
   });
+  const [includeFeesInCapital, setIncludeFeesInCapital] = useState(() => {
+    const saved = localStorage.getItem("includeFeesInCapital");
+    return saved !== null ? saved === "true" : false;
+  });
+  const [totalFees, setTotalFees] = useState(0);
+  const [brokerMode, setBrokerMode] = useState(null);
   // const localZone = DateTime.local().zoneName;
   const { timeZone } = useContext(TimeZoneContext);
-  const { currency: capitalCurrency, setCurrency: setCapitalCurrency } = useContext(CurrencyContext);
+  const { currency: capitalCurrency, setCurrency: setCapitalCurrency } =
+    useContext(CurrencyContext);
 
   // Fetch global (stats, closed, momentum)
   const fetchAll = async () => {
@@ -84,6 +93,7 @@ export default function Dashboard() {
       momentumData,
       configData,
       capitalUsdt,
+      commissionData,
     ] = await Promise.all([
       getStats(),
       getOperations(),
@@ -91,6 +101,7 @@ export default function Dashboard() {
       getMomentumPairs(),
       getConfig(),
       getCapital(),
+      getCommissionRate(),
     ]);
     setStats(statsData);
     setClosedTrades(opsData?.closed || []);
@@ -99,6 +110,18 @@ export default function Dashboard() {
     setDbTradeCount(configData?.database?.total || null);
     setConfig(configData);
     setTotalCapital(capitalUsdt);
+    setBrokerMode(commissionData?.broker_mode || null);
+
+    // Calculate total fees from closed trades
+    if (opsData?.closed) {
+      const fees = opsData.closed.reduce((total, trade) => {
+        const openFees = parseFloat(trade.open_fees) || 0;
+        const closeFees = parseFloat(trade.close_fees) || 0;
+        return total + openFees + closeFees;
+      }, 0);
+      setTotalFees(fees);
+    }
+
     const selectedCurrency = localStorage.getItem("capitalCurrency") || "USDT";
     setCapitalCurrency(selectedCurrency);
     setLastUpdate(new Date());
@@ -140,17 +163,20 @@ export default function Dashboard() {
     let isMounted = true;
 
     const fetchOpen = async () => {
-      const [openData, configData, capitalUsdt] = await Promise.all([
-        getOpenTrades(),
-        getConfig(),
-        getCapital(),
-      ]);
+      const [openData, configData, capitalUsdt, commissionData] =
+        await Promise.all([
+          getOpenTrades(),
+          getConfig(),
+          getCapital(),
+          getCommissionRate(),
+        ]);
       if (!isMounted) return;
 
       setOpenTrades(openData?.open_trades || []);
       setDbTradeCount(configData?.database?.total || null);
       setConfig(configData);
       setTotalCapital(capitalUsdt);
+      setBrokerMode(commissionData?.broker_mode || null);
     };
 
     const id = setInterval(fetchOpen, 10000);
@@ -165,14 +191,27 @@ export default function Dashboard() {
     let isMounted = true;
 
     const fetchClosedTrades = async () => {
-      const [statsData, opsData] = await Promise.all([
+      const [statsData, opsData, commissionData] = await Promise.all([
         getStats(),
         getOperations(),
+        getCommissionRate(),
       ]);
       if (!isMounted) return;
 
       setStats(statsData);
       setClosedTrades(opsData?.closed || []);
+      setBrokerMode(commissionData?.broker_mode || null);
+
+      // Calculate total fees from closed trades
+      if (opsData?.closed) {
+        const fees = opsData.closed.reduce((total, trade) => {
+          const openFees = parseFloat(trade.open_fees) || 0;
+          const closeFees = parseFloat(trade.close_fees) || 0;
+          return total + openFees + closeFees;
+        }, 0);
+        setTotalFees(fees);
+      }
+
       setLastUpdate(new Date());
     };
 
@@ -220,31 +259,76 @@ export default function Dashboard() {
           Last update: {lastUpdate ? lastUpdate.toLocaleTimeString() : "-"}
           {refreshing && <span style={{ marginLeft: 8 }}>Actualizando...</span>}
         </Typography>
-        <FormControlLabel
-          control={
-            <Switch
-              checked={simplifiedView}
-              onChange={(e) => {
-                const newValue = e.target.checked;
-                setSimplifiedView(newValue);
-                localStorage.setItem("simplifiedView", String(newValue));
-              }}
-              sx={{
-                "& .MuiSwitch-switchBase.Mui-checked": {
-                  color: "#2de2e6",
-                },
-                "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
-                  backgroundColor: "#2de2e6",
-                },
-              }}
-            />
-          }
-          label={
-            <Typography variant="body2" sx={{ color: "#aaa" }}>
-              Simplified View
-            </Typography>
-          }
-        />
+        <Box
+          sx={{
+            display: "flex",
+            gap: 2,
+            alignItems: "center",
+            flexWrap: "wrap",
+          }}
+        >
+          <FormControlLabel
+            control={
+              <Switch
+                checked={simplifiedView}
+                onChange={(e) => {
+                  const newValue = e.target.checked;
+                  setSimplifiedView(newValue);
+                  localStorage.setItem("simplifiedView", String(newValue));
+                }}
+                sx={{
+                  "& .MuiSwitch-switchBase.Mui-checked": {
+                    color: "#2de2e6",
+                  },
+                  "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
+                    backgroundColor: "#2de2e6",
+                  },
+                }}
+              />
+            }
+            label={
+              <Typography variant="body2" sx={{ color: "#aaa" }}>
+                Simplified View
+              </Typography>
+            }
+          />
+          {brokerMode === "paper" && (
+            <Tooltip title="Deduct paper trading fees from total capital">
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={includeFeesInCapital}
+                    onChange={(e) => {
+                      const newValue = e.target.checked;
+                      setIncludeFeesInCapital(newValue);
+                      localStorage.setItem(
+                        "includeFeesInCapital",
+                        String(newValue),
+                      );
+                    }}
+                    sx={{
+                      "& .MuiSwitch-switchBase.Mui-checked": {
+                        color: "#ff6b6b",
+                      },
+                      "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track":
+                        {
+                          backgroundColor: "#ff6b6b",
+                        },
+                    }}
+                  />
+                }
+                label={
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                    <Typography variant="body2" sx={{ color: "#aaa" }}>
+                      Include Fees
+                    </Typography>
+                    <InfoIcon sx={{ fontSize: "1rem", color: "#2de2e6" }} />
+                  </Box>
+                }
+              />
+            </Tooltip>
+          )}
+        </Box>
       </Box>
 
       {/* Eliminar el selector de zona horaria aquí */}
@@ -321,7 +405,10 @@ export default function Dashboard() {
                 mb: 1,
               }}
             >
-              Total Capital
+              Total Capital{" "}
+              {brokerMode === "paper" && includeFeesInCapital
+                ? "(fees included)"
+                : ""}
             </Typography>
             <Box
               display="flex"
@@ -371,12 +458,54 @@ export default function Dashboard() {
               >
                 {totalCapital !== null
                   ? formatCurrency(
-                      convertFromUSDT(totalCapital, capitalCurrency),
-                      capitalCurrency
+                      convertFromUSDT(
+                        brokerMode === "paper" && includeFeesInCapital
+                          ? totalCapital - totalFees
+                          : totalCapital,
+                        capitalCurrency,
+                      ),
+                      capitalCurrency,
                     )
                   : formatCurrency(0, "USDT")}
               </Typography>
             </Box>
+            {brokerMode === "paper" &&
+              includeFeesInCapital &&
+              totalFees > 0 && (
+                <Box
+                  sx={{
+                    mt: 1.5,
+                    pt: 1.5,
+                    borderTop: "1px solid rgba(255, 215, 0, 0.2)",
+                    width: "100%",
+                    textAlign: "center",
+                  }}
+                >
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: "#ff6b6b",
+                      fontWeight: 500,
+                      display: "block",
+                    }}
+                  >
+                    Fees Deducted:
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: "#ff6b6b",
+                      fontWeight: 600,
+                    }}
+                  >
+                    -
+                    {formatCurrency(
+                      convertFromUSDT(totalFees, capitalCurrency),
+                      capitalCurrency,
+                    )}
+                  </Typography>
+                </Box>
+              )}
           </Box>
         </Grid>
         {Object.entries(statLabels).map(([key, label]) => {
@@ -401,15 +530,15 @@ export default function Dashboard() {
                 numericPnl !== 0
                   ? `${convertedPnl > 0 ? "+" : ""}${formatCurrency(
                       convertedPnl,
-                      capitalCurrency
+                      capitalCurrency,
                     )}`
                   : formatCurrency(0, capitalCurrency);
               valueColor =
                 numericPnl > 0
                   ? "#27ff7e"
                   : numericPnl < 0
-                  ? "#ff2e63"
-                  : "#fff";
+                    ? "#ff2e63"
+                    : "#fff";
             } else {
               displayValue = formatCurrency(0, capitalCurrency);
               valueColor = "#fff";
@@ -418,12 +547,24 @@ export default function Dashboard() {
           } else if (key === "total_pnl") {
             const pnl = Number(stats[key]);
             if (!isNaN(pnl)) {
-              const convertedPnl = convertFromUSDT(pnl, capitalCurrency);
-              valueColor = pnl > 0 ? "#27ff7e" : pnl < 0 ? "#ff2e63" : "#fff";
+              const effectivePnl =
+                brokerMode === "paper" && includeFeesInCapital
+                  ? pnl - totalFees
+                  : pnl;
+              const convertedPnl = convertFromUSDT(
+                effectivePnl,
+                capitalCurrency,
+              );
+              valueColor =
+                effectivePnl > 0
+                  ? "#27ff7e"
+                  : effectivePnl < 0
+                    ? "#ff2e63"
+                    : "#fff";
               textShadow = `0 0 12px ${valueColor}`;
               displayValue = `${convertedPnl > 0 ? "+" : ""}${formatCurrency(
                 convertedPnl,
-                capitalCurrency
+                capitalCurrency,
               )}`;
             } else {
               displayValue = "-";
@@ -486,7 +627,11 @@ export default function Dashboard() {
                     mb: 1,
                   }}
                 >
-                  {label}
+                  {key === "total_pnl" &&
+                  brokerMode === "paper" &&
+                  includeFeesInCapital
+                    ? `${label} (Net)`
+                    : label}
                 </Typography>
                 <Typography
                   variant="h4"
@@ -500,6 +645,22 @@ export default function Dashboard() {
                 >
                   {displayValue}
                 </Typography>
+                {key === "total_pnl" &&
+                  brokerMode === "paper" &&
+                  includeFeesInCapital &&
+                  totalFees > 0 && (
+                    <Typography
+                      variant="caption"
+                      sx={{ color: "#ff6b6b", mt: 0.75, fontWeight: 500 }}
+                    >
+                      Includes -
+                      {formatCurrency(
+                        convertFromUSDT(totalFees, capitalCurrency),
+                        capitalCurrency,
+                      )}{" "}
+                      in fees
+                    </Typography>
+                  )}
               </Box>
             </Grid>
           );
@@ -689,9 +850,9 @@ export default function Dashboard() {
                     ? formatCurrency(
                         convertFromUSDT(
                           Number(stats.average_pnl),
-                          capitalCurrency
+                          capitalCurrency,
                         ),
-                        capitalCurrency
+                        capitalCurrency,
                       )
                     : formatCurrency(0, capitalCurrency)}
                 </Typography>

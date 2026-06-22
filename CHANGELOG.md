@@ -14,17 +14,19 @@
 
 ### 🖥️ Desktop Features
 
-## [v0.1.14] - 2026-06-18
+## [v0.1.15] - 2026-06-22
 
 
 ### ✨ Added
+- **Dashboard: Include Fees toggle shows capital and PnL net of commissions (paper mode only)**
+- **Settings page: update commission rate (bps) with historical recalculation**
+- **paper trading commission UI and fees toggle in dashboard**
 
 ### 🐛 Fixed
 
 - **RiskLevelsInfo unused import** - Eliminada importación no utilizada de useState
 
 ### 🎨 Enhanced
-- **Equity chart dynamic time-range buttons: added 3d and hide ranges without enough historical data**
 
 - **Open Trades Default Sorting** - La tabla de open trades ahora se ordena automáticamente por Open Time (más recientes primero) por defecto para facilitar la visualización de los trades más nuevos
 
