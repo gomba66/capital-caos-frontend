@@ -4,6 +4,7 @@ import Dashboard from "./pages/Dashboard";
 import Charts from "./pages/Charts";
 import Settings from "./pages/Settings";
 import TradingChartPage from "./pages/TradingChart";
+import Evaluations from "./pages/Evaluations";
 import Sidebar from "./components/Sidebar";
 import { Box, useTheme, useMediaQuery } from "@mui/material";
 import { DateTime } from "luxon";
@@ -94,6 +95,7 @@ function App() {
                     element={<TradingChartPage />}
                   />
                   <Route path="/settings" element={<Settings />} />
+                  <Route path="/evaluations" element={<Evaluations />} />
                 </Routes>
               </Box>
             </Box>

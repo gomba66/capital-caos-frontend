@@ -25,6 +25,7 @@ import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import ShowChartIcon from "@mui/icons-material/ShowChart";
+import AssessmentIcon from "@mui/icons-material/Assessment";
 
 import { Link, useLocation } from "react-router-dom";
 import { TimeZoneContext, SidebarContext } from "../contexts/AppContexts";
@@ -35,6 +36,7 @@ const navItems = [
   { text: "Dashboard", icon: <DashboardIcon />, path: "/" },
   { text: "Charts", icon: <BarChartIcon />, path: "/charts" },
   { text: "Trading Chart", icon: <ShowChartIcon />, path: "/trading-chart" },
+  { text: "Evaluations", icon: <AssessmentIcon />, path: "/evaluations" },
   { text: "Settings", icon: <SettingsIcon />, path: "/settings" },
 ];
 
