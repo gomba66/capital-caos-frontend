@@ -25,6 +25,10 @@ function formatReason(reason) {
   const r = String(reason).toUpperCase();
   if (r.includes("TP_DINAM")) return "Take Profit";
   if (r.includes("TAKE") && r.includes("PROFIT")) return "Take Profit";
+  if (r.includes("TIME_STOP_NEGATIVE_PNL")) return "Time Stop (Negative PnL)";
+  if (r.includes("TIME_STOP_NEVER_POSITIVE")) return "Time Stop (Never Positive)";
+  if (r.includes("TIME_STOP_MIN_PROGRESS")) return "Time Stop (Min Progress)";
+  if (r.includes("TIME_STOP")) return "Time Stop";
   if (r.includes("SL") || r.includes("STOP")) return "Stop Loss";
   if (r.includes("MANUAL")) return "Manual Close";
   if (r.includes("BINANCE")) return "Exchange Close";
