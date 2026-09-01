@@ -6,6 +6,8 @@
 
 ### 🐛 Fixed
 
+- `formatReason()` in `OperationsTable.jsx` mislabeled any `TIME_STOP_*` close reason (e.g. `TIME_STOP_NEGATIVE_PNL`) as "Stop Loss" because the generic check matched the substring "STOP". Added dedicated mappings for `TIME_STOP_NEGATIVE_PNL`, `TIME_STOP_NEVER_POSITIVE`, and `TIME_STOP_MIN_PROGRESS` (plus a generic "Time Stop" fallback) evaluated before the Stop Loss check.
+
 ### 🎨 Enhanced
 
 ### 🔧 Technical
