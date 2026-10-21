@@ -1,206 +1,89 @@
 import React from "react";
-import { Box, Paper, Typography, Grid } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import { calculateProfitFactors } from "../../utils/formatting";
+import { useTranslation } from "react-i18next";
 
-/**
- * Muestra el profit factor general, de longs y de shorts en tarjetas.
- * @param {Array} operations - Lista de operaciones cerradas.
- */
 export default function ProfitFactorChart({
   operations,
   hideDescription = false,
 }) {
+  const { t } = useTranslation();
   const { total, long, short } = calculateProfitFactors(operations);
 
   return (
-    <Box
-      // width="100%"
-      mb={4}
-      display="flex"
-      justifyContent="center"
-    >
-      <Box width={{ xs: "100%", sm: 280, md: 320 }}>
+    <Box mb={4} width={{ xs: "100%", sm: 280, md: 320 }}>
+      <Typography
+        variant="h6"
+        gutterBottom
+        sx={{ color: "text.primary", textAlign: "left" }}
+      >
+        {t("analyticsCharts.profitFactor")}
+      </Typography>
+      {!hideDescription && (
         <Typography
-          variant="h6"
-          gutterBottom
+          variant="caption"
+          color="text.secondary"
+          sx={{ mb: 2, display: "block", textAlign: "left" }}
+        >
+          {t("analyticsCharts.profitFactorDescription")}
+        </Typography>
+      )}
+      <Box sx={{ borderTop: "1px solid", borderColor: "divider" }}>
+        <Box
           sx={{
-            color: "#2de2e6",
-            fontWeight: 700,
-            textShadow: "0 0 8px #2de2e6",
-            textAlign: "left",
+            py: 2,
+            borderBottom: "1px solid",
+            borderColor: "divider",
           }}
         >
-          Profit Factor
-        </Typography>
-        {!hideDescription && (
           <Typography
             variant="caption"
-            color="secondary"
+            color="text.secondary"
+            sx={{ textTransform: "uppercase", letterSpacing: "0.08em" }}
+          >
+            {t("performance.total")}
+          </Typography>
+          <Typography
+            variant="h3"
+            color="success.main"
+            sx={{ fontWeight: 700, fontSize: "2.5rem", lineHeight: 1.1 }}
+          >
+            {total !== null ? total : "-"}
+          </Typography>
+        </Box>
+        <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
+          <Box
             sx={{
-              mb: 2,
-              display: "block",
-              color: "#2de2e6",
-              textAlign: "left",
+              py: 2,
+              pr: 2,
+              borderRight: "1px solid",
+              borderColor: "divider",
             }}
           >
-            Profit factor is the ratio between gross profits and gross losses. A
-            value greater than 1 indicates a profitable system.
-          </Typography>
-        )}
-        <Paper
-          sx={{
-            p: 3,
-            background: "rgba(24,28,47,0.95)",
-            borderRadius: 4,
-            boxShadow: "0 0 24px #2de2e633",
-            transition: "box-shadow 0.3s ease",
-            "&:hover": {
-              boxShadow: "0 0 32px #2de2e666",
-            },
-          }}
-        >
-          <Grid container spacing={2} direction="column">
-            {/* Fila 1: Profit Factor Total */}
-            <Grid>
-              <Box
-                sx={{
-                  background: "#2de2e6" + "22",
-                  borderRadius: 3,
-                  p: 2,
-                  textAlign: "center",
-                  transition: "all 0.3s ease",
-                  "&:hover": {
-                    background: "#2de2e6" + "33",
-                    boxShadow: "0 8px 24px #2de2e644",
-                  },
-                }}
-              >
-                <Typography
-                  variant="subtitle2"
-                  sx={{
-                    color: "#aaa",
-                    letterSpacing: 1,
-                    textTransform: "uppercase",
-                    fontWeight: 600,
-                    mb: 1,
-                  }}
-                >
-                  Total
-                </Typography>
-                <Typography
-                  variant="h3"
-                  sx={{
-                    color: "#2de2e6",
-                    fontWeight: 700,
-                    textShadow: `0 0 12px #2de2e6`,
-                    fontSize: "2.5rem",
-                    lineHeight: 1.1,
-                  }}
-                >
-                  {total !== null ? total : "-"}
-                </Typography>
-              </Box>
-            </Grid>
-            {/* Fila 2: Long y Short, 50% cada uno */}
-            <Grid
-              container
-              spacing={1}
-              direction="row"
-              justifyContent="space-between"
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ textTransform: "uppercase", letterSpacing: "0.08em" }}
             >
-              <Grid sx={{ width: "47%" }}>
-                <Box
-                  sx={{
-                    background: "#2de2a6" + "22",
-                    borderRadius: 3,
-                    p: 2,
-                    textAlign: "center",
-                    width: "100%",
-                    height: "100%",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "center",
-                    transition: "all 0.3s ease",
-                    "&:hover": {
-                      background: "#2de2a6" + "33",
-                      boxShadow: "0 8px 24px #2de2a644",
-                    },
-                  }}
-                >
-                  <Typography
-                    variant="subtitle2"
-                    sx={{
-                      color: "#aaa",
-                      letterSpacing: 1,
-                      textTransform: "uppercase",
-                      fontWeight: 600,
-                      mb: 1,
-                    }}
-                  >
-                    Longs
-                  </Typography>
-                  <Typography
-                    variant="h4"
-                    sx={{
-                      color: "#2de2a6",
-                      fontWeight: 700,
-                      textShadow: `0 0 12px #2de2a6`,
-                      fontSize: "2rem",
-                      lineHeight: 1.1,
-                    }}
-                  >
-                    {long !== null ? long : "-"}
-                  </Typography>
-                </Box>
-              </Grid>
-              <Grid sx={{ width: "47%" }}>
-                <Box
-                  sx={{
-                    background: "#ff2e63" + "22",
-                    borderRadius: 3,
-                    p: 2,
-                    textAlign: "center",
-                    width: "100%",
-                    height: "100%",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "center",
-                    transition: "all 0.3s ease",
-                    "&:hover": {
-                      background: "#ff2e63" + "33",
-                      boxShadow: "0 8px 24px #ff2e6344",
-                    },
-                  }}
-                >
-                  <Typography
-                    variant="subtitle2"
-                    sx={{
-                      color: "#aaa",
-                      letterSpacing: 1,
-                      textTransform: "uppercase",
-                      fontWeight: 600,
-                      mb: 1,
-                    }}
-                  >
-                    Shorts
-                  </Typography>
-                  <Typography
-                    variant="h4"
-                    sx={{
-                      color: "#ff2e63",
-                      fontWeight: 700,
-                      textShadow: `0 0 12px #ff2e63`,
-                      fontSize: "2rem",
-                      lineHeight: 1.1,
-                    }}
-                  >
-                    {short !== null ? short : "-"}
-                  </Typography>
-                </Box>
-              </Grid>
-            </Grid>
-          </Grid>
-        </Paper>
+              {t("performance.longs")}
+            </Typography>
+            <Typography variant="h4" color="success.main" sx={{ fontWeight: 700 }}>
+              {long !== null ? long : "-"}
+            </Typography>
+          </Box>
+          <Box sx={{ py: 2, pl: 2 }}>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ textTransform: "uppercase", letterSpacing: "0.08em" }}
+            >
+              {t("performance.shorts")}
+            </Typography>
+            <Typography variant="h4" color="error.main" sx={{ fontWeight: 700 }}>
+              {short !== null ? short : "-"}
+            </Typography>
+          </Box>
+        </Box>
       </Box>
     </Box>
   );

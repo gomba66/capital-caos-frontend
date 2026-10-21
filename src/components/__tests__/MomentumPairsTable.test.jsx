@@ -57,7 +57,7 @@ describe("MomentumPairsTable", () => {
     expect(screen.getByText(/ETHUSDT/)).toBeInTheDocument();
   });
 
-  it("shows open trade indicators", async () => {
+  it("marks symbols with an open trade without emoji decoration", async () => {
     fetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({ cooldowns: [] }),
@@ -72,11 +72,11 @@ describe("MomentumPairsTable", () => {
       />
     );
 
-    await screen.findByText(/🔥/);
-    expect(screen.getByText(/📈/)).toBeInTheDocument();
+    expect(await screen.findByText("OPEN")).toBeInTheDocument();
+    expect(screen.queryByText(/🔥|📈|📉/)).not.toBeInTheDocument();
   });
 
-  it("displays cooldown status correctly", async () => {
+  it("displays cooldown and ready status with text indicators", async () => {
     const mockCooldowns = [
       {
         symbol: "BTCUSDT",
@@ -99,9 +99,9 @@ describe("MomentumPairsTable", () => {
       />
     );
 
-    // Verificar que se muestra el indicador de cooldown
-    await screen.findByText("🔴"); // Rojo para < 30 min
-    expect(screen.getByText("✅")).toBeInTheDocument(); // Verde para ETHUSDT
+    const cooldown = await screen.findByText("COOLDOWN");
+    expect(cooldown).toHaveAttribute("data-status", "cooldown");
+    expect(screen.getByText("READY")).toHaveAttribute("data-status", "ready");
   });
 
   it("handles fetch error gracefully", async () => {
@@ -116,12 +116,11 @@ describe("MomentumPairsTable", () => {
       />
     );
 
-    // Debería mostrar todos los pares como disponibles (✅)
-    const statusElements = await screen.findAllByText(/✅/);
+    const statusElements = await screen.findAllByText("READY");
     expect(statusElements).toHaveLength(2);
   });
 
-  it("shows correct status for different cooldown times", async () => {
+  it("shows text status for cooldowns with different remaining times", async () => {
     const mockCooldowns = [
       {
         symbol: "BTCUSDT",
@@ -149,8 +148,7 @@ describe("MomentumPairsTable", () => {
       />
     );
 
-    // Verificar diferentes indicadores según el tiempo
-    await screen.findByText("⏳"); // Naranja para > 1 hora
-    await screen.findByText("🟡"); // Amarillo para < 1 hora
+    expect(await screen.findAllByText("COOLDOWN")).toHaveLength(2);
+    expect(screen.queryByText(/⏳|🔴|🟡|✅/)).not.toBeInTheDocument();
   });
 });

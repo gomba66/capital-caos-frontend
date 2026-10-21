@@ -11,7 +11,7 @@ A visual dashboard for the Capital Caos algorithmic trading system. It allows yo
 - View open and closed trades
 - Equity, PnL, winrate, and drawdown charts
 - Momentum pairs and operations tables
-- Cyberpunk theme and responsive design
+- Cipher Desk visual system, with dark mode enabled by default and a persistent light-mode option
 - Integration with FastAPI backend
 - Sidebar navigation and modern user experience
 
@@ -39,6 +39,15 @@ A visual dashboard for the Capital Caos algorithmic trading system. It allows yo
    npm run dev
    ```
 4. Open your browser at the URL shown in the console (usually http://localhost:5173).
+
+The sidebar includes **Cipher Desk**, which presents the market scanner inside
+the Capital Caos dashboard. It reads the scanner state from the backend's
+`/api/state` endpoint; start the API and scanner services to see live results.
+The same Cipher Desk visual system is used throughout the trading dashboard,
+with compact square-edged surfaces, restrained borders, and a redesigned
+navigation rail. Dark mode is the default; the scanner's theme selector can
+switch the entire application to light mode, and the selected preference is
+remembered.
 
 ### Manual Setup
 

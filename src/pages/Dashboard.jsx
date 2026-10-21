@@ -7,57 +7,31 @@ import { getConfig } from "../api/config";
 import { getCapital } from "../api/capital";
 import { getCommissionRate } from "../api/paperBroker";
 import {
-  convertFromUSDT,
-  formatCurrency,
-  getCurrencySymbol,
-} from "../utils/currencyConverter";
-import {
   Box,
   Grid,
-  Card,
-  CardContent,
   Typography,
-  CircularProgress,
+  Alert,
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Tooltip,
   FormControlLabel,
   Switch,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import WarningIcon from "@mui/icons-material/Warning";
 import InfoIcon from "@mui/icons-material/Info";
+import { RefreshCw, WifiOff } from "lucide-react";
 import OperationsTable from "../components/OperationsTable";
 import MomentumPairsTable from "../components/MomentumPairsTable";
+import DashboardMetrics from "../components/DashboardMetrics";
 import EquityChart from "../components/charts/EquityChart";
-import ProfitFactorChart from "../components/charts/ProfitFactorChart";
-import WinrateChart from "../components/charts/WinrateChart";
-import { DateTime } from "luxon";
+import TradePerformanceTable from "../components/charts/TradePerformanceTable";
 import { TimeZoneContext, CurrencyContext } from "../contexts/AppContexts";
+import { useTranslation } from "react-i18next";
+import { convertFromUSDT, formatCurrency } from "../utils/currencyConverter";
 
-const statLabels = {
-  total_pnl: "Total PnL",
-  unrealized_pnl: "Unrealized PnL",
-};
-
-// const commonTimeZones = [
-//   "UTC",
-//   "America/Bogota",
-//   "America/Mexico_City",
-//   "America/New_York",
-//   "Europe/Madrid",
-//   "Europe/London",
-//   "Asia/Tokyo",
-//   "Asia/Shanghai",
-//   "America/Argentina/Buenos_Aires",
-// ];
-
-export default function Dashboard() {
+export default function Dashboard({ interactiveSection }) {
+  const { t, i18n } = useTranslation();
   const [stats, setStats] = useState(null);
   const [openTrades, setOpenTrades] = useState([]);
   const [closedTrades, setClosedTrades] = useState([]);
@@ -67,71 +41,127 @@ export default function Dashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [dbTradeCount, setDbTradeCount] = useState(null);
   const [config, setConfig] = useState(null);
-  const [totalCapital, setTotalCapital] = useState(1);
-  const [simplifiedView, setSimplifiedView] = useState(() => {
-    const saved = localStorage.getItem("simplifiedView");
-    return saved !== null ? saved === "true" : true;
-  });
+  const [totalCapital, setTotalCapital] = useState(null);
   const [includeFeesInCapital, setIncludeFeesInCapital] = useState(() => {
     const saved = localStorage.getItem("includeFeesInCapital");
     return saved !== null ? saved === "true" : false;
   });
   const [totalFees, setTotalFees] = useState(0);
   const [brokerMode, setBrokerMode] = useState(null);
-  // const localZone = DateTime.local().zoneName;
+  const [apiUnavailable, setApiUnavailable] = useState(false);
   const { timeZone } = useContext(TimeZoneContext);
   const { currency: capitalCurrency, setCurrency: setCapitalCurrency } =
     useContext(CurrencyContext);
+  const openTradeSummary = openTrades.reduce(
+    (summary, trade) => {
+      const side = String(trade.side || trade.positionSide || "").toLowerCase();
+      const positionAmount = Number(trade.positionAmt);
+      if (side.includes("long") || (!side.includes("short") && positionAmount > 0)) {
+        summary.long += 1;
+      } else if (side.includes("short") || positionAmount < 0) {
+        summary.short += 1;
+      }
+      summary.unrealizedPnl +=
+        Number(trade.unrealizedProfit ?? trade.unRealizedProfit) || 0;
+      return summary;
+    },
+    { long: 0, short: 0, unrealizedPnl: 0 },
+  );
+  const openTradePnlSign =
+    openTradeSummary.unrealizedPnl > 0
+      ? "+"
+      : openTradeSummary.unrealizedPnl < 0
+        ? "-"
+        : "";
+  const openTradePnl = `${openTradePnlSign}${formatCurrency(
+    convertFromUSDT(Math.abs(openTradeSummary.unrealizedPnl), capitalCurrency),
+    capitalCurrency,
+  )}`;
+  const openTradePnlLabel = t("dashboard.openTradePnl", {
+    amount: "__OPEN_TRADE_PNL__",
+  });
+  const [openTradePnlPrefix, openTradePnlSuffix] =
+    openTradePnlLabel.split("__OPEN_TRADE_PNL__");
+
+  const clearDashboardData = () => {
+    setStats(null);
+    setOpenTrades([]);
+    setClosedTrades([]);
+    setMomentumPairs([]);
+    setDbTradeCount(null);
+    setConfig(null);
+    setTotalCapital(null);
+    setTotalFees(0);
+    setBrokerMode(null);
+    setLastUpdate(null);
+  };
 
   // Fetch global (stats, closed, momentum)
   const fetchAll = async () => {
     setRefreshing(true);
-    const [
-      statsData,
-      opsData,
-      openData,
-      momentumData,
-      configData,
-      capitalUsdt,
-      commissionData,
-    ] = await Promise.all([
-      getStats(),
-      getOperations(),
-      getOpenTrades(),
-      getMomentumPairs(),
-      getConfig(),
-      getCapital(),
-      getCommissionRate(),
-    ]);
-    setStats(statsData);
-    setClosedTrades(opsData?.closed || []);
-    setOpenTrades(openData?.open_trades || []);
-    setMomentumPairs(momentumData?.momentum_pairs || []);
-    setDbTradeCount(configData?.database?.total || null);
-    setConfig(configData);
-    setTotalCapital(capitalUsdt);
-    setBrokerMode(commissionData?.broker_mode || null);
+    try {
+      const [
+        statsData,
+        opsData,
+        openData,
+        momentumData,
+        configData,
+        capitalUsdt,
+        commissionData,
+      ] = await Promise.all([
+        getStats(),
+        getOperations(),
+        getOpenTrades(),
+        getMomentumPairs(),
+        getConfig(),
+        getCapital(),
+        getCommissionRate(),
+      ]);
+      setStats(statsData || null);
+      setClosedTrades(opsData?.closed || []);
+      setOpenTrades(openData?.open_trades || []);
+      setMomentumPairs(momentumData?.momentum_pairs || []);
+      setDbTradeCount(configData?.database?.total || null);
+      setConfig(configData || null);
+      setTotalCapital(capitalUsdt ?? null);
+      setBrokerMode(commissionData?.broker_mode || null);
 
-    // Calculate total fees from closed trades
-    if (opsData?.closed) {
-      const fees = opsData.closed.reduce((total, trade) => {
-        const openFees = parseFloat(trade.open_fees) || 0;
-        const closeFees = parseFloat(trade.close_fees) || 0;
-        return total + openFees + closeFees;
-      }, 0);
-      setTotalFees(fees);
+      if (opsData) {
+        const fees = (opsData.closed || []).reduce((total, trade) => {
+          const openFees = parseFloat(trade.open_fees) || 0;
+          const closeFees = parseFloat(trade.close_fees) || 0;
+          return total + openFees + closeFees;
+        }, 0);
+        setTotalFees(fees);
+      } else {
+        setTotalFees(0);
+      }
+
+      const selectedCurrency = localStorage.getItem("capitalCurrency") || "USDT";
+      setCapitalCurrency(selectedCurrency);
+      setLastUpdate(new Date());
+      setApiUnavailable(
+        !statsData ||
+          !opsData ||
+          !openData ||
+          !momentumData ||
+          !configData ||
+          capitalUsdt == null ||
+          !commissionData,
+      );
+    } catch (error) {
+      console.error("Dashboard data refresh failed:", error);
+      clearDashboardData();
+      setApiUnavailable(true);
+    } finally {
+      setRefreshing(false);
     }
-
-    const selectedCurrency = localStorage.getItem("capitalCurrency") || "USDT";
-    setCapitalCurrency(selectedCurrency);
-    setLastUpdate(new Date());
-    setRefreshing(false);
   };
 
   // Primer fetch global al montar
   useEffect(() => {
     setLoading(true);
-    fetchAll().then(() => setLoading(false));
+    fetchAll().finally(() => setLoading(false));
   }, []);
 
   // Listener para cambios en la moneda del capital
@@ -163,20 +193,40 @@ export default function Dashboard() {
     let isMounted = true;
 
     const fetchOpen = async () => {
-      const [openData, configData, capitalUsdt, commissionData] =
-        await Promise.all([
-          getOpenTrades(),
-          getConfig(),
-          getCapital(),
-          getCommissionRate(),
-        ]);
-      if (!isMounted) return;
+      try {
+        const [openData, configData, capitalUsdt, commissionData] =
+          await Promise.all([
+            getOpenTrades(),
+            getConfig(),
+            getCapital(),
+            getCommissionRate(),
+          ]);
+        if (!isMounted) return;
 
-      setOpenTrades(openData?.open_trades || []);
-      setDbTradeCount(configData?.database?.total || null);
-      setConfig(configData);
-      setTotalCapital(capitalUsdt);
-      setBrokerMode(commissionData?.broker_mode || null);
+          const apiOffline =
+            !openData && !configData && capitalUsdt == null && !commissionData;
+          if (apiOffline) {
+            clearDashboardData();
+          } else {
+            setOpenTrades(openData?.open_trades || []);
+            setDbTradeCount(configData?.database?.total || null);
+            setConfig(configData || null);
+            setTotalCapital(capitalUsdt ?? null);
+            setBrokerMode(commissionData?.broker_mode || null);
+          }
+          setApiUnavailable(
+            !openData ||
+            !configData ||
+            capitalUsdt == null ||
+            !commissionData,
+        );
+      } catch (error) {
+        console.error("Open trade refresh failed:", error);
+        if (isMounted) {
+          clearDashboardData();
+          setApiUnavailable(true);
+        }
+      }
     };
 
     const id = setInterval(fetchOpen, 10000);
@@ -186,61 +236,68 @@ export default function Dashboard() {
     };
   }, []);
 
-  // Auto-refresh de closed trades (operaciones) cada 60s
+  // Reintenta pronto si stats/closed trades no están disponibles; reduce tráfico cuando todo carga.
   useEffect(() => {
     let isMounted = true;
+    let refreshTimer;
 
     const fetchClosedTrades = async () => {
-      const [statsData, opsData, commissionData] = await Promise.all([
-        getStats(),
-        getOperations(),
-        getCommissionRate(),
-      ]);
-      if (!isMounted) return;
+      let nextRefreshDelay = 5000;
+      try {
+        const [statsData, opsData, commissionData] = await Promise.all([
+          getStats(),
+          getOperations(),
+          getCommissionRate(),
+        ]);
+        if (!isMounted) return;
 
-      setStats(statsData);
-      setClosedTrades(opsData?.closed || []);
-      setBrokerMode(commissionData?.broker_mode || null);
+        const refreshComplete = Boolean(statsData && opsData && commissionData);
+        if (refreshComplete) nextRefreshDelay = 60000;
 
-      // Calculate total fees from closed trades
-      if (opsData?.closed) {
-        const fees = opsData.closed.reduce((total, trade) => {
-          const openFees = parseFloat(trade.open_fees) || 0;
-          const closeFees = parseFloat(trade.close_fees) || 0;
-          return total + openFees + closeFees;
-        }, 0);
-        setTotalFees(fees);
+        const apiOffline = !statsData && !opsData && !commissionData;
+        if (apiOffline) {
+          clearDashboardData();
+        } else {
+          setStats(statsData || null);
+          setClosedTrades(opsData?.closed || []);
+          setBrokerMode(commissionData?.broker_mode || null);
+        }
+
+        if (opsData) {
+          const fees = (opsData.closed || []).reduce((total, trade) => {
+            const openFees = parseFloat(trade.open_fees) || 0;
+            const closeFees = parseFloat(trade.close_fees) || 0;
+            return total + openFees + closeFees;
+          }, 0);
+          setTotalFees(fees);
+        } else if (!apiOffline) {
+          setTotalFees(0);
+        }
+
+        if (!apiOffline) setLastUpdate(new Date());
+        setApiUnavailable(!statsData || !opsData || !commissionData);
+      } catch (error) {
+        console.error("Closed trade refresh failed:", error);
+        if (isMounted) {
+          clearDashboardData();
+          setApiUnavailable(true);
+        }
+      } finally {
+        if (isMounted) {
+          refreshTimer = setTimeout(fetchClosedTrades, nextRefreshDelay);
+        }
       }
-
-      setLastUpdate(new Date());
     };
 
-    const id = setInterval(fetchClosedTrades, 60000); // Cada 60 segundos
+    refreshTimer = setTimeout(fetchClosedTrades, 10000);
     return () => {
       isMounted = false;
-      clearInterval(id);
+      clearTimeout(refreshTimer);
     };
   }, []);
 
-  if (loading) {
-    return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight="60vh"
-      >
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  if (!stats) {
-    return <Typography color="error">Failed to load stats.</Typography>;
-  }
-
   return (
-    <Box p={{ xs: 2, sm: 3, md: 4 }}>
+    <Box className="dashboard-page" py={{ xs: 2, sm: 3, md: 4 }}>
       <Box
         sx={{
           display: "flex",
@@ -251,877 +308,185 @@ export default function Dashboard() {
           gap: 2,
         }}
       >
-        <Typography
-          variant="caption"
-          color="secondary"
-          sx={{ display: "block" }}
-        >
-          Last update: {lastUpdate ? lastUpdate.toLocaleTimeString() : "-"}
-          {refreshing && <span style={{ marginLeft: 8 }}>Actualizando...</span>}
-        </Typography>
-        <Box
-          sx={{
-            display: "flex",
-            gap: 2,
-            alignItems: "center",
-            flexWrap: "wrap",
-          }}
-        >
-          <FormControlLabel
-            control={
-              <Switch
-                checked={simplifiedView}
-                onChange={(e) => {
-                  const newValue = e.target.checked;
-                  setSimplifiedView(newValue);
-                  localStorage.setItem("simplifiedView", String(newValue));
-                }}
-                sx={{
-                  "& .MuiSwitch-switchBase.Mui-checked": {
-                    color: "#2de2e6",
-                  },
-                  "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
-                    backgroundColor: "#2de2e6",
-                  },
-                }}
-              />
-            }
-            label={
-              <Typography variant="body2" sx={{ color: "#aaa" }}>
-                Simplified View
-              </Typography>
-            }
-          />
-          {brokerMode === "paper" && (
-            <Tooltip title="Deduct paper trading fees from total capital">
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={includeFeesInCapital}
-                    onChange={(e) => {
-                      const newValue = e.target.checked;
-                      setIncludeFeesInCapital(newValue);
-                      localStorage.setItem(
-                        "includeFeesInCapital",
-                        String(newValue),
-                      );
-                    }}
-                    sx={{
-                      "& .MuiSwitch-switchBase.Mui-checked": {
-                        color: "#ff6b6b",
-                      },
-                      "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track":
-                        {
-                          backgroundColor: "#ff6b6b",
-                        },
-                    }}
-                  />
-                }
-                label={
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                    <Typography variant="body2" sx={{ color: "#aaa" }}>
-                      Include Fees
-                    </Typography>
-                    <InfoIcon sx={{ fontSize: "1rem", color: "#2de2e6" }} />
-                  </Box>
-                }
-              />
-            </Tooltip>
+        <Box>
+          <Typography
+            variant="caption"
+            color="secondary"
+            sx={{ display: "block" }}
+          >
+            {t("dashboard.lastUpdate")}:{" "}
+            {lastUpdate
+              ? lastUpdate.toLocaleTimeString(i18n.resolvedLanguage)
+              : "-"}
+            {refreshing && (
+              <span style={{ marginLeft: 8 }}>{t("dashboard.updating")}</span>
+            )}
+          </Typography>
+          {loading && (
+            <Typography variant="caption" color="text.secondary">
+              {t("dashboard.loading")}
+            </Typography>
           )}
         </Box>
+        {brokerMode === "paper" && (
+          <Tooltip title={t("dashboard.feesTooltip")}>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={includeFeesInCapital}
+                  onChange={(e) => {
+                    const newValue = e.target.checked;
+                    setIncludeFeesInCapital(newValue);
+                    localStorage.setItem(
+                      "includeFeesInCapital",
+                      String(newValue),
+                    );
+                  }}
+                />
+              }
+              label={
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                  <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                    {t("dashboard.includeFees")}
+                  </Typography>
+                  <InfoIcon sx={{ fontSize: "1rem", color: "var(--muted)" }} />
+                </Box>
+              }
+            />
+          </Tooltip>
+        )}
       </Box>
 
-      {/* Eliminar el selector de zona horaria aquí */}
-      <Grid
-        container
-        spacing={{ xs: 3, sm: 3, md: 2, lg: 3, xl: 3 }}
-        mb={4}
-        justifyContent="space-between"
-        sx={{
-          maxWidth: simplifiedView
-            ? { xs: "100%", sm: "100%", md: 1400, lg: 1600, xl: 1800 }
-            : { xs: "100%", sm: "100%", md: 1600, lg: 1800, xl: 2000 },
-          mx: "auto",
-        }}
-      >
-        {/* Capital Total Box */}
-        <Grid
-          sx={{
-            width: simplifiedView
-              ? {
-                  xs: "100%",
-                  sm: "calc((100% - 24px) / 2)",
-                  md: "calc((100% - 32px) / 3)",
-                  lg: "calc((100% - 48px) / 3)",
-                  xl: "calc((100% - 48px) / 3)",
-                }
-              : {
-                  xs: "100%",
-                  sm: "calc((100% - 24px) / 2)",
-                  md: "calc((100% - 32px) / 3)",
-                  lg: "calc((100% - 48px) / 3)",
-                  xl: "calc((100% - 48px) / 3)",
-                },
-          }}
-        >
-          <Box
-            sx={{
-              background: "rgba(24,28,47,0.95)",
-              borderRadius: 3,
-              boxShadow:
-                totalCapital === null
-                  ? "0 0 16px rgba(255, 193, 7, 0.2)"
-                  : "0 0 16px rgba(255, 215, 0, 0.3)",
-              p: 3,
-              textAlign: "center",
-              minHeight: 110,
-              minWidth: 125,
-              maxWidth: simplifiedView
-                ? { xs: "100%", sm: 400, md: 450, lg: 500, xl: 550 }
-                : { xs: "100%", sm: 320, md: 380, lg: 420, xl: 480 },
-              width: "100%",
-              mx: "auto",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-              alignItems: "center",
-              transition: "box-shadow 0.2s",
-              boxSizing: "border-box",
-              "&:hover": {
-                boxShadow:
-                  totalCapital === null
-                    ? "0 0 32px rgba(255, 193, 7, 0.4)"
-                    : "0 0 32px rgba(255, 215, 0, 0.5)",
-              },
-            }}
+      {!stats && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {t("dashboard.statsError")}
+        </Alert>
+      )}
+      {apiUnavailable && (
+        <div className="api-notice" role="status">
+          <WifiOff size={16} />
+          <span>{t("dashboard.apiUnavailable")}</span>
+          <RefreshCw size={14} className="notice-icon" />
+        </div>
+      )}
+
+      <DashboardMetrics
+        totalCapital={totalCapital}
+        stats={stats}
+        openTrades={openTrades}
+        currency={capitalCurrency}
+        brokerMode={brokerMode}
+        includeFees={includeFeesInCapital}
+        totalFees={totalFees}
+        apiUnavailable={apiUnavailable}
+      />
+
+      <Box className="dashboard-section dashboard-performance">
+        <Grid container spacing={2}>
+          <Grid size={{ xs: 12, md: 8 }} sx={{ minWidth: 0 }}>
+            <EquityChart
+              operations={closedTrades}
+              showDrawdown={false}
+              timeZone={timeZone}
+              currency={capitalCurrency}
+              height={400}
+            />
+          </Grid>
+          <Grid size={{ xs: 12, md: 4 }} sx={{ minWidth: 0 }}>
+            <TradePerformanceTable
+              operations={closedTrades}
+              winrates={stats?.winrates}
+              stats={stats}
+              currency={capitalCurrency}
+              hideDescription
+            />
+          </Grid>
+        </Grid>
+      </Box>
+
+      <Box className="dashboard-section dashboard-open-positions">
+        <Accordion>
+          <AccordionSummary
+            expandIcon={<ExpandMoreIcon />}
+            aria-label={t("dashboard.openTrades")}
+            aria-describedby="open-trades-summary"
           >
-            <Typography
-              variant="subtitle2"
-              sx={{
-                color: "#aaa",
-                letterSpacing: 1,
-                textTransform: "uppercase",
-                fontWeight: 600,
-                mb: 1,
-              }}
-            >
-              Total Capital{" "}
-              {brokerMode === "paper" && includeFeesInCapital
-                ? "(fees included)"
-                : ""}
-            </Typography>
-            <Box
-              display="flex"
-              alignItems="center"
-              justifyContent="center"
-              gap={0.5}
-              sx={{
-                flexWrap: "wrap",
-                maxWidth: "100%",
-                width: "100%",
-                boxSizing: "border-box",
-              }}
-            >
-              {totalCapital === null && (
-                <Tooltip
-                  title="No se pudo obtener el capital total de Binance. Verifique la conexión con la API."
-                  arrow
-                  placement="top"
+            <Box className="dashboard-open-summary">
+              <Typography>{t("dashboard.openTrades")}</Typography>
+              <Box className="dashboard-open-summary-details">
+                <span>
+                  {t("dashboard.openTradeCount", { count: openTrades.length })}
+                </span>
+                <span>{t("dashboard.openTradeLong", { count: openTradeSummary.long })}</span>
+                <span>{t("dashboard.openTradeShort", { count: openTradeSummary.short })}</span>
+                <span
+                  className={[
+                    "dashboard-open-pnl",
+                    openTradeSummary.unrealizedPnl > 0 && "performance-win",
+                    openTradeSummary.unrealizedPnl < 0 && "performance-loss",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
                 >
-                  <WarningIcon
-                    sx={{
-                      color: "#ffc107",
-                      fontSize: "1.2rem",
-                      filter: "drop-shadow(0 0 8px #ffc107)",
-                      cursor: "help",
-                      flexShrink: 0,
-                    }}
-                  />
-                </Tooltip>
-              )}
+                  {openTradePnlPrefix}
+                  <span
+                    key={`${openTradeSummary.unrealizedPnl}-${capitalCurrency}`}
+                    className="dashboard-value-update"
+                  >
+                    {openTradePnl}
+                  </span>
+                  {openTradePnlSuffix}
+                </span>
+              </Box>
               <Typography
-                variant="h4"
-                sx={{
-                  color: totalCapital === null ? "#ffc107" : "#ffd700",
-                  fontWeight: 700,
-                  textShadow:
-                    totalCapital === null
-                      ? "0 0 12px #ffc107"
-                      : "0 0 12px rgba(255, 215, 0, 0.8)",
-                  fontSize: "2.2rem",
-                  lineHeight: 1.1,
-                  wordBreak: "break-word",
-                  flexShrink: 1,
-                  textAlign: "center",
-                  whiteSpace: "nowrap",
-                }}
+                id="open-trades-summary"
+                component="span"
+                className="sr-only"
               >
-                {totalCapital !== null
-                  ? formatCurrency(
-                      convertFromUSDT(
-                        brokerMode === "paper" && includeFeesInCapital
-                          ? totalCapital - totalFees
-                          : totalCapital,
-                        capitalCurrency,
-                      ),
-                      capitalCurrency,
-                    )
-                  : formatCurrency(0, "USDT")}
+                {t("dashboard.openTradesSummary", {
+                  count: openTrades.length,
+                  long: openTradeSummary.long,
+                  short: openTradeSummary.short,
+                  pnl: openTradePnl,
+                })}
               </Typography>
             </Box>
-            {brokerMode === "paper" &&
-              includeFeesInCapital &&
-              totalFees > 0 && (
-                <Box
-                  sx={{
-                    mt: 1.5,
-                    pt: 1.5,
-                    borderTop: "1px solid rgba(255, 215, 0, 0.2)",
-                    width: "100%",
-                    textAlign: "center",
-                  }}
-                >
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      color: "#ff6b6b",
-                      fontWeight: 500,
-                      display: "block",
-                    }}
-                  >
-                    Fees Deducted:
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: "#ff6b6b",
-                      fontWeight: 600,
-                    }}
-                  >
-                    -
-                    {formatCurrency(
-                      convertFromUSDT(totalFees, capitalCurrency),
-                      capitalCurrency,
-                    )}
-                  </Typography>
-                </Box>
-              )}
-          </Box>
-        </Grid>
-        {Object.entries(statLabels).map(([key, label]) => {
-          // Colores para los valores destacados
-          let valueColor = "#fff";
-          let displayValue = stats[key] !== undefined ? stats[key] : "-";
-          let textShadow = undefined;
+          </AccordionSummary>
+          <AccordionDetails>
+            <OperationsTable
+              operations={openTrades}
+              timeZone={timeZone}
+              isOpenTrades
+              binanceCount={openTrades.length}
+              dbCount={dbTradeCount}
+              config={config}
+            />
+          </AccordionDetails>
+        </Accordion>
+      </Box>
 
-          // Lógica especial para unrealized_pnl
-          if (key === "unrealized_pnl") {
-            const unrealizedPnl = openTrades.reduce((total, trade) => {
-              const profit = Number(trade.unrealizedProfit) || 0;
-              return total + profit;
-            }, 0);
+      {interactiveSection}
 
-            // Asegurar que sea un número válido
-            const numericPnl = Number(unrealizedPnl);
-            if (!isNaN(numericPnl)) {
-              const convertedPnl = convertFromUSDT(numericPnl, capitalCurrency);
-              const _symbol = getCurrencySymbol(capitalCurrency);
-              displayValue =
-                numericPnl !== 0
-                  ? `${convertedPnl > 0 ? "+" : ""}${formatCurrency(
-                      convertedPnl,
-                      capitalCurrency,
-                    )}`
-                  : formatCurrency(0, capitalCurrency);
-              valueColor =
-                numericPnl > 0
-                  ? "#27ff7e"
-                  : numericPnl < 0
-                    ? "#ff2e63"
-                    : "#fff";
-            } else {
-              displayValue = formatCurrency(0, capitalCurrency);
-              valueColor = "#fff";
-            }
-            textShadow = `0 0 12px ${valueColor}`;
-          } else if (key === "total_pnl") {
-            const pnl = Number(stats[key]);
-            if (!isNaN(pnl)) {
-              const effectivePnl =
-                brokerMode === "paper" && includeFeesInCapital
-                  ? pnl - totalFees
-                  : pnl;
-              const convertedPnl = convertFromUSDT(
-                effectivePnl,
-                capitalCurrency,
-              );
-              valueColor =
-                effectivePnl > 0
-                  ? "#27ff7e"
-                  : effectivePnl < 0
-                    ? "#ff2e63"
-                    : "#fff";
-              textShadow = `0 0 12px ${valueColor}`;
-              displayValue = `${convertedPnl > 0 ? "+" : ""}${formatCurrency(
-                convertedPnl,
-                capitalCurrency,
-              )}`;
-            } else {
-              displayValue = "-";
-              valueColor = "#fff";
-            }
-          }
-          return (
-            <Grid
-              sx={{
-                width: simplifiedView
-                  ? {
-                      xs: "100%",
-                      sm: "calc((100% - 24px) / 2)",
-                      md: "calc((100% - 32px) / 3)",
-                      lg: "calc((100% - 48px) / 3)",
-                      xl: "calc((100% - 48px) / 3)",
-                    }
-                  : {
-                      xs: "100%",
-                      sm: "calc((100% - 24px) / 2)",
-                      md: "calc((100% - 32px) / 3)",
-                      lg: "calc((100% - 48px) / 3)",
-                      xl: "calc((100% - 48px) / 3)",
-                    },
-              }}
-              key={key}
-            >
-              <Box
-                sx={{
-                  background: "rgba(24,28,47,0.95)",
-                  borderRadius: 3,
-                  boxShadow: `0 0 16px ${valueColor}33`,
-                  p: 3,
-                  textAlign: "center",
-                  minHeight: 110,
-                  minWidth: 125,
-                  maxWidth: simplifiedView
-                    ? { xs: "100%", sm: 400, md: 450, lg: 500, xl: 550 }
-                    : { xs: "100%", sm: 320, md: 380, lg: 420, xl: 480 },
-                  width: "100%",
-                  mx: "auto",
-                  boxSizing: "border-box",
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  transition: "box-shadow 0.2s",
-                  "&:hover": {
-                    boxShadow: `0 0 32px ${valueColor}99`,
-                  },
-                }}
-              >
-                <Typography
-                  variant="subtitle2"
-                  sx={{
-                    color: "#aaa",
-                    letterSpacing: 1,
-                    textTransform: "uppercase",
-                    fontWeight: 600,
-                    mb: 1,
-                  }}
-                >
-                  {key === "total_pnl" &&
-                  brokerMode === "paper" &&
-                  includeFeesInCapital
-                    ? `${label} (Net)`
-                    : label}
-                </Typography>
-                <Typography
-                  variant="h4"
-                  sx={{
-                    color: valueColor,
-                    fontWeight: 700,
-                    textShadow,
-                    fontSize: "2.2rem",
-                    lineHeight: 1.1,
-                  }}
-                >
-                  {displayValue}
-                </Typography>
-                {key === "total_pnl" &&
-                  brokerMode === "paper" &&
-                  includeFeesInCapital &&
-                  totalFees > 0 && (
-                    <Typography
-                      variant="caption"
-                      sx={{ color: "#ff6b6b", mt: 0.75, fontWeight: 500 }}
-                    >
-                      Includes -
-                      {formatCurrency(
-                        convertFromUSDT(totalFees, capitalCurrency),
-                        capitalCurrency,
-                      )}{" "}
-                      in fees
-                    </Typography>
-                  )}
-              </Box>
-            </Grid>
-          );
-        })}
-
-        {!simplifiedView && (
-          <>
-            {/* Wins Box */}
-            <Grid
-              sx={{
-                width: {
-                  xs: "100%",
-                  sm: "calc((100% - 24px) / 2)",
-                  md: "calc((100% - 32px) / 3)",
-                  lg: "calc((100% - 48px) / 3)",
-                  xl: "calc((100% - 48px) / 3)",
-                },
-              }}
-            >
-              <Box
-                sx={{
-                  background: "rgba(24,28,47,0.95)",
-                  borderRadius: 3,
-                  boxShadow: "0 0 16px rgba(45, 226, 230, 0.2)",
-                  p: 3,
-                  textAlign: "center",
-                  minHeight: 110,
-                  minWidth: 125,
-                  maxWidth: { xs: "100%", sm: 320, md: 380, lg: 420, xl: 480 },
-                  width: "100%",
-                  mx: "auto",
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  transition: "box-shadow 0.2s",
-                  "&:hover": {
-                    boxShadow: "0 0 32px rgba(45, 226, 230, 0.4)",
-                  },
-                }}
-              >
-                <Typography
-                  variant="subtitle2"
-                  sx={{
-                    color: "#aaa",
-                    letterSpacing: 1,
-                    textTransform: "uppercase",
-                    fontWeight: 600,
-                    mb: 1,
-                  }}
-                >
-                  Wins
-                </Typography>
-                <Typography
-                  variant="h4"
-                  sx={{
-                    color: "#2de2e6",
-                    fontWeight: 700,
-                    textShadow: "0 0 12px #2de2e6",
-                    fontSize: "2.2rem",
-                    lineHeight: 1.1,
-                  }}
-                >
-                  {stats?.wins || 0}
-                </Typography>
-              </Box>
-            </Grid>
-
-            {/* Losses Box */}
-            <Grid
-              sx={{
-                width: {
-                  xs: "100%",
-                  sm: "calc((100% - 24px) / 2)",
-                  md: "calc((100% - 32px) / 3)",
-                  lg: "calc((100% - 48px) / 3)",
-                  xl: "calc((100% - 48px) / 3)",
-                },
-              }}
-            >
-              <Box
-                sx={{
-                  background: "rgba(24,28,47,0.95)",
-                  borderRadius: 3,
-                  boxShadow: "0 0 16px rgba(255, 46, 99, 0.2)",
-                  p: 3,
-                  textAlign: "center",
-                  minHeight: 110,
-                  minWidth: 125,
-                  maxWidth: { xs: "100%", sm: 320, md: 380, lg: 420, xl: 480 },
-                  width: "100%",
-                  mx: "auto",
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  transition: "box-shadow 0.2s",
-                  "&:hover": {
-                    boxShadow: "0 0 32px rgba(255, 46, 99, 0.4)",
-                  },
-                }}
-              >
-                <Typography
-                  variant="subtitle2"
-                  sx={{
-                    color: "#aaa",
-                    letterSpacing: 1,
-                    textTransform: "uppercase",
-                    fontWeight: 600,
-                    mb: 1,
-                  }}
-                >
-                  Losses
-                </Typography>
-                <Typography
-                  variant="h4"
-                  sx={{
-                    color: "#ff2e63",
-                    fontWeight: 700,
-                    textShadow: "0 0 12px #ff2e63",
-                    fontSize: "2.2rem",
-                    lineHeight: 1.1,
-                  }}
-                >
-                  {stats?.losses || 0}
-                </Typography>
-              </Box>
-            </Grid>
-
-            {/* Average PnL Box */}
-            <Grid
-              sx={{
-                width: {
-                  xs: "100%",
-                  sm: "calc((100% - 24px) / 2)",
-                  md: "calc((100% - 32px) / 3)",
-                  lg: "calc((100% - 48px) / 3)",
-                  xl: "calc((100% - 48px) / 3)",
-                },
-              }}
-            >
-              <Box
-                sx={{
-                  background: "rgba(24,28,47,0.95)",
-                  borderRadius: 3,
-                  boxShadow: "0 0 16px rgba(45, 226, 230, 0.2)",
-                  p: 3,
-                  textAlign: "center",
-                  minHeight: 110,
-                  minWidth: 125,
-                  maxWidth: { xs: "100%", sm: 320, md: 380, lg: 420, xl: 480 },
-                  width: "100%",
-                  mx: "auto",
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  transition: "box-shadow 0.2s",
-                  "&:hover": {
-                    boxShadow: "0 0 32px rgba(45, 226, 230, 0.4)",
-                  },
-                }}
-              >
-                <Typography
-                  variant="subtitle2"
-                  sx={{
-                    color: "#aaa",
-                    letterSpacing: 1,
-                    textTransform: "uppercase",
-                    fontWeight: 600,
-                    mb: 1,
-                  }}
-                >
-                  Average PnL
-                </Typography>
-                <Typography
-                  variant="h4"
-                  sx={{
-                    color: "#2de2e6",
-                    fontWeight: 700,
-                    textShadow: "0 0 12px #2de2e6",
-                    fontSize: "2.2rem",
-                    lineHeight: 1.1,
-                  }}
-                >
-                  {stats?.average_pnl !== undefined
-                    ? formatCurrency(
-                        convertFromUSDT(
-                          Number(stats.average_pnl),
-                          capitalCurrency,
-                        ),
-                        capitalCurrency,
-                      )
-                    : formatCurrency(0, capitalCurrency)}
-                </Typography>
-              </Box>
-            </Grid>
-
-            {/* Max Win Streak Box */}
-            <Grid
-              sx={{
-                width: {
-                  xs: "100%",
-                  sm: "calc((100% - 24px) / 2)",
-                  md: "calc((100% - 32px) / 3)",
-                  lg: "calc((100% - 48px) / 3)",
-                  xl: "calc((100% - 48px) / 3)",
-                },
-              }}
-            >
-              <Box
-                sx={{
-                  background: "rgba(24,28,47,0.95)",
-                  borderRadius: 3,
-                  boxShadow: "0 0 16px rgba(39, 255, 126, 0.2)",
-                  p: 3,
-                  textAlign: "center",
-                  minHeight: 110,
-                  minWidth: 125,
-                  maxWidth: { xs: "100%", sm: 320, md: 380, lg: 420, xl: 480 },
-                  width: "100%",
-                  mx: "auto",
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  transition: "box-shadow 0.2s",
-                  "&:hover": {
-                    boxShadow: "0 0 32px rgba(39, 255, 126, 0.4)",
-                  },
-                }}
-              >
-                <Typography
-                  variant="subtitle2"
-                  sx={{
-                    color: "#aaa",
-                    letterSpacing: 1,
-                    textTransform: "uppercase",
-                    fontWeight: 600,
-                    mb: 1,
-                  }}
-                >
-                  Max Win Streak
-                </Typography>
-                <Typography
-                  variant="h4"
-                  sx={{
-                    color: "#27ff7e",
-                    fontWeight: 700,
-                    textShadow: "0 0 12px #27ff7e",
-                    fontSize: "2.2rem",
-                    lineHeight: 1.1,
-                  }}
-                >
-                  {stats?.max_win_streak || 0}
-                </Typography>
-              </Box>
-            </Grid>
-
-            {/* Max Loss Streak Box */}
-            <Grid
-              sx={{
-                width: {
-                  xs: "100%",
-                  sm: "calc((100% - 24px) / 2)",
-                  md: "calc((100% - 32px) / 3)",
-                  lg: "calc((100% - 48px) / 3)",
-                  xl: "calc((100% - 48px) / 3)",
-                },
-              }}
-            >
-              <Box
-                sx={{
-                  background: "rgba(24,28,47,0.95)",
-                  borderRadius: 3,
-                  boxShadow: "0 0 16px rgba(255, 46, 99, 0.2)",
-                  p: 3,
-                  textAlign: "center",
-                  minHeight: 110,
-                  minWidth: 125,
-                  maxWidth: { xs: "100%", sm: 320, md: 380, lg: 420, xl: 480 },
-                  width: "100%",
-                  mx: "auto",
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  transition: "box-shadow 0.2s",
-                  "&:hover": {
-                    boxShadow: "0 0 32px rgba(255, 46, 99, 0.4)",
-                  },
-                }}
-              >
-                <Typography
-                  variant="subtitle2"
-                  sx={{
-                    color: "#aaa",
-                    letterSpacing: 1,
-                    textTransform: "uppercase",
-                    fontWeight: 600,
-                    mb: 1,
-                  }}
-                >
-                  Max Loss Streak
-                </Typography>
-                <Typography
-                  variant="h4"
-                  sx={{
-                    color: "#ff2e63",
-                    fontWeight: 700,
-                    textShadow: "0 0 12px #ff2e63",
-                    fontSize: "2.2rem",
-                    lineHeight: 1.1,
-                  }}
-                >
-                  {stats?.max_loss_streak || 0}
-                </Typography>
-              </Box>
-            </Grid>
-
-            {/* Total Trades Box */}
-            <Grid
-              sx={{
-                width: {
-                  xs: "100%",
-                  sm: "calc((100% - 24px) / 2)",
-                  md: "calc((100% - 32px) / 3)",
-                  lg: "calc((100% - 48px) / 3)",
-                  xl: "calc((100% - 48px) / 3)",
-                },
-              }}
-            >
-              <Box
-                sx={{
-                  background: "rgba(24,28,47,0.95)",
-                  borderRadius: 3,
-                  boxShadow: "0 0 16px rgba(255, 167, 38, 0.2)",
-                  p: 3,
-                  textAlign: "center",
-                  minHeight: 110,
-                  minWidth: 125,
-                  maxWidth: { xs: "100%", sm: 320, md: 380, lg: 420, xl: 480 },
-                  width: "100%",
-                  mx: "auto",
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  transition: "box-shadow 0.2s",
-                  "&:hover": {
-                    boxShadow: "0 0 32px rgba(255, 167, 38, 0.4)",
-                  },
-                }}
-              >
-                <Typography
-                  variant="subtitle2"
-                  sx={{
-                    color: "#aaa",
-                    letterSpacing: 1,
-                    textTransform: "uppercase",
-                    fontWeight: 600,
-                    mb: 1,
-                  }}
-                >
-                  Total Trades
-                </Typography>
-                <Typography
-                  variant="h4"
-                  sx={{
-                    color: "#ffa726",
-                    fontWeight: 700,
-                    textShadow: "0 0 12px #ffa726",
-                    fontSize: "2.2rem",
-                    lineHeight: 1.1,
-                  }}
-                >
-                  {stats?.total_trades || 0}
-                </Typography>
-              </Box>
-            </Grid>
-          </>
-        )}
-      </Grid>
-
-      {/* Charts Section - Responsive Layout */}
-      <Grid
-        container
-        spacing={simplifiedView ? 0 : 9}
-        mb={4}
-        justifyContent={simplifiedView ? "flex-start" : "center"}
-        sx={{
-          maxWidth: simplifiedView ? "100%" : "auto",
-          width: "100%",
-          px: simplifiedView ? 0 : 0,
-        }}
-      >
-        {/* Equity Chart - Full width on mobile/tablet, 48% on desktop (or full width in simplified view) */}
-        <Grid
-          item
-          xs={12}
-          md={simplifiedView ? 12 : 6}
-          sx={{
-            width: simplifiedView ? "100%" : "auto",
-            maxWidth: simplifiedView ? "100%" : "none",
-          }}
-        >
-          <EquityChart
-            operations={closedTrades}
-            showDrawdown={false}
-            timeZone={timeZone}
-            currency={capitalCurrency}
-            simplifiedView={simplifiedView}
-            height={simplifiedView ? 416 : 350}
-          />
-        </Grid>
-
-        {!simplifiedView && (
-          <>
-            {/* Profit Factor Chart - Full width on mobile, 24% on tablet/desktop */}
-            <Grid item xs={12} sm={6} md={3}>
-              <ProfitFactorChart operations={closedTrades} hideDescription />
-            </Grid>
-
-            {/* Winrate Chart - Full width on mobile, 24% on tablet/desktop */}
-            <Grid item xs={12} sm={6} md={3}>
-              <WinrateChart winrates={stats?.winrates} hideDescription />
-            </Grid>
-          </>
-        )}
-      </Grid>
-
-      <OperationsTable
-        operations={openTrades}
-        title="Open Trades"
-        timeZone={timeZone}
-        binanceCount={openTrades.length}
-        dbCount={dbTradeCount}
-        simplifiedView={simplifiedView}
-        config={config}
-      />
-      <Accordion sx={{ mb: 2 }}>
-        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Typography>Show Closed Trades</Typography>
-        </AccordionSummary>
-        <AccordionDetails>
-          <OperationsTable
-            operations={closedTrades}
-            title="Closed Trades"
-            timeZone={timeZone}
-            simplifiedView={simplifiedView}
-          />
-        </AccordionDetails>
-      </Accordion>
-      {!simplifiedView && (
+      <Box className="dashboard-section dashboard-history">
+        <Accordion sx={{ mb: 2 }}>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Typography>{t("dashboard.history")}</Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            <OperationsTable
+              operations={closedTrades}
+              title={t("dashboard.closedTrades")}
+              timeZone={timeZone}
+            />
+          </AccordionDetails>
+        </Accordion>
         <MomentumPairsTable
           pairs={momentumPairs}
-          title="Momentum Pairs"
+          title={t("dashboard.momentumPairs")}
           openTrades={openTrades}
           timeZone={timeZone}
         />
-      )}
+      </Box>
     </Box>
   );
 }

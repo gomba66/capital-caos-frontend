@@ -11,6 +11,7 @@ import {
   Cell,
 } from "recharts";
 import { Typography, Box, Paper } from "@mui/material";
+import { useTranslation } from "react-i18next";
 
 /**
  * Construye los datos para la gráfica de win/loss por tipo de operación (long/short).
@@ -56,12 +57,20 @@ const tooltipStyle = {
  * @param {Array} operations - Lista de operaciones cerradas.
  */
 export default function LongShortWinLossChart({ operations }) {
-  const data = buildLongShortWinLossData(operations);
+  const { t } = useTranslation();
+  const data = buildLongShortWinLossData(operations).map((row) => ({
+    ...row,
+    type: t(`performance.${row.type.toLowerCase()}s`),
+  }));
   const hasData = data.some((d) => d.win > 0 || d.loss > 0);
 
   if (!hasData) {
     return (
-      <Typography>No closed trades to display long/short win/loss.</Typography>
+      <Typography>
+        {t("analyticsCharts.noTrades", {
+          chart: t("analyticsCharts.longShortEmpty"),
+        })}
+      </Typography>
     );
   }
 
@@ -69,15 +78,14 @@ export default function LongShortWinLossChart({ operations }) {
     <Box mb={4} display="flex" justifyContent="center">
       <Box width={{ xs: "100%", sm: 280, md: 320 }}>
         <Typography variant="h6" gutterBottom>
-          Long vs Short Win/Loss
+          {t("analyticsCharts.longShort")}
         </Typography>
         <Typography
           variant="caption"
           color="secondary"
           sx={{ mb: 1, display: "block" }}
         >
-          This chart shows the number of winning and losing trades, separated by
-          trade type (Long/Short).
+          {t("analyticsCharts.longShortDescription")}
         </Typography>
         <Paper sx={{ p: 2, background: "#181c2f" }}>
           <ResponsiveContainer width="100%" minWidth={220} height={250}>
@@ -103,10 +111,10 @@ export default function LongShortWinLossChart({ operations }) {
                 cursor={false}
                 formatter={(value, name) => {
                   if (name && name.toLowerCase().includes("win")) {
-                    return [value, "Wins"];
+                    return [value, t("performance.wins")];
                   }
                   if (name && name.toLowerCase().includes("loss")) {
-                    return [value, "Losses"];
+                    return [value, t("performance.losses")];
                   }
                   return [value, name];
                 }}
@@ -115,7 +123,7 @@ export default function LongShortWinLossChart({ operations }) {
               {/* Barra de ganadas */}
               <Bar
                 dataKey="win"
-                name="Wins"
+                name={t("performance.wins")}
                 radius={[6, 6, 0, 0]}
                 activeBar={{
                   style: {
@@ -141,7 +149,7 @@ export default function LongShortWinLossChart({ operations }) {
               {/* Barra de perdidas */}
               <Bar
                 dataKey="loss"
-                name="Losses"
+                name={t("performance.losses")}
                 radius={[6, 6, 0, 0]}
                 activeBar={{
                   style: {

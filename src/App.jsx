@@ -1,16 +1,22 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Dashboard from "./pages/Dashboard";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import Home from "./pages/Home";
 import Charts from "./pages/Charts";
 import Settings from "./pages/Settings";
-import TradingChartPage from "./pages/TradingChart";
 import Evaluations from "./pages/Evaluations";
 import Sidebar from "./components/Sidebar";
+import PlatformHeader from "./components/PlatformHeader";
 import { Box, useTheme, useMediaQuery } from "@mui/material";
 import { DateTime } from "luxon";
 import { SidebarContext, TimeZoneContext, CurrencyContext } from "./contexts/AppContexts";
 import { getBackendVersion } from "./api/version";
 import { initializeExchangeRates } from "./utils/currencyConverter";
+import AppErrorBoundary from "./components/AppErrorBoundary";
 
 function App() {
   const localZone = DateTime.local().zoneName;
@@ -20,12 +26,18 @@ function App() {
   const [currency, setCurrency] = useState(() => {
     return localStorage.getItem("capitalCurrency") || "USDT";
   });
-  const [sidebarWidth, setSidebarWidth] = useState(220);
+  const [sidebarWidth, setSidebarWidth] = useState(64);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const contextValue = useMemo(() => ({ timeZone, setTimeZone }), [timeZone]);
   const currencyContextValue = useMemo(() => ({ currency, setCurrency }), [currency]);
   const sidebarContextValue = useMemo(
-    () => ({ sidebarWidth, setSidebarWidth }),
-    [sidebarWidth]
+    () => ({
+      sidebarWidth,
+      setSidebarWidth,
+      mobileNavOpen,
+      setMobileNavOpen,
+    }),
+    [sidebarWidth, mobileNavOpen],
   );
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -66,9 +78,7 @@ function App() {
               display="flex"
               minHeight="100vh"
               sx={{
-                background: "linear-gradient(135deg, #181c2f 0%, #2a174e 100%)",
-                backgroundAttachment: "fixed",
-                backgroundSize: "cover",
+                backgroundColor: "background.default",
               }}
             >
               <Sidebar />
@@ -76,27 +86,31 @@ function App() {
                 component="main"
                 sx={{
                   position: isMobile ? "relative" : "absolute",
-                  left: isMobile ? "80px" : `${sidebarWidth}px`,
+                  left: isMobile ? 0 : `${sidebarWidth}px`,
                   right: 0,
                   top: 0,
                   minHeight: "100vh",
-                  background: "linear-gradient(135deg, #181c2f 0%, #2a174e 100%)",
-                  backgroundAttachment: "fixed",
-                  backgroundSize: "cover",
+                  minWidth: 0,
+                  width: isMobile ? 0 : "auto",
+                  flex: isMobile ? "1 1 0%" : "none",
+                  backgroundColor: "background.default",
                   transition: "left 0.3s ease-in-out",
                 }}
               >
-                <Routes>
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/charts" element={<Charts />} />
-                  <Route path="/trading-chart" element={<TradingChartPage />} />
-                  <Route
-                    path="/trading-chart/:symbol"
-                    element={<TradingChartPage />}
-                  />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="/evaluations" element={<Evaluations />} />
-                </Routes>
+                <PlatformHeader />
+                <AppErrorBoundary>
+                  <Routes>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/charts" element={<Charts />} />
+                    <Route path="/evaluations" element={<Evaluations />} />
+                    <Route path="/settings" element={<Settings />} />
+                    <Route
+                      path="/scanner"
+                      element={<Navigate to="/#scanner" replace />}
+                    />
+                    <Route path="*" element={<Navigate to="/" replace />} />
+                  </Routes>
+                </AppErrorBoundary>
               </Box>
             </Box>
           </SidebarContext.Provider>

@@ -1,8 +1,13 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { BrowserRouter } from "react-router-dom";
 import OperationsTable from "../OperationsTable";
+import { getPriceHistory } from "../../api/priceHistory";
+
+vi.mock("../../api/priceHistory", () => ({
+  getPriceHistory: vi.fn(),
+}));
 
 const theme = createTheme();
 
@@ -206,7 +211,8 @@ describe("OperationsTable", () => {
     expect(screen.getByText("ETHUSDT")).toBeInTheDocument();
   });
 
-  test("handles open trades mode", () => {
+  test("handles open trades mode", async () => {
+    getPriceHistory.mockResolvedValue({ data: [] });
     const openTradesOperations = [
       {
         id: 1,
@@ -228,7 +234,92 @@ describe("OperationsTable", () => {
 
     expect(screen.getByText("Open Trades")).toBeInTheDocument();
     expect(screen.getByText("BTCUSDT")).toBeInTheDocument();
-    expect(screen.getByText("PnL")).toBeInTheDocument();
+    expect(screen.getByText("Unrealized PnL")).toBeInTheDocument();
+    expect(screen.getByText("Chart")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "View BTCUSDT chart" }));
+    expect(
+      await screen.findByRole("dialog", { name: "BTCUSDT" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Entry:")).toBeInTheDocument();
+    expect(screen.getByText("Floating PnL:")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(getPriceHistory).toHaveBeenCalledWith("BTCUSDT", "3m", 120);
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Close chart" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  test("keeps the open-trade layout when there are no positions", () => {
+    renderWithProviders(
+      <OperationsTable
+        operations={[]}
+        title="Open Trades"
+        isOpenTrades
+      />,
+    );
+
+    expect(screen.getByText("Unrealized PnL")).toBeInTheDocument();
+    expect(screen.getByText("TP Target")).toBeInTheDocument();
+    expect(screen.getByText("No operations found.")).toBeInTheDocument();
+    expect(screen.getByText("Chart")).toBeInTheDocument();
+  });
+
+  test("emphasizes PnL and right-aligns numeric open-trade columns", () => {
+    const { container } = renderWithProviders(
+      <OperationsTable
+        operations={[
+          {
+            id: 1,
+            symbol: "BTCUSDT",
+            side: "LONG",
+            unrealizedProfit: "100",
+            updateTime: "2024-01-01T10:00:00Z",
+            take_profit_target: { ratio: 2.5, value_usd: 50 },
+          },
+        ]}
+        title="Open Trades"
+        isOpenTrades
+      />,
+    );
+
+    expect(
+      container.querySelector(".operations-table__pnl-head"),
+    ).toBeInTheDocument();
+    expect(
+      container.querySelector(".operations-table__pnl-cell"),
+    ).toBeInTheDocument();
+    expect(
+      container.querySelector(".operations-table__numeric-head"),
+    ).toBeInTheDocument();
+    expect(
+      container.querySelectorAll(".operations-table__numeric-cell"),
+    ).toHaveLength(3);
+    expect(
+      container.querySelector("tfoot .operations-table__numeric-cell"),
+    ).toBeInTheDocument();
+  });
+
+  test("shows configured side limits as compact semantic badges", () => {
+    renderWithProviders(
+      <OperationsTable
+        operations={[]}
+        title="Open Trades"
+        isOpenTrades
+        binanceCount={0}
+        config={{
+          limits: { max_long_trades: 12, max_short_trades: 8 },
+          side_config: { allowed_side: "both" },
+        }}
+      />,
+    );
+
+    expect(screen.getByText("LONG")).toBeInTheDocument();
+    expect(screen.getByText("SHORT")).toBeInTheDocument();
+    expect(screen.getByText("12")).toBeInTheDocument();
+    expect(screen.getByText("8")).toBeInTheDocument();
+    expect(document.querySelector(".position-limit--long")).toBeInTheDocument();
+    expect(document.querySelector(".position-limit--short")).toBeInTheDocument();
   });
 
   test("handles sorting by different columns", () => {
@@ -352,7 +443,7 @@ describe("OperationsTable", () => {
     );
 
     // Probar ordenamiento por PnL en open trades
-    const pnlHeader = screen.getByText("PnL");
+    const pnlHeader = screen.getByText("Unrealized PnL");
     fireEvent.click(pnlHeader);
 
     expect(screen.getByText("BTCUSDT")).toBeInTheDocument();
@@ -548,7 +639,7 @@ describe("OperationsTable", () => {
     );
 
     // Probar ordenamiento por tiempo en open trades
-    const timeHeader = screen.getByText("Open date");
+    const timeHeader = screen.getByText("Open Time");
     fireEvent.click(timeHeader);
 
     expect(screen.getByText("BTCUSDT")).toBeInTheDocument();
@@ -629,6 +720,16 @@ describe("OperationsTable - Cobertura avanzada", () => {
         updateTime: Date.now(),
         positionAmt: "100", // Para que se detecte como open trade
       },
+      {
+        id: 4,
+        symbol: "XRPUSDT",
+        side: "LONG",
+        entryPrice: "100",
+        unrealizedProfit: "0",
+        updateTime: Date.now(),
+        take_profit_target: { ratio: 3, value_usd: 60 },
+        positionAmt: "2",
+      },
     ];
     renderWithProviders(
       <OperationsTable
@@ -638,14 +739,22 @@ describe("OperationsTable - Cobertura avanzada", () => {
       />
     );
     // Buscar el texto dentro de Typography components
-    expect(
-      screen.getByText((content) => content.includes("2.50"))
-    ).toBeInTheDocument();
+    const numericTarget = screen.getByText((content) =>
+      content.includes("2.50")
+    );
+    expect(numericTarget).toBeInTheDocument();
+    expect(numericTarget).toHaveStyle({ color: "var(--muted)" });
     expect(
       screen.getByText((content) => content.includes("1.50"))
     ).toBeInTheDocument();
     expect(
+      screen.getByText((content) => content.includes("3.00"))
+    ).toBeInTheDocument();
+    expect(
       screen.getAllByText((content) => content.includes("50.00")).length
+    ).toBeGreaterThan(0);
+    expect(
+      screen.getAllByText((content) => content.includes("60.00")).length
     ).toBeGreaterThan(0);
     expect(screen.getAllByText("-").length).toBeGreaterThan(0);
   });
@@ -843,6 +952,7 @@ describe("OperationsTable - Cobertura avanzada", () => {
         unrealizedProfit: "10",
         updateTime: Date.now(),
         positionAmt: "0.001", // Para que se detecte como open trade
+        take_profit_target: { ratio: 3, value_usd: 25 },
       },
       {
         id: 2,
@@ -868,5 +978,16 @@ describe("OperationsTable - Cobertura avanzada", () => {
     expect(
       screen.getAllByText((content) => content.includes("5.00")).length
     ).toBeGreaterThan(0);
+    const footerCells = screen
+      .getByText((content) => content.includes("Total:"))
+      .closest("tr")
+      .querySelectorAll("td");
+    expect(footerCells[0]).toHaveAttribute("colspan", "2");
+    expect(footerCells[1]).toContainElement(
+      screen.getByText((content) => content.includes("Total:"))
+    );
+    expect(footerCells[2]).toHaveTextContent(/Target:/);
+    expect(footerCells[2]).toHaveStyle({ color: "var(--muted)" });
+    expect(footerCells[3]).toHaveAttribute("colspan", "3");
   });
 });

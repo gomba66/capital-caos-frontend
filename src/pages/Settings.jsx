@@ -1,11 +1,7 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Typography,
   Box,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Divider,
   Paper,
   TextField,
@@ -19,7 +15,6 @@ import {
   DialogActions,
 } from "@mui/material";
 import InfoIcon from "@mui/icons-material/Info";
-import { TimeZoneContext } from "../contexts/AppContexts";
 import { DateTime } from "luxon";
 import {
   getBackendVersion,
@@ -31,28 +26,12 @@ import {
   getCommissionRate,
   setCommissionRate,
 } from "../api/paperBroker";
-
-const commonTimeZones = [
-  "UTC",
-  "America/Bogota",
-  "America/Mexico_City",
-  "America/New_York",
-  "Europe/Madrid",
-  "Europe/London",
-  "Asia/Tokyo",
-  "Asia/Shanghai",
-  "America/Argentina/Buenos_Aires",
-];
-
-const commonCurrencies = ["USDT", "COP", "MXN"];
+import { useTranslation } from "react-i18next";
 
 export default function Settings() {
-  const { timeZone, setTimeZone } = useContext(TimeZoneContext);
+  const { t, i18n } = useTranslation();
   const [backendVersionInfo, setBackendVersionInfo] = useState(null);
   const [config, setConfig] = useState(null);
-  const [currency, setCurrency] = useState(() => {
-    return localStorage.getItem("capitalCurrency") || "USDT";
-  });
   const [commissionRate, setCommissionRateState] = useState(null);
   const [newCommissionRate, setNewCommissionRate] = useState("");
   const [commissionLoading, setCommissionLoading] = useState(false);
@@ -88,27 +67,12 @@ export default function Settings() {
     fetchCommissionRate();
   }, []);
 
-  const handleZoneChange = (e) => {
-    setTimeZone(e.target.value);
-    localStorage.setItem("timeZone", e.target.value);
-  };
-
-  const handleCurrencyChange = (e) => {
-    const newCurrency = e.target.value;
-    setCurrency(newCurrency);
-    localStorage.setItem("capitalCurrency", newCurrency);
-    // Disparar evento personalizado para actualizar Dashboard en la misma ventana
-    window.dispatchEvent(
-      new CustomEvent("currencyChange", { detail: newCurrency })
-    );
-  };
-
   const handleUpdateCommission = async () => {
     const rateBps = parseFloat(newCommissionRate);
     if (isNaN(rateBps) || rateBps < 0 || rateBps > 1000) {
       setCommissionMessage({
         type: "error",
-        text: "Commission rate must be between 0 and 1000 bps",
+        text: t("settingsPage.rateRangeError"),
       });
       return;
     }
@@ -121,9 +85,14 @@ export default function Settings() {
       if (result && result.success) {
         setCommissionMessage({
           type: "success",
-          text: `Commission rate updated: ${result.old_rate_bps}bps → ${result.new_rate_bps}bps${
+          text: `${t("settingsPage.rateUpdated", {
+            oldRate: result.old_rate_bps,
+            newRate: result.new_rate_bps,
+          })}${
             result.recalculation
-              ? ` | ${result.recalculation.total_updated} trades recalculated`
+              ? ` | ${t("settingsPage.tradesRecalculated", {
+                  count: result.recalculation.total_updated,
+                })}`
               : ""
           }`,
         });
@@ -132,13 +101,13 @@ export default function Settings() {
       } else {
         setCommissionMessage({
           type: "error",
-          text: result?.error || "Failed to update commission rate",
+          text: result?.error || t("settingsPage.updateFailed"),
         });
       }
     } catch (error) {
       setCommissionMessage({
         type: "error",
-        text: `Error: ${error.message}`,
+        text: t("settingsPage.error", { message: error.message }),
       });
     } finally {
       setCommissionLoading(false);
@@ -146,72 +115,21 @@ export default function Settings() {
   };
 
   return (
-    <Box p={4}>
+    <Box p={{ xs: 2, sm: 3, md: 4 }}>
       <Typography variant="h4" gutterBottom>
-        Settings
+        {t("settingsPage.title")}
       </Typography>
-      <FormControl
-        sx={{ minWidth: 260, mt: 3 }}
-        size="small"
-        variant="outlined"
-      >
-        <InputLabel id="tz-select-label">Time zone</InputLabel>
-        <Select
-          labelId="tz-select-label"
-          id="tz-select"
-          value={timeZone}
-          label="Time zone"
-          onChange={handleZoneChange}
-          MenuProps={{
-            PaperProps: {
-              style: {
-                maxHeight: 300,
-              },
-            },
-          }}
-        >
-          {[timeZone, ...commonTimeZones.filter((z) => z !== timeZone)].map(
-            (tz) => (
-              <MenuItem key={tz} value={tz}>
-                {tz}
-              </MenuItem>
-            )
-          )}
-        </Select>
-      </FormControl>
-
-      <FormControl
-        sx={{ minWidth: 260, mt: 3, ml: 2 }}
-        size="small"
-        variant="outlined"
-      >
-        <InputLabel id="currency-select-label">Capital Currency</InputLabel>
-        <Select
-          labelId="currency-select-label"
-          id="currency-select"
-          value={currency}
-          label="Capital Currency"
-          onChange={handleCurrencyChange}
-        >
-          {commonCurrencies.map((curr) => (
-            <MenuItem key={curr} value={curr}>
-              {curr}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
-
       <Divider sx={{ my: 4 }} />
 
       <Typography variant="h6" gutterBottom>
-        Version Information
+        {t("settingsPage.versions")}
       </Typography>
       <Box sx={{ display: "flex", justifyContent: "flex-start", mt: 2 }}>
         <Paper
           elevation={2}
           sx={{
             p: 2,
-            backgroundColor: "rgba(255, 255, 255, 0.05)",
+            backgroundColor: "background.paper",
             maxWidth: 300,
             width: "100%",
           }}
@@ -224,10 +142,10 @@ export default function Settings() {
                 alignItems="center"
               >
                 <Typography variant="body2" color="text.secondary">
-                  Backend:
+                  {t("settingsPage.backend")}:
                 </Typography>
                 <Typography variant="body2" fontWeight="bold">
-                  {backendVersionInfo?.version || "Loading..."}
+                  {backendVersionInfo?.version || t("common.loading")}
                 </Typography>
               </Box>
               <Typography
@@ -237,18 +155,18 @@ export default function Settings() {
               >
                 {backendVersionInfo?.date &&
                 backendVersionInfo.date !== "unknown"
-                  ? DateTime.fromISO(backendVersionInfo.date).toLocaleString(
-                      DateTime.DATE_MED
-                    )
+                  ? DateTime.fromISO(backendVersionInfo.date)
+                      .setLocale(i18n.resolvedLanguage)
+                      .toLocaleString(DateTime.DATE_MED)
                   : backendVersionInfo
-                  ? "Unknown date"
+                  ? t("settingsPage.unknownDate")
                   : "..."}
               </Typography>
             </Box>
             <Divider
               sx={{
                 my: 0.5,
-                borderColor: "rgba(255, 255, 255, 0.1)",
+                borderColor: "divider",
               }}
             />
             <Box display="flex" flexDirection="column" gap={0.5}>
@@ -258,7 +176,7 @@ export default function Settings() {
                 alignItems="center"
               >
                 <Typography variant="body2" color="text.secondary">
-                  Frontend:
+                  {t("settingsPage.frontend")}:
                 </Typography>
                 <Typography variant="body2" fontWeight="bold">
                   {frontendVersion}
@@ -270,10 +188,10 @@ export default function Settings() {
                 sx={{ textAlign: "right", opacity: 0.7 }}
               >
                 {frontendVersionDate !== "unknown"
-                  ? DateTime.fromISO(frontendVersionDate).toLocaleString(
-                      DateTime.DATE_MED
-                    )
-                  : "Unknown date"}
+                  ? DateTime.fromISO(frontendVersionDate)
+                      .setLocale(i18n.resolvedLanguage)
+                      .toLocaleString(DateTime.DATE_MED)
+                  : t("settingsPage.unknownDate")}
               </Typography>
             </Box>
           </Box>
@@ -283,14 +201,14 @@ export default function Settings() {
       <Divider sx={{ my: 4 }} />
 
       <Typography variant="h6" gutterBottom>
-        System Configuration
+        {t("settingsPage.system")}
       </Typography>
       <Box sx={{ display: "flex", justifyContent: "flex-start", mt: 2 }}>
         <Paper
           elevation={2}
           sx={{
             p: 2,
-            backgroundColor: "rgba(255, 255, 255, 0.05)",
+            backgroundColor: "background.paper",
             maxWidth: 400,
             width: "100%",
           }}
@@ -304,11 +222,11 @@ export default function Settings() {
                   color="text.secondary"
                   sx={{ mb: 0.5 }}
                 >
-                  Trade Limits
+                  {t("settingsPage.tradeLimits")}
                 </Typography>
                 <Box display="flex" justifyContent="space-between">
                   <Typography variant="body2" color="text.secondary">
-                    Max Long:
+                    {t("settingsPage.maxLong")}:
                   </Typography>
                   <Typography variant="body2" fontWeight="bold">
                     {config.limits.max_long_trades}
@@ -316,7 +234,7 @@ export default function Settings() {
                 </Box>
                 <Box display="flex" justifyContent="space-between">
                   <Typography variant="body2" color="text.secondary">
-                    Max Short:
+                    {t("settingsPage.maxShort")}:
                   </Typography>
                   <Typography variant="body2" fontWeight="bold">
                     {config.limits.max_short_trades}
@@ -324,7 +242,7 @@ export default function Settings() {
                 </Box>
                 <Box display="flex" justifyContent="space-between">
                   <Typography variant="body2" color="text.secondary">
-                    Max Total:
+                    {t("settingsPage.maxTotal")}:
                   </Typography>
                   <Typography variant="body2" fontWeight="bold">
                     {config.limits.max_open_trades}
@@ -334,7 +252,7 @@ export default function Settings() {
 
               <Divider
                 sx={{
-                  borderColor: "rgba(255, 255, 255, 0.1)",
+                    borderColor: "divider",
                 }}
               />
 
@@ -345,11 +263,11 @@ export default function Settings() {
                   color="text.secondary"
                   sx={{ mb: 0.5 }}
                 >
-                  Risk Configuration
+                  {t("settingsPage.risk")}
                 </Typography>
                 <Box display="flex" justifyContent="space-between">
                   <Typography variant="body2" color="text.secondary">
-                    Long Risk:
+                    {t("settingsPage.longRisk")}:
                   </Typography>
                   <Typography variant="body2" fontWeight="bold">
                     {(config.limits.long_risk_pct * 100).toFixed(1)}%
@@ -357,7 +275,7 @@ export default function Settings() {
                 </Box>
                 <Box display="flex" justifyContent="space-between">
                   <Typography variant="body2" color="text.secondary">
-                    Short Risk:
+                    {t("settingsPage.shortRisk")}:
                   </Typography>
                   <Typography variant="body2" fontWeight="bold">
                     {(config.limits.short_risk_pct * 100).toFixed(1)}%
@@ -367,7 +285,7 @@ export default function Settings() {
 
               <Divider
                 sx={{
-                  borderColor: "rgba(255, 255, 255, 0.1)",
+                    borderColor: "divider",
                 }}
               />
 
@@ -378,12 +296,12 @@ export default function Settings() {
                   color="text.secondary"
                   sx={{ mb: 0.5 }}
                 >
-                  Open Trades
+                  {t("settingsPage.openTrades")}
                 </Typography>
                 <Box display="flex" flexDirection="column" gap={0.5}>
                   <Box display="flex" justifyContent="space-between">
                     <Typography variant="body2" color="text.secondary">
-                      Database Total:
+                      {t("settingsPage.databaseTotal")}:
                     </Typography>
                     <Typography variant="body2" fontWeight="bold">
                       {config.database.total}
@@ -391,7 +309,7 @@ export default function Settings() {
                   </Box>
                   <Box display="flex" justifyContent="space-between">
                     <Typography variant="body2" color="text.secondary">
-                      Database Long:
+                      {t("settingsPage.databaseLong")}:
                     </Typography>
                     <Typography variant="body2" fontWeight="bold">
                       {config.database.long}
@@ -399,7 +317,7 @@ export default function Settings() {
                   </Box>
                   <Box display="flex" justifyContent="space-between">
                     <Typography variant="body2" color="text.secondary">
-                      Database Short:
+                      {t("settingsPage.databaseShort")}:
                     </Typography>
                     <Typography variant="body2" fontWeight="bold">
                       {config.database.short}
@@ -414,7 +332,7 @@ export default function Settings() {
                 >
                   <Box display="flex" justifyContent="space-between">
                     <Typography variant="body2" color="text.secondary">
-                      Binance Total:
+                      {t("settingsPage.exchangeTotal")}:
                     </Typography>
                     <Typography variant="body2" fontWeight="bold">
                       {config.binance.total}
@@ -422,7 +340,7 @@ export default function Settings() {
                   </Box>
                   <Box display="flex" justifyContent="space-between">
                     <Typography variant="body2" color="text.secondary">
-                      Binance Long:
+                      {t("settingsPage.exchangeLong")}:
                     </Typography>
                     <Typography variant="body2" fontWeight="bold">
                       {config.binance.long}
@@ -430,7 +348,7 @@ export default function Settings() {
                   </Box>
                   <Box display="flex" justifyContent="space-between">
                     <Typography variant="body2" color="text.secondary">
-                      Binance Short:
+                      {t("settingsPage.exchangeShort")}:
                     </Typography>
                     <Typography variant="body2" fontWeight="bold">
                       {config.binance.short}
@@ -441,7 +359,7 @@ export default function Settings() {
             </Box>
           ) : (
             <Typography variant="body2" color="text.secondary">
-              Loading configuration...
+              {t("settingsPage.loadingConfig")}
             </Typography>
           )}
         </Paper>
@@ -452,14 +370,14 @@ export default function Settings() {
       {brokerMode === "paper" && (
         <>
           <Typography variant="h6" gutterBottom>
-            Paper Broker Commission
+            {t("settingsPage.brokerCommission")}
           </Typography>
           <Box sx={{ display: "flex", justifyContent: "flex-start", mt: 2 }}>
             <Paper
               elevation={2}
               sx={{
                 p: 2,
-                backgroundColor: "rgba(255, 255, 255, 0.05)",
+                backgroundColor: "background.paper",
                 maxWidth: 400,
                 width: "100%",
               }}
@@ -470,7 +388,7 @@ export default function Settings() {
                     <Box display="flex" flexDirection="column" gap={0.5} flex={1}>
                       <Box display="flex" justifyContent="space-between">
                         <Typography variant="body2" color="text.secondary">
-                          Current Rate:
+                          {t("settingsPage.currentRate")}:
                         </Typography>
                         <Typography variant="body2" fontWeight="bold">
                           {commissionRate.commission_rate_bps} bps (
@@ -481,14 +399,14 @@ export default function Settings() {
                         </Typography>
                       </Box>
                       <Typography variant="caption" color="text.secondary">
-                        Broker Mode:{" "}
-                        <span style={{ fontWeight: "bold", color: "#ffd700" }}>
+                        {t("settingsPage.brokerMode")}:{" "}
+                        <span style={{ fontWeight: "bold", color: "var(--amber)" }}>
                           {commissionRate.broker_mode}
                         </span>
                       </Typography>
                     </Box>
-                    <Tooltip title="Commission is applied to entry and exit. 5 bps = 0.05%">
-                      <InfoIcon sx={{ fontSize: "1.2rem", color: "#2de2e6" }} />
+                    <Tooltip title={t("settingsPage.commissionTooltip")}>
+                      <InfoIcon sx={{ fontSize: "1.2rem", color: "primary.main" }} />
                     </Tooltip>
                   </Box>
 
@@ -497,16 +415,8 @@ export default function Settings() {
                     color="primary"
                     size="small"
                     onClick={() => setCommissionDialogOpen(true)}
-                    sx={{
-                      backgroundColor: "#2de2e6",
-                      color: "#000",
-                      fontWeight: "bold",
-                      "&:hover": {
-                        backgroundColor: "#1da9af",
-                      },
-                    }}
                   >
-                    Update Commission
+                    {t("settingsPage.updateRate")}
                   </Button>
 
                   {commissionMessage && (
@@ -520,7 +430,7 @@ export default function Settings() {
                 </Box>
               ) : (
                 <Typography variant="body2" color="text.secondary">
-                  Loading commission rate...
+                  {t("settingsPage.commissionLoading")}
                 </Typography>
               )}
             </Paper>
@@ -528,16 +438,16 @@ export default function Settings() {
 
           {/* Commission Update Dialog */}
           <Dialog open={commissionDialogOpen} onClose={() => setCommissionDialogOpen(false)} maxWidth="sm" fullWidth>
-            <DialogTitle>Update Commission Rate</DialogTitle>
+            <DialogTitle>{t("settingsPage.updateCommission")}</DialogTitle>
             <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 2 }}>
               <Typography variant="body2" color="text.secondary">
-                Enter commission rate in basis points (0-1000).
+                {t("settingsPage.commissionDescription")}
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                Example: 5 bps = 0.05% commission on entry and exit
+                {t("settingsPage.commissionExample")}
               </Typography>
               <TextField
-                label="Commission Rate (bps)"
+                label={t("settingsPage.rateBps")}
                 type="number"
                 value={newCommissionRate}
                 onChange={(e) => setNewCommissionRate(e.target.value)}
@@ -554,7 +464,7 @@ export default function Settings() {
                 />
                 <label htmlFor="recalculate-checkbox">
                   <Typography variant="body2" color="text.secondary">
-                    Recalculate all historical trades
+                    {t("settingsPage.recalculateAll")}
                   </Typography>
                 </label>
               </Box>
@@ -563,26 +473,21 @@ export default function Settings() {
               )}
             </DialogContent>
             <DialogActions>
-              <Button onClick={() => setCommissionDialogOpen(false)}>Cancel</Button>
+              <Button onClick={() => setCommissionDialogOpen(false)}>
+                {t("settingsPage.cancel")}
+              </Button>
               <Button
                 onClick={handleUpdateCommission}
                 disabled={commissionLoading}
                 variant="contained"
-                sx={{
-                  backgroundColor: "#2de2e6",
-                  color: "#000",
-                  fontWeight: "bold",
-                  "&:hover": {
-                    backgroundColor: "#1da9af",
-                  },
-                }}
               >
                 {commissionLoading ? (
                   <>
-                    <CircularProgress size={20} sx={{ mr: 1 }} /> Updating...
+                    <CircularProgress size={20} sx={{ mr: 1 }} />
+                    {t("settingsPage.updating")}
                   </>
                 ) : (
-                  "Update"
+                  t("settingsPage.update")
                 )}
               </Button>
             </DialogActions>

@@ -2,8 +2,10 @@ import React, { createContext } from "react";
 import { DateTime } from "luxon";
 
 export const SidebarContext = createContext({
-  sidebarWidth: 220,
+  sidebarWidth: 64,
   setSidebarWidth: () => {},
+  mobileNavOpen: false,
+  setMobileNavOpen: () => {},
 });
 
 export const TimeZoneContext = React.createContext({
@@ -14,4 +16,16 @@ export const TimeZoneContext = React.createContext({
 export const CurrencyContext = React.createContext({
   currency: "USDT",
   setCurrency: () => {},
+});
+
+export const PlatformThemeContext = React.createContext({
+  mode: "dark",
+  setMode: () => {},
+  palette: "classic",
+  setPalette: () => {},
+});
+
+export const NotificationContext = React.createContext({
+  notificationHistory: [],
+  setNotificationHistory: () => {},
 });

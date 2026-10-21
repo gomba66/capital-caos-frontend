@@ -8,7 +8,6 @@ import {
   ListItem,
   ListItemIcon,
   ListItemText,
-  Toolbar,
   Typography,
   Box,
   IconButton,
@@ -20,45 +19,38 @@ import {
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import SettingsIcon from "@mui/icons-material/Settings";
-import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import ShowChartIcon from "@mui/icons-material/ShowChart";
 import AssessmentIcon from "@mui/icons-material/Assessment";
-
+import RadarIcon from "@mui/icons-material/Radar";
 import { Link, useLocation } from "react-router-dom";
-import { TimeZoneContext, SidebarContext } from "../contexts/AppContexts";
+import { useTranslation } from "react-i18next";
+import { SidebarContext } from "../contexts/AppContexts";
 import { getBackendVersion } from "../api/version";
 
-// const drawerWidth = 220;
 const navItems = [
-  { text: "Dashboard", icon: <DashboardIcon />, path: "/" },
-  { text: "Charts", icon: <BarChartIcon />, path: "/charts" },
-  { text: "Trading Chart", icon: <ShowChartIcon />, path: "/trading-chart" },
-  { text: "Evaluations", icon: <AssessmentIcon />, path: "/evaluations" },
-  { text: "Settings", icon: <SettingsIcon />, path: "/settings" },
+  { label: "navigation.dashboard", icon: <DashboardIcon />, path: "/" },
+  { label: "navigation.charts", icon: <BarChartIcon />, path: "/charts" },
+  { label: "navigation.evaluations", icon: <AssessmentIcon />, path: "/evaluations" },
+  { label: "navigation.scanner", icon: <RadarIcon />, path: "/#scanner" },
+  { label: "navigation.settings", icon: <SettingsIcon />, path: "/settings" },
 ];
 
 export default function Sidebar() {
   const location = useLocation();
-  const { timeZone } = useContext(TimeZoneContext);
-  const { setSidebarWidth } = useContext(SidebarContext);
+  const { setSidebarWidth, mobileNavOpen, setMobileNavOpen } =
+    useContext(SidebarContext);
+  const { t } = useTranslation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [collapsed, setCollapsed] = useState(true);
   const [backendVersion, setBackendVersion] = useState(null);
-  const [selectedCurrency, setSelectedCurrency] = useState(() => {
-    return localStorage.getItem("capitalCurrency") || "USDT";
-  });
+  const isCollapsed = !isMobile && collapsed;
+  const currentWidth = isMobile ? 248 : isCollapsed ? 64 : 220;
 
-  const isCollapsed = isMobile || collapsed;
-  const currentWidth = isCollapsed ? 80 : 220;
-
-  // Actualizar el ancho del sidebar en el contexto
   React.useEffect(() => {
-    setSidebarWidth(currentWidth);
-  }, [currentWidth, setSidebarWidth]);
+    setSidebarWidth(isMobile ? 0 : currentWidth);
+  }, [currentWidth, isMobile, setSidebarWidth]);
 
   // Obtener la versión del backend
   useEffect(() => {
@@ -71,241 +63,34 @@ export default function Sidebar() {
     fetchVersion();
   }, []);
 
-  // Listener para cambios en la moneda
-  useEffect(() => {
-    const handleStorageChange = (e) => {
-      if (e.key === "capitalCurrency") {
-        setSelectedCurrency(e.newValue || "USDT");
-      }
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-    const handleCurrencyChange = (e) => {
-      setSelectedCurrency(e.detail || "USDT");
-    };
-
-    window.addEventListener("currencyChange", handleCurrencyChange);
-
-    return () => {
-      window.removeEventListener("storage", handleStorageChange);
-      window.removeEventListener("currencyChange", handleCurrencyChange);
-    };
-  }, []);
   return (
     <>
       <Drawer
-        variant="permanent"
-        open={true}
+        className="app-sidebar"
+        variant={isMobile ? "temporary" : "permanent"}
+        open={isMobile ? mobileNavOpen : true}
+        onClose={() => setMobileNavOpen(false)}
+        ModalProps={{ keepMounted: true }}
         sx={{
-          width: currentWidth,
+          width: isMobile ? 0 : currentWidth,
           flexShrink: 0,
           transition: "width 0.3s ease-in-out",
           "& .MuiDrawer-paper": {
             width: currentWidth,
             boxSizing: "border-box",
-            background: "linear-gradient(135deg, #181c2f 0%, #2a174e 100%)",
-            borderRight: "2px solid #2de2e6",
-            color: "#fff",
             transition: "width 0.3s ease-in-out",
           },
         }}
       >
-        <Toolbar />
-        <Box sx={{ p: 2, pb: 0, textAlign: "center" }}>
-          <Box
-            component="img"
-            src="/logo.jpg"
-            alt="Capital Caos"
-            sx={{
-              height: isCollapsed ? 50 : 80,
-              width: isCollapsed ? 50 : "auto",
-              maxWidth: "100%",
-              mb: 1,
-              borderRadius: 1,
-              boxShadow: "0 0 16px rgba(45, 226, 230, 0.3)",
-              display: "block",
-              margin: "0 auto 8px auto",
-            }}
-          />
-          <Box
-            sx={{
-              overflow: "hidden",
-              transition: "all 0.3s ease-in-out",
-              opacity: isCollapsed ? 0 : 1,
-              maxHeight: isCollapsed ? 0 : "auto",
-              transform: isCollapsed ? "translateY(-10px)" : "translateY(0)",
-            }}
-          >
-            <Typography
-              variant="h6"
-              color="#ffe156"
-              sx={{
-                letterSpacing: 2,
-                fontWeight: 700,
-                textShadow: "0 0 8px #ffe156",
-                mb: 0.5,
-                display: "block",
-                textAlign: "center",
-              }}
-            >
-              CAPITAL CAOS
-            </Typography>
-            <Typography
-              variant="caption"
-              color="#2de2e6"
-              sx={{
-                letterSpacing: 1,
-                display: "block",
-                textAlign: "center",
-              }}
-            >
-              Trading Dashboard
-            </Typography>
-          </Box>
-          <Tooltip
-            title={isCollapsed ? timeZone : ""}
-            placement="right"
-            arrow
-            sx={{
-              "& .MuiTooltip-tooltip": {
-                bgcolor: "rgba(24,28,47,0.95)",
-                color: "#2de2e6",
-                border: "1px solid #2de2e6",
-                fontSize: 12,
-                fontFamily: "monospace",
-              },
-            }}
-          >
-            <Box
-              sx={{
-                mt: 1,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                bgcolor: "rgba(45,226,230,0.07)",
-                borderRadius: isCollapsed ? 1 : 2,
-                px: isCollapsed ? 0.5 : 1.2,
-                py: isCollapsed ? 0.3 : 0.5,
-                cursor: isCollapsed ? "help" : "default",
-              }}
-            >
-              <AccessTimeIcon
-                sx={{
-                  fontSize: isCollapsed ? 14 : 17,
-                  color: "#2de2e6",
-                  mr: isCollapsed ? 0 : 0.7,
-                  transition: "all 0.3s ease-in-out",
-                }}
-              />
-              <Box
-                sx={{
-                  overflow: "hidden",
-                  transition: "all 0.3s ease-in-out",
-                  opacity: isCollapsed ? 0 : 1,
-                  maxWidth: isCollapsed ? 0 : "auto",
-                  transform: isCollapsed
-                    ? "translateX(-10px)"
-                    : "translateX(0)",
-                }}
-              >
-                <Typography
-                  variant="caption"
-                  color="#2de2e6"
-                  sx={{
-                    fontWeight: 600,
-                    fontFamily: "monospace",
-                    fontSize: 13,
-                    letterSpacing: 0.5,
-                  }}
-                >
-                  {timeZone}
-                </Typography>
-              </Box>
-            </Box>
-          </Tooltip>
-          <Tooltip
-            title={isCollapsed ? selectedCurrency : ""}
-            placement="right"
-            arrow
-            sx={{
-              "& .MuiTooltip-tooltip": {
-                bgcolor: "rgba(24,28,47,0.95)",
-                color: "#ffd700",
-                border: "1px solid #ffd700",
-                fontSize: 12,
-                fontFamily: "monospace",
-              },
-            }}
-          >
-            <Box
-              sx={{
-                mt: 1,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                bgcolor: "rgba(255,215,0,0.15)",
-                borderRadius: isCollapsed ? 1 : 2,
-                px: isCollapsed ? 0.5 : 1.2,
-                py: isCollapsed ? 0.3 : 0.5,
-                cursor: isCollapsed ? "help" : "default",
-                border: "1px solid rgba(255,215,0,0.3)",
-                boxShadow: "0 0 8px rgba(255,215,0,0.2)",
-                transition: "all 0.3s ease-in-out",
-                "&:hover": {
-                  bgcolor: "rgba(255,215,0,0.2)",
-                  boxShadow: "0 0 12px rgba(255,215,0,0.4)",
-                },
-              }}
-            >
-              <AttachMoneyIcon
-                sx={{
-                  fontSize: isCollapsed ? 14 : 17,
-                  color: "#ffd700",
-                  mr: isCollapsed ? 0 : 0.7,
-                  transition: "all 0.3s ease-in-out",
-                  filter: "drop-shadow(0 0 4px rgba(255,215,0,0.6))",
-                }}
-              />
-              <Box
-                sx={{
-                  overflow: "hidden",
-                  transition: "all 0.3s ease-in-out",
-                  opacity: isCollapsed ? 0 : 1,
-                  maxWidth: isCollapsed ? 0 : "auto",
-                  transform: isCollapsed
-                    ? "translateX(-10px)"
-                    : "translateX(0)",
-                }}
-              >
-                <Typography
-                  variant="caption"
-                  color="#ffd700"
-                  sx={{
-                    fontWeight: 700,
-                    fontFamily: "monospace",
-                    fontSize: 13,
-                    letterSpacing: 0.5,
-                    textShadow: "0 0 8px rgba(255,215,0,0.8)",
-                  }}
-                >
-                  {selectedCurrency}
-                </Typography>
-              </Box>
-            </Box>
-          </Tooltip>
-        </Box>
-        <List sx={{ mt: isCollapsed ? 2 : 4 }}>
+        <List className="app-sidebar-nav" sx={{ mt: 2 }}>
           {navItems.map((item) => (
             <Tooltip
-              key={item.text}
-              title={isCollapsed ? item.text : ""}
+              key={item.label}
+              title={isCollapsed ? t(item.label) : ""}
               placement="right"
               arrow
               sx={{
                 "& .MuiTooltip-tooltip": {
-                  bgcolor: "rgba(24,28,47,0.95)",
-                  color: "#2de2e6",
-                  border: "1px solid #2de2e6",
                   fontSize: 12,
                   fontWeight: 600,
                 },
@@ -314,25 +99,23 @@ export default function Sidebar() {
               <ListItem disablePadding>
                 <ListItemButton
                   component={Link}
+                  className="app-sidebar-link"
                   to={item.path}
-                  selected={location.pathname === item.path}
+                  onClick={() => isMobile && setMobileNavOpen(false)}
+                  selected={
+                    item.path === "/#scanner"
+                      ? location.pathname === "/" &&
+                        location.hash === "#scanner"
+                      : location.pathname === item.path
+                  }
                   sx={{
                     mb: isCollapsed ? 0.5 : 1,
-                    borderRadius: isCollapsed ? 1 : 2,
                     minHeight: 48,
                     justifyContent: isCollapsed ? "center" : "flex-start",
-                    background:
-                      location.pathname === item.path
-                        ? "rgba(45,226,230,0.12)"
-                        : "none",
-                    "&:hover": {
-                      background: "rgba(255,225,86,0.10)",
-                    },
                   }}
                 >
                   <ListItemIcon
                     sx={{
-                      color: "#2de2e6",
                       minWidth: isCollapsed ? "auto" : 36,
                       margin: 0,
                     }}
@@ -351,7 +134,7 @@ export default function Sidebar() {
                     }}
                   >
                     <ListItemText
-                      primary={item.text}
+                      primary={t(item.label)}
                       primaryTypographyProps={{
                         fontWeight: 600,
                         letterSpacing: 1,
@@ -379,14 +162,13 @@ export default function Sidebar() {
         >
           <Typography
             variant="caption"
-            color="#2de2e6"
+            color="text.secondary"
             sx={{
               fontFamily: "monospace",
               fontSize: 11,
               opacity: 1,
               letterSpacing: 0.5,
               textAlign: "center",
-              textShadow: "0 0 8px #2de2e6",
               fontWeight: 500,
             }}
           >
@@ -408,15 +190,14 @@ export default function Sidebar() {
           >
             <IconButton
               onClick={() => setCollapsed(!collapsed)}
+              aria-label={t(
+                isCollapsed ? "navigation.expand" : "navigation.collapse",
+              )}
+              title={t(
+                isCollapsed ? "navigation.expand" : "navigation.collapse",
+              )}
               sx={{
-                color: "#2de2e6",
-                bgcolor: "rgba(45,226,230,0.1)",
-                border: "1px solid #2de2e6",
                 transition: "all 0.3s ease-in-out",
-                "&:hover": {
-                  bgcolor: "rgba(45,226,230,0.2)",
-                  transform: "scale(1.05)",
-                },
               }}
             >
               {collapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />}

@@ -4,16 +4,17 @@ import { getStats } from "../api/stats";
 import { Box, CircularProgress, Typography } from "@mui/material";
 import EquityChart from "../components/charts/EquityChart";
 import PnLHistogram from "../components/charts/PnLHistogram";
-import WinrateChart from "../components/charts/WinrateChart";
 import LongShortWinLossChart from "../components/charts/LongShortWinLossChart";
-import ProfitFactorChart from "../components/charts/ProfitFactorChart";
+import TradePerformanceTable from "../components/charts/TradePerformanceTable";
 import WeeklyPerformanceChart from "../components/charts/WeeklyPerformanceChart";
 import MonthlyPerformanceChart from "../components/charts/MonthlyPerformanceChart";
 import WeeklyMonthlyPerformanceChart from "../components/charts/WeeklyMonthlyPerformanceChart";
 import SymbolPnLChart from "../components/charts/SymbolPnLChart";
 import { TimeZoneContext, CurrencyContext } from "../contexts/AppContexts";
+import { useTranslation } from "react-i18next";
 
 export default function Charts() {
+  const { t } = useTranslation();
   const [closedTrades, setClosedTrades] = useState([]);
   const [winrates, setWinrates] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -54,9 +55,9 @@ export default function Charts() {
   }
 
   return (
-    <Box p={4}>
+    <Box p={{ xs: 2, sm: 3, md: 4 }}>
       <Typography variant="h4" gutterBottom>
-        Advanced Charts
+        {t("chartsPage.advanced")}
       </Typography>
 
       {/* 1. Gráfica Principal (Equity) */}
@@ -67,18 +68,34 @@ export default function Charts() {
         currency={currency}
       />
 
-      {/* 2. Métricas Clave (2x2 grid) */}
+      {/* 2. Combined performance metrics */}
       <Box
         display="flex"
         flexWrap="wrap"
-        gap={4}
-        justifyContent="center"
+        gap={{ xs: 3, md: 5 }}
+        alignItems="flex-start"
+        justifyContent="space-between"
         sx={{ mb: 4 }}
       >
-        <ProfitFactorChart operations={closedTrades} />
-        <WinrateChart winrates={winrates} />
-        <PnLHistogram operations={closedTrades} />
-        <LongShortWinLossChart operations={closedTrades} />
+        <Box sx={{ width: { xs: "100%", md: "48%" }, minWidth: 0 }}>
+          <TradePerformanceTable
+            operations={closedTrades}
+            winrates={winrates}
+          />
+        </Box>
+        <Box
+          sx={{
+            width: { xs: "100%", md: "48%" },
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 2,
+            alignItems: "flex-start",
+            minWidth: 0,
+          }}
+        >
+          <PnLHistogram operations={closedTrades} />
+          <LongShortWinLossChart operations={closedTrades} />
+        </Box>
       </Box>
 
       {/* 3. Análisis Temporal (3 en fila) */}

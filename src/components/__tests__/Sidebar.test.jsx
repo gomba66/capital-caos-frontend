@@ -1,92 +1,86 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { afterEach, vi } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import Sidebar from "../Sidebar";
-import { TimeZoneContext, SidebarContext } from "../../contexts/AppContexts";
+import { SidebarContext } from "../../contexts/AppContexts";
 
-const theme = createTheme();
-
-const renderWithProviders = (component) => {
-  return render(
+const renderSidebar = ({
+  isMobile = false,
+  mobileNavOpen = false,
+  setMobileNavOpen = vi.fn(),
+} = {}) => {
+  vi.spyOn(window, "matchMedia").mockImplementation((query) => ({
+    matches: isMobile && query.includes("max-width"),
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  }));
+  return {
+    setMobileNavOpen,
+    ...render(
     <BrowserRouter>
-      <ThemeProvider theme={theme}>
-        <TimeZoneContext.Provider
-          value={{ timeZone: "UTC", setTimeZone: vi.fn() }}
+      <ThemeProvider theme={createTheme()}>
+        <SidebarContext.Provider
+          value={{
+            sidebarWidth: 220,
+            setSidebarWidth: vi.fn(),
+            mobileNavOpen,
+            setMobileNavOpen,
+          }}
         >
-          <SidebarContext.Provider
-            value={{ sidebarWidth: 220, setSidebarWidth: vi.fn() }}
-          >
-            {component}
-          </SidebarContext.Provider>
-        </TimeZoneContext.Provider>
+          <Sidebar />
+        </SidebarContext.Provider>
       </ThemeProvider>
-    </BrowserRouter>
-  );
+    </BrowserRouter>,
+    ),
+  };
 };
 
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
 describe("Sidebar", () => {
-  test("renders sidebar with navigation items", () => {
-    renderWithProviders(<Sidebar />);
+  test("starts compact and expands navigation on desktop", () => {
+    renderSidebar();
+
+    expect(
+      screen.getByRole("button", { name: "Expand navigation" }),
+    ).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Expand navigation" }),
+    );
+    expect(
+      screen.getByRole("button", { name: "Collapse navigation" }),
+    ).toBeInTheDocument();
+  });
+
+  test("renders navigation without duplicating the shared header", () => {
+    renderSidebar();
 
     expect(screen.getByText("Dashboard")).toBeInTheDocument();
     expect(screen.getByText("Charts")).toBeInTheDocument();
+    expect(screen.queryByText("Trading Chart")).not.toBeInTheDocument();
     expect(screen.getByText("Settings")).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Live Scanner" }),
+    ).toHaveAttribute("href", "/#scanner");
+    expect(screen.queryByText("CAPITAL CAOS")).not.toBeInTheDocument();
+    expect(screen.queryByText("UTC")).not.toBeInTheDocument();
   });
 
-  test("renders timezone information", () => {
-    renderWithProviders(<Sidebar />);
+  test("opens as a temporary drawer and closes after navigation on mobile", () => {
+    const setMobileNavOpen = vi.fn();
+    renderSidebar({ isMobile: true, mobileNavOpen: true, setMobileNavOpen });
 
-    expect(screen.getByText("UTC")).toBeInTheDocument();
-  });
+    fireEvent.click(screen.getByRole("link", { name: "Dashboard" }));
 
-  test("renders logo image", () => {
-    renderWithProviders(<Sidebar />);
-
-    const logo = screen.getByAltText("Capital Caos");
-    expect(logo).toBeInTheDocument();
-    expect(logo).toHaveAttribute("src", "/logo.jpg");
-  });
-
-  test("handles mobile view correctly", () => {
-    // Mock useMediaQuery para simular vista móvil
-    const mockUseMediaQuery = vi.fn().mockReturnValue(true);
-    vi.doMock("@mui/material", async () => {
-      const actual = await vi.importActual("@mui/material");
-      return {
-        ...actual,
-        useMediaQuery: mockUseMediaQuery,
-      };
-    });
-
-    renderWithProviders(<Sidebar />);
-
-    // Verificar que el sidebar se renderiza en modo móvil
-    expect(screen.getByText("Dashboard")).toBeInTheDocument();
-  });
-
-  test("handles collapsed state", () => {
-    renderWithProviders(<Sidebar />);
-
-    // Verificar que el sidebar se renderiza correctamente
-    expect(screen.getByText("Dashboard")).toBeInTheDocument();
-    expect(screen.getByText("UTC")).toBeInTheDocument();
-  });
-
-  test("displays timezone information", () => {
-    renderWithProviders(<Sidebar />);
-
-    // Verificar que se muestra información de timezone
-    expect(screen.getByText("Dashboard")).toBeInTheDocument();
-    expect(screen.getByText("UTC")).toBeInTheDocument();
-  });
-
-  test("handles navigation items correctly", () => {
-    renderWithProviders(<Sidebar />);
-
-    // Verificar que todos los elementos de navegación están presentes
-    expect(screen.getByText("Dashboard")).toBeInTheDocument();
-    expect(screen.getByText("Charts")).toBeInTheDocument();
-    expect(screen.getByText("Settings")).toBeInTheDocument();
+    expect(setMobileNavOpen).toHaveBeenCalledWith(false);
   });
 });

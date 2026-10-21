@@ -10,6 +10,7 @@ import {
   Cell,
 } from "recharts";
 import { Typography, Box, Paper } from "@mui/material";
+import { useTranslation } from "react-i18next";
 
 function buildHistogramData(operations, binSize = 5) {
   const pnls = (operations || [])
@@ -94,15 +95,22 @@ const tooltipStyle = {
 };
 
 export default function PnLHistogram({ operations }) {
+  const { t } = useTranslation();
   const data = buildHistogramData(operations, 5);
   if (!data.length) {
-    return <Typography>No closed trades to display PnL histogram.</Typography>;
+    return (
+      <Typography>
+        {t("analyticsCharts.noTrades", {
+          chart: t("analyticsCharts.pnlHistogramEmpty"),
+        })}
+      </Typography>
+    );
   }
   return (
     <Box mb={4} display="flex" justifyContent="center">
       <Box width={{ xs: "100%", sm: 280, md: 320 }}>
         <Typography variant="h6" gutterBottom>
-          PnL Distribution
+          {t("analyticsCharts.pnlHistogram")}
         </Typography>
         <Typography
           variant="caption"
@@ -114,7 +122,7 @@ export default function PnLHistogram({ operations }) {
             lineHeight: "20px",
           }}
         >
-          Distribution of trades by PnL ranges. Cyan = profits, red = losses.
+          {t("analyticsCharts.pnlDescription")}
         </Typography>
         <Paper sx={{ p: 2, background: "#181c2f" }}>
           <ResponsiveContainer width="100%" minWidth={220} height={250}>
@@ -145,7 +153,7 @@ export default function PnLHistogram({ operations }) {
               />
               <Bar
                 dataKey="count"
-                name="Trades"
+                name={t("analyticsCharts.trades")}
                 radius={[6, 6, 0, 0]}
                 activeBar={{
                   style: {

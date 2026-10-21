@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Table,
   TableBody,
@@ -10,28 +9,30 @@ import {
   Paper,
   Typography,
   Box,
-  IconButton,
   Tooltip,
 } from "@mui/material";
-import { ShowChart } from "@mui/icons-material";
 import { DateTime } from "luxon";
 
 import ScannerInfo from "./ScannerInfo";
+import OpenTradeChartDialog from "./OpenTradeChartDialog";
 import { convertFromUSDT, formatCurrency } from "../utils/currencyConverter";
 import { useSymbolStatistics } from "../hooks/useSymbolStatistics";
+import { useTranslation } from "react-i18next";
+import { CandlestickChart } from "lucide-react";
 
-function formatReason(reason) {
+function formatReason(reason, t) {
   if (!reason) return "-";
   const r = String(reason).toUpperCase();
-  if (r.includes("TP_DINAM")) return "Take Profit";
-  if (r.includes("TAKE") && r.includes("PROFIT")) return "Take Profit";
+  if (r.includes("TP_DINAM")) return t("operations.takeProfit");
+  if (r.includes("TAKE") && r.includes("PROFIT"))
+    return t("operations.takeProfit");
   if (r.includes("TIME_STOP_NEGATIVE_PNL")) return "Time Stop (Negative PnL)";
   if (r.includes("TIME_STOP_NEVER_POSITIVE")) return "Time Stop (Never Positive)";
   if (r.includes("TIME_STOP_MIN_PROGRESS")) return "Time Stop (Min Progress)";
   if (r.includes("TIME_STOP")) return "Time Stop";
-  if (r.includes("SL") || r.includes("STOP")) return "Stop Loss";
-  if (r.includes("MANUAL")) return "Manual Close";
-  if (r.includes("BINANCE")) return "Exchange Close";
+  if (r.includes("SL") || r.includes("STOP")) return t("operations.stopLoss");
+  if (r.includes("MANUAL")) return t("operations.manualClose");
+  if (r.includes("BINANCE")) return t("operations.exchangeClose");
   return String(reason);
 }
 
@@ -64,7 +65,7 @@ function formatUnrealizedProfit(val, currency = "USDT") {
   if (isNaN(num)) return val;
   const isPositive = num > 0;
   const isNegative = num < 0;
-  const color = isPositive ? "#2de2a6" : isNegative ? "#ff2e63" : undefined;
+  const color = isPositive ? "var(--green)" : isNegative ? "var(--red)" : undefined;
 
   // Convertir de USDT a la moneda seleccionada
   const convertedValue = convertFromUSDT(Math.abs(num), currency);
@@ -78,7 +79,7 @@ function formatUnrealizedProfit(val, currency = "USDT") {
       {currency !== "USDT" && (
         <>
           {" "}
-          <span style={{ color: "#aaa", fontWeight: 400, fontSize: "0.9em" }}>
+          <span style={{ color: "var(--muted)", fontWeight: 400, fontSize: "0.9em" }}>
             ({currency})
           </span>
         </>
@@ -93,7 +94,7 @@ function formatClosedPnL(val, currency = "USDT") {
   if (isNaN(num)) return val;
   const isPositive = num > 0;
   const isNegative = num < 0;
-  const color = isPositive ? "#2de2a6" : isNegative ? "#ff2e63" : undefined;
+  const color = isPositive ? "var(--green)" : isNegative ? "var(--red)" : undefined;
 
   // Convertir de USDT a la moneda seleccionada
   const convertedValue = convertFromUSDT(Math.abs(num), currency);
@@ -107,7 +108,7 @@ function formatClosedPnL(val, currency = "USDT") {
       {currency !== "USDT" && (
         <>
           {" "}
-          <span style={{ color: "#aaa", fontWeight: 400, fontSize: "0.9em" }}>
+          <span style={{ color: "var(--muted)", fontWeight: 400, fontSize: "0.9em" }}>
             ({currency})
           </span>
         </>
@@ -119,8 +120,8 @@ function formatClosedPnL(val, currency = "USDT") {
 function getSideStyle(side) {
   if (!side) return {};
   const s = side.toLowerCase();
-  if (s.includes("short")) return { color: "#ff2e63", fontWeight: 700 };
-  if (s.includes("long")) return { color: "#2de2a6", fontWeight: 700 };
+  if (s.includes("short")) return { color: "var(--red)", fontWeight: 700 };
+  if (s.includes("long")) return { color: "var(--green)", fontWeight: 700 };
   return { fontWeight: 700 };
 }
 
@@ -145,15 +146,27 @@ function getDurationString(start) {
   return `${hours > 0 ? hours + "h " : ""}${minutes}m ${seconds}s`;
 }
 
-function getWinLoss(pnl) {
+function getWinLoss(pnl, t) {
   if (pnl === undefined || pnl === null) return "-";
   const num = Number(pnl);
   if (isNaN(num)) return "-";
   if (num > 0)
-    return <span style={{ color: "#2de2a6", fontWeight: 700 }}>WIN</span>;
+    return (
+      <span style={{ color: "var(--green)", fontWeight: 700 }}>
+        {t("operations.win")}
+      </span>
+    );
   if (num < 0)
-    return <span style={{ color: "#ff2e63", fontWeight: 700 }}>LOSS</span>;
-  return <span style={{ color: "#aaa", fontWeight: 700 }}>FLAT</span>;
+    return (
+      <span style={{ color: "var(--red)", fontWeight: 700 }}>
+        {t("operations.loss")}
+      </span>
+    );
+  return (
+    <span style={{ color: "var(--muted)", fontWeight: 700 }}>
+      {t("operations.flat")}
+    </span>
+  );
 }
 
 export default function OperationsTable({
@@ -162,10 +175,12 @@ export default function OperationsTable({
   timeZone,
   binanceCount,
   dbCount,
-  simplifiedView = false,
+  isOpenTrades: openTradesMode,
   config = null,
 }) {
-  const navigate = useNavigate();
+  const { t } = useTranslation();
+  const [chartTradeKey, setChartTradeKey] = useState(null);
+  const closeChart = useCallback(() => setChartTradeKey(null), []);
   const [currency, setCurrency] = useState(() => {
     return localStorage.getItem("capitalCurrency") || "USDT";
   });
@@ -204,10 +219,10 @@ export default function OperationsTable({
 
   // Detect if open_trades format (Binance) or closed trades (tracker)
   const isOpenTrades =
-    operations &&
-    operations.length > 0 &&
-    (operations[0].positionAmt !== undefined ||
-      operations[0].status === "open");
+    openTradesMode ??
+    (operations?.length > 0 &&
+      (operations[0].positionAmt !== undefined ||
+        operations[0].status === "open"));
 
   // Estado para ordenamiento
   // Para open trades, ordenar por defecto por Open Time (updateTime) descendente (más recientes primero)
@@ -227,11 +242,6 @@ export default function OperationsTable({
         operations[0].status === "open");
     return isOpen ? "desc" : "asc";
   });
-
-  // Función para navegar al gráfico de trading
-  const handleSymbolClick = (symbol) => {
-    navigate(`/trading-chart/${symbol}`);
-  };
 
   // Función para ordenar
   function handleSort(col) {
@@ -320,6 +330,14 @@ export default function OperationsTable({
   if (orderBy) {
     sortedOps = [...operations].sort(getComparator(orderBy));
   }
+  const selectedTrade =
+    chartTradeKey === null
+      ? null
+      : (operations || []).find(
+          (operation) =>
+            `${operation.symbol}:${operation.side || operation.positionSide}` ===
+            chartTradeKey,
+        ) || null;
 
   // Sumatoria de PnL para open trades (en USDT)
   const totalPnL = isOpenTrades
@@ -361,7 +379,7 @@ export default function OperationsTable({
       : "";
 
   // Mostrar contador solo para "Open Trades"
-  const showCounter = title === "Open Trades" && binanceCount !== undefined;
+  const showCounter = isOpenTrades && binanceCount !== undefined;
 
   // Determinar qué sides están activos y sus límites
   const getActiveSidesAndLimits = () => {
@@ -412,7 +430,7 @@ export default function OperationsTable({
           {title}
         </Typography>
 
-        {title === "Open Trades" && (
+        {isOpenTrades && (
           <Box
             display="flex"
             alignItems="center"
@@ -432,7 +450,7 @@ export default function OperationsTable({
                       fontSize: "0.75rem",
                     }}
                   >
-                    Exchange trades:
+                    {t("operations.exchangeTrades")}:
                   </Typography>
                   <Typography
                     variant="body2"
@@ -453,7 +471,7 @@ export default function OperationsTable({
                       sx={{
                         width: "1px",
                         height: "16px",
-                        bgcolor: "rgba(255, 255, 255, 0.2)",
+                        bgcolor: "var(--line)",
                       }}
                     />
                     <Box display="flex" alignItems="center" gap={0.5}>
@@ -465,14 +483,16 @@ export default function OperationsTable({
                           fontSize: "0.75rem",
                         }}
                       >
-                        DB trades:
+                        {t("operations.dbTrades")}:
                       </Typography>
                       <Tooltip
                         title={
                           config?.database?.protected > 0
-                            ? `${config.database.protected} protected of ${
-                                dbCount + (config.database.protected || 0)
-                              } total`
+                            ? t("operations.protectedOf", {
+                                protected: config.database.protected,
+                                total:
+                                  dbCount + (config.database.protected || 0),
+                              })
                             : ""
                         }
                       >
@@ -481,7 +501,7 @@ export default function OperationsTable({
                           sx={{
                             color:
                               config?.database?.protected > 0
-                                ? "#ff9800"
+                                ? "var(--amber)"
                                 : "text.primary",
                             fontFamily: "monospace",
                             fontWeight: 600,
@@ -497,10 +517,10 @@ export default function OperationsTable({
                       </Tooltip>
                       {binanceCount !==
                         dbCount + (config?.database?.protected || 0) && (
-                        <Tooltip title="DB trades count doesn't match Exchange trades">
+                        <Tooltip title={t("operations.mismatch")}>
                           <span
                             style={{
-                              color: "#ff9800",
+                              color: "var(--amber)",
                               fontSize: "1rem",
                               marginLeft: "4px",
                             }}
@@ -527,41 +547,28 @@ export default function OperationsTable({
                     }}
                   />
                 )}
-                <Box display="flex" alignItems="center" gap={1}>
+                <Box
+                  className="position-limits"
+                  display="flex"
+                  alignItems="center"
+                  gap={0.75}
+                >
                   <Typography
+                    component="span"
                     variant="caption"
-                    sx={{
-                      color: "text.secondary",
-                      opacity: 0.7,
-                      fontSize: "0.75rem",
-                    }}
+                    className="position-limits-label"
                   >
-                    Limits:
+                    {t("operations.limits")}:
                   </Typography>
-                  {activeSidesAndLimits.map((item, index) => (
-                    <Typography
+                  {activeSidesAndLimits.map((item) => (
+                    <Box
                       key={item.side}
-                      variant="body2"
-                      sx={{
-                        color: item.side === "LONG" ? "#2de2a6" : "#ff2e63",
-                        opacity: 0.9,
-                        fontFamily: "monospace",
-                        fontSize: "0.85rem",
-                        fontWeight: 600,
-                      }}
+                      component="span"
+                      className={`position-limit position-limit--${item.side.toLowerCase()}`}
                     >
-                      {item.side} {item.limit}
-                      {index < activeSidesAndLimits.length - 1 && (
-                        <span
-                          style={{
-                            color: "rgba(255, 255, 255, 0.5)",
-                            margin: "0 4px",
-                          }}
-                        >
-                          |
-                        </span>
-                      )}
-                    </Typography>
+                      <span>{item.side}</span>
+                      <b>{item.limit}</b>
+                    </Box>
                   ))}
                 </Box>
               </>
@@ -570,42 +577,56 @@ export default function OperationsTable({
         )}
       </Box>
       <TableContainer component={Paper} sx={{ mb: 4, overflowX: "auto" }}>
-        <Table size="small" sx={{ minWidth: 650 }}>
+        <Table
+          className={`operations-table ${
+            openTradesMode ? "operations-table--open" : "operations-table--closed"
+          }`}
+          size="small"
+          sx={{ minWidth: 650 }}
+        >
           <TableHead>
             <TableRow>
               <TableCell
                 onClick={() => handleSort("symbol")}
                 style={{ cursor: "pointer" }}
               >
-                Symbol
+                {t("operations.symbol")}
               </TableCell>
               <TableCell
                 onClick={() => handleSort("side")}
                 style={{ cursor: "pointer" }}
               >
-                Side
+                {t("operations.side")}
               </TableCell>
               <TableCell
                 onClick={() => handleSort("pnl")}
+                className={isOpenTrades ? "operations-table__pnl-head" : undefined}
                 style={{ cursor: "pointer" }}
               >
-                {isOpenTrades ? "Unrealized PnL" : "PnL"}
+                {isOpenTrades
+                  ? t("operations.unrealizedPnl")
+                  : t("operations.pnl")}
               </TableCell>
               {!isOpenTrades && (
                 <TableCell
                   onClick={() => handleSort("pnl")}
                   style={{ cursor: "pointer" }}
                 >
-                  Result
+                  {t("operations.result")}
                 </TableCell>
               )}
-              {isOpenTrades && <TableCell>TP Target</TableCell>}
+              {isOpenTrades && (
+                <TableCell className="operations-table__numeric-head">
+                  {t("operations.tpTarget")}
+                </TableCell>
+              )}
               <TableCell
+                className={isOpenTrades ? "operations-table__numeric-head" : undefined}
                 style={{ cursor: "pointer" }}
                 onClick={() => handleSort("winRate")}
               >
-                <Tooltip title="Historical win rate percentage for this symbol">
-                  <span>Win Rate</span>
+                <Tooltip title={t("operations.winRateTooltip")}>
+                  <span>{t("operations.winRate")}</span>
                 </Tooltip>
               </TableCell>
 
@@ -615,31 +636,35 @@ export default function OperationsTable({
                 }
                 style={{ cursor: "pointer" }}
               >
-                {isOpenTrades ? "Open Time" : "Open date"}
+                {isOpenTrades
+                  ? t("operations.openTime")
+                  : t("operations.openDate")}
               </TableCell>
-              <TableCell
-                onClick={() => handleSort(isOpenTrades ? "" : "closeTime")}
-                style={{ cursor: isOpenTrades ? undefined : "pointer" }}
-              >
-                {isOpenTrades ? "" : "Close date"}
-              </TableCell>
-              {!isOpenTrades && !simplifiedView && (
+              {!isOpenTrades && (
+                <TableCell
+                  onClick={() => handleSort("closeTime")}
+                  style={{ cursor: "pointer" }}
+                >
+                  {t("operations.closeDate")}
+                </TableCell>
+              )}
+              {!isOpenTrades && (
                 <TableCell
                   onClick={() => handleSort("reason")}
                   style={{ cursor: "pointer" }}
                 >
-                  Reason
+                  {t("operations.reason")}
                 </TableCell>
               )}
-              {!simplifiedView && (
+              {!isOpenTrades && (
                 <TableCell
                   onClick={() => handleSort("scanner")}
                   style={{ cursor: "pointer" }}
                 >
-                  Scanner
+                  {t("operations.scanner")}
                 </TableCell>
               )}
-              {isOpenTrades && <TableCell>Chart</TableCell>}
+              {isOpenTrades && <TableCell>{t("operations.chart")}</TableCell>}
             </TableRow>
           </TableHead>
           <TableBody>
@@ -650,7 +675,7 @@ export default function OperationsTable({
                     <TableCell
                       style={{
                         fontWeight: 600,
-                        color: "#2de2e6",
+                        color: "var(--ink)",
                       }}
                     >
                       {op.symbol || "-"}
@@ -658,12 +683,19 @@ export default function OperationsTable({
                     <TableCell style={getSideStyle(op.side || op.positionSide)}>
                       {formatSide(op.side || op.positionSide)}
                       {op.protected && (
-                        <span title="Protected" style={{ marginLeft: 6 }}>
+                        <span
+                          title={t("operations.protected")}
+                          style={{ marginLeft: 6 }}
+                        >
                           🔒
                         </span>
                       )}
                     </TableCell>
-                    <TableCell>
+                    <TableCell
+                      className={
+                        isOpenTrades ? "operations-table__pnl-cell" : undefined
+                      }
+                    >
                       {isOpenTrades
                         ? formatUnrealizedProfit(
                             op.unrealizedProfit || op.unRealizedProfit,
@@ -672,16 +704,16 @@ export default function OperationsTable({
                         : formatClosedPnL(op.pnl, currency)}
                     </TableCell>
                     {!isOpenTrades && (
-                      <TableCell>{getWinLoss(op.pnl)}</TableCell>
+                      <TableCell>{getWinLoss(op.pnl, t)}</TableCell>
                     )}
                     {isOpenTrades && (
-                      <TableCell>
+                      <TableCell className="operations-table__numeric-cell">
                         {op.take_profit_target ? (
                           typeof op.take_profit_target === "object" ? (
                             <Box>
                               <Typography
                                 variant="body2"
-                                sx={{ fontWeight: 600, color: "#2de2e6" }}
+                                sx={{ fontWeight: 600, color: "var(--muted)" }}
                               >
                                 {Number(op.take_profit_target.ratio).toFixed(2)}
                                 x{" "}
@@ -689,7 +721,7 @@ export default function OperationsTable({
                               {op.take_profit_target.value_usd && (
                                 <Typography
                                   variant="caption"
-                                  style={{ color: "#2de2a6" }}
+                                  style={{ color: "var(--muted)" }}
                                 >
                                   (~
                                   {(() => {
@@ -709,7 +741,7 @@ export default function OperationsTable({
                                       {" "}
                                       <span
                                         style={{
-                                          color: "#aaa",
+                                          color: "var(--muted)",
                                           fontWeight: 400,
                                           fontSize: "0.85em",
                                         }}
@@ -725,7 +757,7 @@ export default function OperationsTable({
                           ) : (
                             <Typography
                               variant="body2"
-                              sx={{ fontWeight: 600, color: "#2de2e6" }}
+                              sx={{ fontWeight: 600, color: "var(--muted)" }}
                             >
                               {Number(op.take_profit_target).toFixed(2)}x{" "}
                             </Typography>
@@ -735,7 +767,11 @@ export default function OperationsTable({
                         )}
                       </TableCell>
                     )}
-                    <TableCell>
+                    <TableCell
+                      className={
+                        isOpenTrades ? "operations-table__numeric-cell" : undefined
+                      }
+                    >
                       {symbolStatsMap[op.symbol] ? (
                         (() => {
                           const stats = symbolStatsMap[op.symbol];
@@ -767,12 +803,14 @@ export default function OperationsTable({
                                 fontWeight: 600,
                                 color:
                                   displayWinRate >= 50
-                                    ? "#2de2a6"
+                                    ? "var(--green)"
                                     : displayWinRate >= 30
-                                    ? "#ffd700"
-                                    : "#ff2e63",
+                                    ? "var(--amber)"
+                                    : "var(--red)",
                               }}
-                              title={`Based on ${displayTrades} trades`}
+                              title={t("operations.basedOnTrades", {
+                                count: displayTrades,
+                              })}
                             >
                               {displayWinRate.toFixed(1)}%
                             </Typography>
@@ -793,15 +831,15 @@ export default function OperationsTable({
                         ? getDurationString(op.updateTime)
                         : formatDate(op.timestamp || op.openTime, timeZone)}
                     </TableCell>
-                    <TableCell>
-                      {isOpenTrades
-                        ? ""
-                        : formatDate(op.closed_at || op.closeTime, timeZone)}
-                    </TableCell>
-                    {!isOpenTrades && !simplifiedView && (
-                      <TableCell>{formatReason(op.reason)}</TableCell>
+                    {!isOpenTrades && (
+                      <TableCell>
+                        {formatDate(op.closed_at || op.closeTime, timeZone)}
+                      </TableCell>
                     )}
-                    {!simplifiedView && (
+                    {!isOpenTrades && (
+                      <TableCell>{formatReason(op.reason, t)}</TableCell>
+                    )}
+                    {!isOpenTrades && (
                       <TableCell>
                         <ScannerInfo
                           scannerInfo={op.scanner_info}
@@ -811,21 +849,24 @@ export default function OperationsTable({
                     )}
                     {isOpenTrades && (
                       <TableCell>
-                        <Tooltip title={`View ${op.symbol} chart`}>
-                          <IconButton
-                            size="small"
-                            onClick={() => handleSymbolClick(op.symbol)}
-                            sx={{
-                              color: "#2de2e6",
-                              "&:hover": {
-                                backgroundColor: "rgba(45, 226, 230, 0.1)",
-                                color: "#2de2e6",
-                              },
-                            }}
-                          >
-                            <ShowChart />
-                          </IconButton>
-                        </Tooltip>
+                        <button
+                          className="chart-button"
+                          type="button"
+                          onClick={() =>
+                            setChartTradeKey(
+                              `${op.symbol}:${op.side || op.positionSide}`,
+                            )
+                          }
+                          title={t("charts.view", {
+                            symbol: op.symbol?.replace(":USDT", ""),
+                          })}
+                          aria-label={t("charts.view", {
+                            symbol: op.symbol?.replace(":USDT", ""),
+                          })}
+                          disabled={!op.symbol}
+                        >
+                          <CandlestickChart size={15} />
+                        </button>
                       </TableCell>
                     )}
                   </TableRow>
@@ -834,18 +875,10 @@ export default function OperationsTable({
             ) : (
               <TableRow>
                 <TableCell
-                  colSpan={
-                    simplifiedView
-                      ? isOpenTrades
-                        ? 7 // Symbol, Side, PnL, Open Time, Close date (empty), TP Target, Chart
-                        : 6 // Symbol, Side, PnL, Open date, Close date, Result
-                      : isOpenTrades
-                      ? 13 // Symbol, Side, Entry, PnL, Open Time, Close date (empty), Scanner, Hist.Trades, WinRate, TotalPnL, TP Target, Chart
-                      : 10 // Symbol, Side, Entry, PnL, Open date, Close date, Reason, Result, Scanner, Type
-                  }
+                  colSpan={isOpenTrades ? 7 : 9}
                   align="center"
                 >
-                  No operations found.
+                  {t("operations.noOperations")}
                 </TableCell>
               </TableRow>
             )}
@@ -856,24 +889,26 @@ export default function OperationsTable({
               <TableRow>
                 <TableCell colSpan={2} />
                 <TableCell
+                  className="operations-table__pnl-total"
                   style={{
                     fontWeight: 700,
                     color:
                       totalPnL > 0
-                        ? "#2de2a6"
+                        ? "var(--green)"
                         : totalPnL < 0
-                        ? "#ff2e63"
+                        ? "var(--red)"
                         : undefined,
                   }}
                 >
-                  Total: {totalPnL > 0 ? "+" : totalPnL < 0 ? "-" : ""}
+                  {t("operations.total")}:{" "}
+                  {totalPnL > 0 ? "+" : totalPnL < 0 ? "-" : ""}
                   {totalPnLFormatted}
                   {currency !== "USDT" && (
                     <>
                       {" "}
                       <span
                         style={{
-                          color: "#aaa",
+                          color: "var(--muted)",
                           fontWeight: 400,
                           fontSize: "0.9em",
                         }}
@@ -887,8 +922,8 @@ export default function OperationsTable({
                       {" "}
                       <span
                         style={{
-                          color: "#4ecdc4",
-                          fontWeight: 600,
+                          color: "var(--muted)",
+                          fontWeight: 400,
                           fontSize: "0.85em",
                         }}
                       >
@@ -898,20 +933,21 @@ export default function OperationsTable({
                   )}
                 </TableCell>
                 <TableCell
+                  className="operations-table__numeric-cell"
                   style={{
-                    fontWeight: 700,
-                    color: "#4ecdc4",
+                    fontWeight: 500,
+                    color: "var(--muted)",
                   }}
                 >
                   {totalTPTarget > 0 ? (
                     <>
-                      Target: ~{totalTPTargetFormatted}
+                      {t("operations.target")}: ~{totalTPTargetFormatted}
                       {currency !== "USDT" && (
                         <>
                           {" "}
                           <span
                             style={{
-                              color: "#aaa",
+                              color: "var(--muted)",
                               fontWeight: 400,
                               fontSize: "0.9em",
                             }}
@@ -925,14 +961,16 @@ export default function OperationsTable({
                     "-"
                   )}
                 </TableCell>
-                <TableCell
-                  colSpan={simplifiedView ? 4 : 5} // Simplified: Open Time, Close date (empty), Chart | Normal: Win Rate, Open Time, Close date (empty), Scanner, Chart
-                />
+                <TableCell colSpan={3} />
               </TableRow>
             </tfoot>
           )}
         </Table>
       </TableContainer>
+      <OpenTradeChartDialog
+        trade={selectedTrade}
+        onClose={closeChart}
+      />
     </>
   );
 }
