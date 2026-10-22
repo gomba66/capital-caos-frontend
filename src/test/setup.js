@@ -1,5 +1,10 @@
-import { vi } from "vitest";
+import { beforeEach, vi } from "vitest";
 import "@testing-library/jest-dom";
+import i18n from "../i18n.js";
+
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
+});
 
 // Suprimir warnings de act() en la consola
 const originalConsoleError = console.error;

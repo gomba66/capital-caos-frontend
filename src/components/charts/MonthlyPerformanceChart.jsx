@@ -19,12 +19,29 @@ import {
 } from "@mui/material";
 import CustomSwitch from "../CustomSwitch";
 import { DateTime } from "luxon";
+import { useTranslation } from "react-i18next";
+
+const monthKeys = [
+  "january",
+  "february",
+  "march",
+  "april",
+  "may",
+  "june",
+  "july",
+  "august",
+  "september",
+  "october",
+  "november",
+  "december",
+];
 
 function buildMonthlyPerformanceData(
   operations,
   filterType = "all",
   timeZone = "UTC",
-  showAllMonths = false
+  showAllMonths = false,
+  t,
 ) {
   if (!operations || operations.length === 0) {
     return [];
@@ -33,7 +50,6 @@ function buildMonthlyPerformanceData(
   // Get current date in user's timezone
   const now = DateTime.now().setZone(timeZone);
   const currentMonth = now.month - 1; // 0-based index
-  const currentYear = now.year;
 
   let monthsToShow = [];
   let monthLabels = [];
@@ -42,26 +58,7 @@ function buildMonthlyPerformanceData(
     // Show all 12 months with single letter labels of current year using FIRST LETTER OF MONTH
     monthsToShow = Array.from({ length: 12 }, (_, i) => i);
     monthLabels = monthsToShow.map((monthIndex) => {
-      const allMonthNames = [
-        "Jan",
-        "Feb",
-        "Mar",
-        "Apr",
-        "May",
-        "Jun",
-        "Jul",
-        "Aug",
-        "Sep",
-        "Oct",
-        "Nov",
-        "Dec",
-      ];
-      const month = DateTime.fromObject({
-        year: currentYear,
-        month: monthIndex + 1,
-      }).toFormat("MMM");
-
-      return month.charAt(0) + allMonthNames.indexOf(month).toString();
+      return `${t(`analyticsCharts.${monthKeys[monthIndex]}`).charAt(0)}${monthIndex}`;
     });
   } else {
     // Show 3 months before, current, and 1 month after (5 months total)
@@ -73,21 +70,9 @@ function buildMonthlyPerformanceData(
     }
 
     // Full names for focused view
-    const allMonthNames = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ];
-    monthLabels = allMonthNames.slice(startMonth, endMonth + 1);
+    monthLabels = monthKeys
+      .slice(startMonth, endMonth + 1)
+      .map((month) => t(`analyticsCharts.${month}`).slice(0, 3));
   }
 
   // Initialize data for selected months
@@ -163,29 +148,13 @@ const tooltipStyle = {
 };
 
 const CustomTooltip = ({ active, payload, /* label, */ filterType }) => {
+  const { t } = useTranslation();
   if (active && payload && payload.length && payload[0] && payload[0].payload) {
     const data = payload[0].payload;
-    let filterText = "All operations";
-    if (filterType === "long") filterText = "Longs only";
-    if (filterType === "short") filterText = "Shorts only";
-
-    const allMonthNamesComplete = [
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December",
-    ];
-
-    // Get month name from monthIndex for consistency
-    const monthName = allMonthNamesComplete[data.monthIndex];
+    const filterText = t(
+      `analyticsCharts.${filterType === "all" ? "allOperations" : `${filterType}Only`}`,
+    );
+    const monthName = t(`analyticsCharts.${monthKeys[data.monthIndex]}`);
 
     return (
       <div style={tooltipStyle}>
@@ -196,14 +165,17 @@ const CustomTooltip = ({ active, payload, /* label, */ filterType }) => {
           {filterText}
         </p>
         <p style={{ color: "#fff", margin: "4px 0" }}>
-          PnL: ${data.pnl.toFixed(2)}
-        </p>
-        <p style={{ color: "#fff", margin: "4px 0" }}>Trades: {data.trades}</p>
-        <p style={{ color: "#fff", margin: "4px 0" }}>
-          Wins: {data.wins} | Losses: {data.losses}
+          {t("operations.pnl")}: ${data.pnl.toFixed(2)}
         </p>
         <p style={{ color: "#fff", margin: "4px 0" }}>
-          Win Rate: {data.winRate}%
+          {t("analyticsCharts.trades")}: {data.trades}
+        </p>
+        <p style={{ color: "#fff", margin: "4px 0" }}>
+          {t("performance.wins")}: {data.wins} | {t("performance.losses")}:{" "}
+          {data.losses}
+        </p>
+        <p style={{ color: "#fff", margin: "4px 0" }}>
+          {t("performance.winRate")}: {data.winRate}%
         </p>
       </div>
     );
@@ -215,6 +187,7 @@ export default function MonthlyPerformanceChart({
   operations,
   timeZone = "UTC",
 }) {
+  const { t } = useTranslation();
   const [filterValue, setFilterValue] = useState(0); // 0: General, 1: Longs, 2: Shorts
   const [showAllMonths, setShowAllMonths] = useState(false);
 
@@ -237,14 +210,19 @@ export default function MonthlyPerformanceChart({
     operations,
     filterType,
     timeZone,
-    showAllMonths
+    showAllMonths,
+    t,
   );
 
   // Check if there are any operations at all
   const hasAnyOperations = operations && operations.length > 0;
   if (!hasAnyOperations) {
     return (
-      <Typography>No closed trades to display monthly performance.</Typography>
+      <Typography>
+        {t("analyticsCharts.noTrades", {
+          chart: t("analyticsCharts.monthlyPerformanceEmpty"),
+        })}
+      </Typography>
     );
   }
 
@@ -259,15 +237,14 @@ export default function MonthlyPerformanceChart({
     <Box mb={4} display="flex" justifyContent="center">
       <Box width={{ xs: "100%", sm: 400, md: 450 }}>
         <Typography variant="h6" gutterBottom>
-          Monthly Performance
+          {t("analyticsCharts.monthlyPerformance")}
         </Typography>
         <Typography
           variant="caption"
           color="secondary"
           sx={{ mb: 1, display: "block", height: 40, lineHeight: "20px" }}
         >
-          This chart shows total PnL by month of the year. Use it to identify
-          seasonal patterns.
+          {t("analyticsCharts.monthlyDescription")}
         </Typography>
 
         <Box
@@ -283,7 +260,11 @@ export default function MonthlyPerformanceChart({
           <CustomSwitch
             value={filterValue}
             onChange={setFilterValue}
-            options={["General", "Longs", "Shorts"]}
+            options={[
+              t("charts.filterGeneral"),
+              t("performance.longs"),
+              t("performance.shorts"),
+            ]}
           />
           <FormControlLabel
             control={
@@ -300,13 +281,13 @@ export default function MonthlyPerformanceChart({
             }
             label={
               <Typography sx={{ color: "#fff", fontSize: "14px" }}>
-                All Months
+                {t("analyticsCharts.allMonths")}
               </Typography>
             }
           />
         </Box>
         <Paper sx={{ p: 2, background: "#181c2f" }}>
-          <ResponsiveContainer width="100%" minWidth={350} height={300}>
+          <ResponsiveContainer width="100%" minWidth={220} height={300}>
             <BarChart
               data={data}
               margin={{ top: 20, right: 10, left: 5, bottom: 20 }}

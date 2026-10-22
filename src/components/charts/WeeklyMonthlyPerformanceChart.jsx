@@ -23,6 +23,22 @@ import {
 } from "@mui/material";
 import CustomSwitch from "../CustomSwitch";
 import { DateTime } from "luxon";
+import { useTranslation } from "react-i18next";
+
+const monthNameKeys = [
+  "january",
+  "february",
+  "march",
+  "april",
+  "may",
+  "june",
+  "july",
+  "august",
+  "september",
+  "october",
+  "november",
+  "december",
+];
 
 function buildWeeklyMonthlyPerformanceData(
   operations,
@@ -125,25 +141,16 @@ const CustomTooltip = ({
   selectedMonth,
   selectedYear,
 }) => {
+  const { t } = useTranslation();
   if (active && payload && payload.length) {
     const data = payload[0].payload;
-    let filterText = "All operations";
-    if (filterType === "long") filterText = "Longs only";
-    if (filterType === "short") filterText = "Shorts only";
+    const filterText = t(
+      `analyticsCharts.${filterType === "all" ? "allOperations" : `${filterType}Only`}`,
+    );
 
     const months = [
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December",
+      "january", "february", "march", "april", "may", "june",
+      "july", "august", "september", "october", "november", "december",
     ];
 
     return (
@@ -152,17 +159,21 @@ const CustomTooltip = ({
           {label}
         </p>
         <p style={{ color: "#666", margin: "0 0 8px 0", fontSize: "12px" }}>
-          {months[selectedMonth]} {selectedYear} - {filterText}
+          {t(`analyticsCharts.${months[selectedMonth]}`)} {selectedYear} -{" "}
+          {filterText}
         </p>
         <p style={{ color: "#fff", margin: "4px 0" }}>
-          PnL: ${data.pnl.toFixed(2)}
-        </p>
-        <p style={{ color: "#fff", margin: "4px 0" }}>Trades: {data.trades}</p>
-        <p style={{ color: "#fff", margin: "4px 0" }}>
-          Wins: {data.wins} | Losses: {data.losses}
+          {t("operations.pnl")}: ${data.pnl.toFixed(2)}
         </p>
         <p style={{ color: "#fff", margin: "4px 0" }}>
-          Win Rate: {data.winRate}%
+          {t("analyticsCharts.trades")}: {data.trades}
+        </p>
+        <p style={{ color: "#fff", margin: "4px 0" }}>
+          {t("performance.wins")}: {data.wins} | {t("performance.losses")}:{" "}
+          {data.losses}
+        </p>
+        <p style={{ color: "#fff", margin: "4px 0" }}>
+          {t("performance.winRate")}: {data.winRate}%
         </p>
       </div>
     );
@@ -174,6 +185,7 @@ export default function WeeklyMonthlyPerformanceChart({
   operations,
   timeZone = "UTC",
 }) {
+  const { t } = useTranslation();
   const [filterValue, setFilterValue] = useState(0); // 0: General, 1: Longs, 2: Shorts
 
   // Get current month and year for default selection
@@ -213,7 +225,9 @@ export default function WeeklyMonthlyPerformanceChart({
   if (!hasAnyOperations) {
     return (
       <Typography>
-        No closed trades to display weekly monthly performance.
+        {t("analyticsCharts.noTrades", {
+          chart: t("analyticsCharts.weeklyMonthlyEmpty"),
+        })}
       </Typography>
     );
   }
@@ -232,15 +246,14 @@ export default function WeeklyMonthlyPerformanceChart({
     <Box mb={4} display="flex" justifyContent="center">
       <Box width={{ xs: "100%", sm: 400, md: 450 }}>
         <Typography variant="h6" gutterBottom>
-          Weekly Monthly Performance
+          {t("analyticsCharts.weeklyMonthly")}
         </Typography>
         <Typography
           variant="caption"
           color="secondary"
           sx={{ mb: 1, display: "block", height: 40, lineHeight: "20px" }}
         >
-          This chart shows total PnL by week of the month. Use it to identify
-          weekly patterns within months.
+          {t("analyticsCharts.weeklyMonthlyDescription")}
         </Typography>
 
         <Box
@@ -257,7 +270,11 @@ export default function WeeklyMonthlyPerformanceChart({
           <CustomSwitch
             value={filterValue}
             onChange={setFilterValue}
-            options={["General", "Longs", "Shorts"]}
+            options={[
+              t("charts.filterGeneral"),
+              t("performance.longs"),
+              t("performance.shorts"),
+            ]}
           />
           <FormControlLabel
             control={
@@ -274,7 +291,7 @@ export default function WeeklyMonthlyPerformanceChart({
             }
             label={
               <Typography sx={{ color: "#fff", fontSize: "14px" }}>
-                Date
+                {t("analyticsCharts.date")}
               </Typography>
             }
           />
@@ -283,12 +300,12 @@ export default function WeeklyMonthlyPerformanceChart({
             <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
               <FormControl sx={{ minWidth: 120 }}>
                 <InputLabel sx={{ color: "#fff" }} shrink={true}>
-                  Month
+                  {t("analyticsCharts.month")}
                 </InputLabel>
                 <Select
                   value={selectedMonth}
                   onChange={(e) => setSelectedMonth(e.target.value)}
-                  label="Month"
+                  label={t("analyticsCharts.month")}
                   sx={{
                     color: "#fff",
                     "& .MuiOutlinedInput-notchedOutline": {
@@ -305,29 +322,22 @@ export default function WeeklyMonthlyPerformanceChart({
                     },
                   }}
                 >
-                  <MenuItem value={0}>January</MenuItem>
-                  <MenuItem value={1}>February</MenuItem>
-                  <MenuItem value={2}>March</MenuItem>
-                  <MenuItem value={3}>April</MenuItem>
-                  <MenuItem value={4}>May</MenuItem>
-                  <MenuItem value={5}>June</MenuItem>
-                  <MenuItem value={6}>July</MenuItem>
-                  <MenuItem value={7}>August</MenuItem>
-                  <MenuItem value={8}>September</MenuItem>
-                  <MenuItem value={9}>October</MenuItem>
-                  <MenuItem value={10}>November</MenuItem>
-                  <MenuItem value={11}>December</MenuItem>
+                  {Array.from({ length: 12 }, (_, index) => (
+                    <MenuItem key={index} value={index}>
+                      {t(`analyticsCharts.${monthNameKeys[index]}`)}
+                    </MenuItem>
+                  ))}
                 </Select>
               </FormControl>
 
               <FormControl sx={{ minWidth: 120 }}>
                 <InputLabel sx={{ color: "#fff" }} shrink={true}>
-                  Year
+                  {t("analyticsCharts.year")}
                 </InputLabel>
                 <Select
                   value={selectedYear}
                   onChange={(e) => setSelectedYear(e.target.value)}
-                  label="Year"
+                  label={t("analyticsCharts.year")}
                   sx={{
                     color: "#fff",
                     "& .MuiOutlinedInput-notchedOutline": {
@@ -359,7 +369,7 @@ export default function WeeklyMonthlyPerformanceChart({
         </Box>
         <Paper sx={{ p: 2, background: "#181c2f" }}>
           {hasData ? (
-            <ResponsiveContainer width="100%" minWidth={350} height={300}>
+            <ResponsiveContainer width="100%" minWidth={220} height={300}>
               <BarChart
                 data={data}
                 margin={{ top: 20, right: 30, left: 20, bottom: 20 }}

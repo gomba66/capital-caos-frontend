@@ -12,9 +12,11 @@ import {
   LinearProgress,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import { TrendingUp, Info } from "@mui/icons-material";
+import { Info } from "@mui/icons-material";
+import { useTranslation } from "react-i18next";
 
 const RiskLevelsInfo = ({ systemInfo }) => {
+  const { t } = useTranslation();
   if (!systemInfo?.capital) {
     return null;
   }
@@ -53,7 +55,7 @@ const RiskLevelsInfo = ({ systemInfo }) => {
         <Box display="flex" alignItems="center">
           <Info sx={{ color: "#2de2e6", mr: 1 }} />
           <Typography sx={{ color: "#2de2e6", fontWeight: 600 }}>
-            Información Detallada - Risk Levels
+            {t("riskInfo.title")}
           </Typography>
         </Box>
       </AccordionSummary>
@@ -62,7 +64,7 @@ const RiskLevelsInfo = ({ systemInfo }) => {
           {/* Información del nivel actual */}
           <Box mb={3}>
             <Typography variant="h6" sx={{ color: "#ffa726", mb: 2 }}>
-              Nivel de Capital Actual
+              {t("riskInfo.current")}
             </Typography>
             <Box
               sx={{
@@ -79,10 +81,11 @@ const RiskLevelsInfo = ({ systemInfo }) => {
                 mb={2}
               >
                 <Typography variant="body1">
-                  <strong>Balance Real:</strong> ${available_balance}
+                  <strong>{t("riskInfo.realBalance")}:</strong> $
+                  {available_balance}
                 </Typography>
                 <Chip
-                  label={`Nivel: $${current_risk_level}`}
+                  label={`${t("riskInfo.currentLevel")}: $${current_risk_level}`}
                   sx={{
                     backgroundColor: "#ffa72630",
                     color: "#ffa726",
@@ -95,7 +98,9 @@ const RiskLevelsInfo = ({ systemInfo }) => {
                 <Box>
                   <Box display="flex" justifyContent="space-between" mb={1}>
                     <Typography variant="body2" color="secondary">
-                      Progreso al siguiente nivel (${next_risk_level}):
+                      {t("riskInfo.progress", {
+                        amount: `$${next_risk_level}`,
+                      })}
                     </Typography>
                     <Typography variant="body2" sx={{ color: "#27ff7e" }}>
                       {progressToNext.toFixed(1)}%
@@ -119,8 +124,11 @@ const RiskLevelsInfo = ({ systemInfo }) => {
                     color="secondary"
                     sx={{ mt: 1, display: "block" }}
                   >
-                    Faltan ${(next_risk_level - available_balance).toFixed(2)}{" "}
-                    para el siguiente nivel
+                    {t("riskInfo.remaining", {
+                      amount: `$${(
+                        next_risk_level - available_balance
+                      ).toFixed(2)}`,
+                    })}
                   </Typography>
                 </Box>
               )}
@@ -130,13 +138,10 @@ const RiskLevelsInfo = ({ systemInfo }) => {
           {/* Explicación del sistema */}
           <Box mb={3}>
             <Typography variant="h6" sx={{ color: "#2de2e6", mb: 2 }}>
-              ¿Cómo Funciona el Sistema?
+              {t("riskInfo.how")}
             </Typography>
             <Typography variant="body2" color="secondary" paragraph>
-              El sistema utiliza niveles de capital predefinidos (RISK_LEVELS)
-              para calcular el riesgo y el tamaño de las posiciones. Tu balance
-              real se "redondea hacia abajo" al nivel más cercano para hacer
-              cálculos más conservadores.
+              {t("riskInfo.explanation")}
             </Typography>
             <Box
               sx={{
@@ -146,9 +151,10 @@ const RiskLevelsInfo = ({ systemInfo }) => {
               }}
             >
               <Typography variant="body2" sx={{ color: "#2de2e6" }}>
-                <strong>Ejemplo:</strong> Si tu balance es ${available_balance},
-                el sistema usa ${current_risk_level}
-                para todos los cálculos de riesgo y tamaño de posición.
+                {t("riskInfo.example", {
+                  balance: `$${available_balance}`,
+                  level: `$${current_risk_level}`,
+                })}
               </Typography>
             </Box>
           </Box>
@@ -156,7 +162,7 @@ const RiskLevelsInfo = ({ systemInfo }) => {
           {/* Niveles disponibles */}
           <Box>
             <Typography variant="h6" sx={{ color: "#27ff7e", mb: 2 }}>
-              Niveles de Capital (Progresión 2.5x)
+              {t("riskInfo.available")}
             </Typography>
             <Box
               sx={{
@@ -173,8 +179,8 @@ const RiskLevelsInfo = ({ systemInfo }) => {
                   key={level}
                   title={
                     level === current_risk_level
-                      ? "Nivel Actual"
-                      : `Nivel ${index + 1}`
+                      ? t("riskInfo.currentLevel")
+                      : t("riskInfo.level", { number: index + 1 })
                   }
                   placement="top"
                 >
@@ -230,8 +236,7 @@ const RiskLevelsInfo = ({ systemInfo }) => {
               color="secondary"
               sx={{ mt: 1, display: "block" }}
             >
-              Se muestran los primeros 10 niveles. La progresión continúa
-              multiplicando por 2.5x hasta 10M USDT.
+              {t("riskInfo.firstLevels")}
             </Typography>
           </Box>
         </Box>

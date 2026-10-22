@@ -1,5 +1,12 @@
 import React from "react";
-import { render, screen, waitFor, act } from "@testing-library/react";
+import {
+  render,
+  screen,
+  waitFor,
+  act,
+  fireEvent,
+  within,
+} from "@testing-library/react";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { BrowserRouter } from "react-router-dom";
 import Dashboard from "../Dashboard";
@@ -7,6 +14,9 @@ import { getStats } from "../../api/stats";
 import { getOperations } from "../../api/operations";
 import { getOpenTrades } from "../../api/openTrades";
 import { getMomentumPairs } from "../../api/momentumPairs";
+import { getConfig } from "../../api/config";
+import { getCapital } from "../../api/capital";
+import { getCommissionRate } from "../../api/paperBroker";
 import { TimeZoneContext, SidebarContext } from "../../contexts/AppContexts";
 
 // Mock de las APIs
@@ -24,6 +34,18 @@ vi.mock("../../api/openTrades", () => ({
 
 vi.mock("../../api/momentumPairs", () => ({
   getMomentumPairs: vi.fn(),
+}));
+
+vi.mock("../../api/config", () => ({
+  getConfig: vi.fn(),
+}));
+
+vi.mock("../../api/capital", () => ({
+  getCapital: vi.fn(),
+}));
+
+vi.mock("../../api/paperBroker", () => ({
+  getCommissionRate: vi.fn(),
 }));
 
 const theme = createTheme();
@@ -113,7 +135,11 @@ describe("Dashboard", () => {
     vi.clearAllMocks();
   });
 
-  test("renders dashboard with loading state", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  test("renders dashboard content while initial data is loading", () => {
     // Mock APIs para que retornen datos
     getStats.mockResolvedValue(mockStats);
     getOperations.mockResolvedValue(mockOperations);
@@ -124,8 +150,17 @@ describe("Dashboard", () => {
       renderWithProviders(<Dashboard />);
     });
 
-    // Verificar que se muestra el loading inicialmente
-    expect(screen.getByRole("progressbar")).toBeInTheDocument();
+    expect(screen.queryByText("Loading available data…")).not.toBeInTheDocument();
+    expect(screen.getByText("Open Trades")).toBeInTheDocument();
+    expect(screen.queryByText("$1.00")).not.toBeInTheDocument();
+    expect(screen.queryByText("Failed to load stats.")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Local API unavailable: API temporarily unavailable."),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("No closed trades to display equity curve."),
+    ).not.toBeInTheDocument();
+    expect(screen.getAllByRole("status").length).toBeGreaterThan(0);
   });
 
   test("renders dashboard with data after loading", async () => {
@@ -141,12 +176,52 @@ describe("Dashboard", () => {
 
     // Esperar a que se carguen los datos
     await waitFor(() => {
-      expect(screen.getByText("Simplified View")).toBeInTheDocument();
+      expect(screen.getByText("1 open")).toBeInTheDocument();
     });
 
-    // Verificar que se muestran los componentes principales
-    expect(screen.getByText("Simplified View")).toBeInTheDocument();
+    expect(screen.queryByText("Simplified View")).not.toBeInTheDocument();
     expect(screen.getByText("Total Capital")).toBeInTheDocument();
+    expect(screen.getByText("Open Trades")).toBeInTheDocument();
+    expect(screen.getByText("Trading Performance")).toBeInTheDocument();
+    expect(
+      document.querySelector(".dashboard-performance .MuiGrid-grid-md-8"),
+    ).toBeInTheDocument();
+    expect(
+      document.querySelector(".dashboard-performance .MuiGrid-grid-md-4"),
+    ).toBeInTheDocument();
+
+    const equityCurve = document.querySelector(".dashboard-performance");
+    const openTrades = document.querySelector(".dashboard-open-positions");
+    expect(
+      equityCurve.compareDocumentPosition(openTrades) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+
+    const openTradesToggle = screen.getByRole("button", {
+      name: "Open Trades",
+    });
+    expect(openTradesToggle).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByText("1 open")).toBeInTheDocument();
+    expect(screen.getByText("Long 1")).toBeInTheDocument();
+    expect(screen.getByText("Short 0")).toBeInTheDocument();
+    const openPnl = document.querySelector(".dashboard-open-pnl");
+    expect(openPnl).toHaveTextContent("Unrealized +$100.00");
+    expect(openPnl).toHaveClass("performance-win");
+    expect(openPnl.querySelector(".dashboard-value-update")).toHaveTextContent(
+      "+$100.00",
+    );
+    fireEvent.click(openTradesToggle);
+    expect(openTradesToggle).toHaveAttribute("aria-expanded", "true");
+    expect(
+      document.querySelector(
+        ".dashboard-open-positions .operations-table__open-trades-accordion",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(document.querySelector(".dashboard-open-positions")).getByText(
+        "BTCUSDT",
+      ),
+    ).toBeInTheDocument();
   });
 
   test("handles empty data", async () => {
@@ -157,7 +232,9 @@ describe("Dashboard", () => {
     getMomentumPairs.mockResolvedValue({ momentum_pairs: [] });
 
     act(() => {
-      renderWithProviders(<Dashboard />);
+      renderWithProviders(
+        <Dashboard interactiveSection={<div>Interactive scanner</div>} />,
+      );
     });
 
     // Esperar a que se carguen los datos
@@ -167,6 +244,7 @@ describe("Dashboard", () => {
 
     // Verificar que se muestra el mensaje de error cuando stats es null
     expect(screen.getByText("Failed to load stats.")).toBeInTheDocument();
+    expect(screen.getByText("Interactive scanner")).toBeInTheDocument();
   });
 
   test("handles null data", async () => {
@@ -202,10 +280,116 @@ describe("Dashboard", () => {
 
     // Esperar a que se carguen los datos
     await waitFor(() => {
-      expect(screen.getByText("Simplified View")).toBeInTheDocument();
+      expect(screen.getByText("Total Capital")).toBeInTheDocument();
     });
 
-    // Verificar que la página se renderiza sin la propiedad closed
-    expect(screen.getByText("Simplified View")).toBeInTheDocument();
+    expect(screen.queryByText("Simplified View")).not.toBeInTheDocument();
+  });
+
+  test("keeps dashboard visible when a refresh request rejects", async () => {
+    getStats.mockRejectedValue(new Error("API unavailable"));
+    getOperations.mockResolvedValue(mockOperations);
+    getOpenTrades.mockResolvedValue(mockOpenTrades);
+    getMomentumPairs.mockResolvedValue(mockMomentumPairs);
+
+    renderWithProviders(<Dashboard />);
+
+    expect(
+      await screen.findByText(
+        "Local API unavailable: API temporarily unavailable.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Local API unavailable: API temporarily unavailable.")
+        .closest(".api-notice"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Open Trades")).toBeInTheDocument();
+  });
+
+  test("clears displayed data when the API becomes unavailable", async () => {
+    vi.useFakeTimers();
+    getStats.mockResolvedValue(mockStats);
+    getOperations.mockResolvedValue(mockOperations);
+    getOpenTrades.mockResolvedValue(mockOpenTrades);
+    getMomentumPairs.mockResolvedValue(mockMomentumPairs);
+    getConfig.mockResolvedValue({ database: { total: 10 } });
+    getCapital.mockResolvedValue(3253.83);
+    getCommissionRate.mockResolvedValue({ broker_mode: "paper" });
+
+    renderWithProviders(<Dashboard />);
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const financialMetrics = screen.getByLabelText("Financial metrics");
+    expect(within(financialMetrics).getByText("$3,253.83")).toBeInTheDocument();
+    expect(within(financialMetrics).getByText("+$1,500.50")).toBeInTheDocument();
+
+    getStats.mockResolvedValue(null);
+    getOperations.mockResolvedValue(null);
+    getOpenTrades.mockResolvedValue(null);
+    getMomentumPairs.mockResolvedValue(null);
+    getConfig.mockResolvedValue(null);
+    getCapital.mockResolvedValue(null);
+    getCommissionRate.mockResolvedValue(null);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(10000);
+    });
+
+    expect(
+      screen.getByText("Local API unavailable: API temporarily unavailable."),
+    ).toBeInTheDocument();
+    expect(within(financialMetrics).getAllByText("—")).toHaveLength(3);
+    expect(screen.queryByText("BTCUSDT")).not.toBeInTheDocument();
+    expect(screen.getByText("No closed trades to display equity curve.")).toBeInTheDocument();
+  });
+
+  test("retries closed trades and PnL promptly after the API returns", async () => {
+    vi.useFakeTimers();
+    getStats.mockResolvedValueOnce(null).mockResolvedValue(mockStats);
+    getOperations.mockResolvedValueOnce(null).mockResolvedValue(mockOperations);
+    getOpenTrades.mockResolvedValue(mockOpenTrades);
+    getMomentumPairs.mockResolvedValue(mockMomentumPairs);
+    getConfig.mockResolvedValue({ database: { total: 10 } });
+    getCapital.mockResolvedValue(3253.83);
+    getCommissionRate.mockResolvedValue({ broker_mode: "paper" });
+
+    renderWithProviders(<Dashboard />);
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const financialMetrics = screen.getByLabelText("Financial metrics");
+    expect(within(financialMetrics).getAllByText("—")).toHaveLength(3);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(10000);
+    });
+
+    expect(
+      within(financialMetrics).getByText("+$1,500.50"),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("No closed trades to display equity curve."),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Failed to load stats.")).not.toBeInTheDocument();
+  });
+
+  test("renders the dashboard while the initial API requests are pending", () => {
+    getStats.mockReturnValue(new Promise(() => {}));
+    getOperations.mockReturnValue(new Promise(() => {}));
+    getOpenTrades.mockReturnValue(new Promise(() => {}));
+    getMomentumPairs.mockReturnValue(new Promise(() => {}));
+
+    renderWithProviders(<Dashboard />);
+
+    expect(screen.queryByText("Loading available data…")).not.toBeInTheDocument();
+    expect(screen.getByText("Open Trades")).toBeInTheDocument();
+    expect(screen.getByText("Trading Performance")).toBeInTheDocument();
   });
 });

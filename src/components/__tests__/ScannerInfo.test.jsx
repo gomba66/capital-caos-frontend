@@ -2,6 +2,7 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import ScannerInfo from "../ScannerInfo";
+import i18n from "../../i18n";
 
 const theme = createTheme();
 
@@ -20,7 +21,8 @@ describe("ScannerInfo", () => {
     },
   };
 
-  test("renders scanner information when provided", () => {
+  test("renders scanner information when provided", async () => {
+    await i18n.changeLanguage("es");
     renderWithProviders(<ScannerInfo scannerInfo={mockScannerInfo} />);
 
     expect(screen.getByText("aggressive")).toBeInTheDocument();
@@ -35,8 +37,22 @@ describe("ScannerInfo", () => {
     );
 
     expect(screen.getByText("AGGRESSIVE")).toBeInTheDocument();
+    expect(screen.getByText("AGGRESSIVE")).toHaveClass("momentum-scanner-tag");
     // En modo compacto no se muestran los detalles de momentum_data
     expect(screen.queryByText("Cambio 5m: 3.5%")).not.toBeInTheDocument();
+  });
+
+  test("uses the same scanner label as Momentum Pairs", () => {
+    renderWithProviders(
+      <ScannerInfo
+        scannerInfo={{ scanner: "performance_scanner" }}
+        compact={true}
+      />
+    );
+
+    expect(screen.getByText("PERFORMANCE")).toHaveClass(
+      "momentum-scanner-tag"
+    );
   });
 
   test("renders dash when no scanner info is provided", () => {

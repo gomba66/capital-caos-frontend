@@ -13,6 +13,7 @@ import {
 import { Typography, Box, Paper } from "@mui/material";
 import CustomSwitch from "../CustomSwitch";
 import { DateTime } from "luxon";
+import { useTranslation } from "react-i18next";
 
 function buildWeeklyPerformanceData(
   operations,
@@ -127,6 +128,7 @@ export default function WeeklyPerformanceChart({
   operations,
   timeZone = "UTC",
 }) {
+  const { t } = useTranslation();
   const [filterValue, setFilterValue] = useState(0); // 0: General, 1: Longs, 2: Shorts
 
   // Determine which filter to apply based on slider value
@@ -150,7 +152,11 @@ export default function WeeklyPerformanceChart({
   const hasAnyOperations = operations && operations.length > 0;
   if (!hasAnyOperations) {
     return (
-      <Typography>No closed trades to display weekly performance.</Typography>
+      <Typography>
+        {t("analyticsCharts.noTrades", {
+          chart: t("analyticsCharts.weeklyPerformanceEmpty"),
+        })}
+      </Typography>
     );
   }
 
@@ -165,15 +171,14 @@ export default function WeeklyPerformanceChart({
     <Box mb={4} display="flex" justifyContent="center">
       <Box width={{ xs: "100%", sm: 400, md: 450 }}>
         <Typography variant="h6" gutterBottom>
-          Weekly Performance by Day
+          {t("analyticsCharts.weeklyPerformance")}
         </Typography>
         <Typography
           variant="caption"
           color="secondary"
           sx={{ mb: 1, display: "block", height: 40, lineHeight: "20px" }}
         >
-          This chart shows total PnL by day of the week. Use it to identify
-          which days are more profitable.
+          {t("analyticsCharts.weeklyDescription")}
         </Typography>
 
         <Box
@@ -187,11 +192,15 @@ export default function WeeklyPerformanceChart({
           <CustomSwitch
             value={filterValue}
             onChange={setFilterValue}
-            options={["General", "Longs", "Shorts"]}
+            options={[
+              t("charts.filterGeneral"),
+              t("performance.longs"),
+              t("performance.shorts"),
+            ]}
           />
         </Box>
         <Paper sx={{ p: 2, background: "#181c2f" }}>
-          <ResponsiveContainer width="100%" minWidth={350} height={300}>
+          <ResponsiveContainer width="100%" minWidth={220} height={300}>
             <BarChart
               data={data}
               margin={{ top: 20, right: 30, left: 20, bottom: 20 }}

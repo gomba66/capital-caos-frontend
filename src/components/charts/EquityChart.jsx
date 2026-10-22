@@ -25,12 +25,12 @@ import {
   FormGroup,
   FormControlLabel,
   Checkbox,
-  Button,
-  ButtonGroup,
+  Skeleton,
 } from "@mui/material";
 import { DateTime } from "luxon";
+import { useTranslation } from "react-i18next";
 
-function buildEquityDrawdownData(operations) {
+function buildEquityDrawdownData(operations, startingPoint) {
   let equity = 0;
   let peak = -Infinity; // Inicializar en -Infinity para que el primer valor siempre sea mayor
 
@@ -50,7 +50,7 @@ function buildEquityDrawdownData(operations) {
         equity: 0,
         drawdown: 0,
         pnl: 0,
-        symbol: "Starting Point",
+        symbol: startingPoint,
       },
     ];
   }
@@ -64,7 +64,7 @@ function buildEquityDrawdownData(operations) {
     equity: 0,
     drawdown: 0,
     pnl: 0,
-    symbol: "Starting Point",
+    symbol: startingPoint,
   };
 
   // Inicializar peak en 0 (el punto de inicio)
@@ -149,10 +149,11 @@ export default function EquityChart({
   showDrawdown = true,
   timeZone = "UTC",
   height = 416,
-  simplifiedView = false,
   currency = "USDT",
+  loading = false,
 }) {
-  const data = buildEquityDrawdownData(operations);
+  const { t } = useTranslation();
+  const data = buildEquityDrawdownData(operations, t("charts.startingPoint"));
   const [showEquity, setShowEquity] = useState(true);
   const [showDrawdownState, setShowDrawdown] = useState(true);
   const [visibleRange, setVisibleRange] = useState({
@@ -269,21 +270,36 @@ export default function EquityChart({
   const hasRealOperations =
     operations && operations.some((op) => op.closed_at || op.closeTime);
 
+  if (loading) {
+    return (
+      <Box
+        role="status"
+        aria-label={t("dashboard.loading")}
+        aria-busy="true"
+        sx={{ minHeight: height, width: "100%" }}
+      >
+        <Skeleton variant="text" width="42%" height={34} sx={{ mb: 1 }} />
+        <Skeleton variant="rounded" width="100%" height={height - 48} />
+      </Box>
+    );
+  }
+
   if (!hasRealOperations) {
-    return <Typography>No closed trades to display equity curve.</Typography>;
+    return <Typography>{t("analyticsCharts.noEquity")}</Typography>;
   }
 
   return (
     <Box
       mb={4}
       sx={{
-        minWidth: simplifiedView ? 0 : "720px",
+        minWidth: 0,
         width: "100%",
         maxWidth: "100%",
       }}
     >
       <Typography variant="h6" gutterBottom>
-        Equity Curve{showDrawdown ? " & Drawdown" : ""}
+        {t("analyticsCharts.equity")}
+        {showDrawdown ? ` & ${t("analyticsCharts.drawdown")}` : ""}
       </Typography>
       {showDrawdown && (
         <Typography
@@ -291,9 +307,7 @@ export default function EquityChart({
           color="secondary"
           sx={{ mb: 1, display: "block" }}
         >
-          This chart shows your cumulative profit and loss (Equity) over time,
-          and the drawdown percentage (maximum drop from a peak). Use the
-          checkboxes to show/hide each line.
+          {t("charts.equityDescription")}
         </Typography>
       )}
       {showDrawdown && (
@@ -305,7 +319,7 @@ export default function EquityChart({
                 onChange={() => setShowEquity((v) => !v)}
               />
             }
-            label="Show Equity"
+            label={t("analyticsCharts.showEquity")}
           />
           <FormControlLabel
             control={
@@ -314,7 +328,7 @@ export default function EquityChart({
                 onChange={() => setShowDrawdown((v) => !v)}
               />
             }
-            label="Show Drawdown"
+            label={t("analyticsCharts.showDrawdown")}
           />
         </FormGroup>
       )}
@@ -324,38 +338,14 @@ export default function EquityChart({
         {availableRangeOptions.map((option) => (
           <button
             key={option.id}
-            style={{
-              minWidth: "45px",
-              padding: "4px 8px",
-              fontSize: "0.875rem",
-              color: selectedButton === option.id ? "#2de2e6" : "#888",
-              borderColor: selectedButton === option.id ? "#2de2e6" : "#444",
-              borderWidth: "1px",
-              borderStyle: "solid",
-              backgroundColor:
-                selectedButton === option.id
-                  ? "rgba(45, 226, 230, 0.08)"
-                  : "transparent",
-              cursor: "pointer",
-              borderRadius: "4px",
-              fontFamily: "inherit",
-              transition: "all 0.2s",
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.backgroundColor = "rgba(45, 226, 230, 0.08)";
-              e.target.style.color = "#2de2e6";
-              e.target.style.borderColor = "#2de2e6";
-            }}
-            onMouseLeave={(e) => {
-              if (selectedButton !== option.id) {
-                e.target.style.backgroundColor = "transparent";
-                e.target.style.color = "#888";
-                e.target.style.borderColor = "#444";
-              }
-            }}
+            type="button"
+            className={`equity-range-button ${
+              selectedButton === option.id ? "equity-range-button--active" : ""
+            }`}
+            aria-pressed={selectedButton === option.id}
             onClick={() => applyRangeSelection(option.id)}
           >
-            {option.label}
+            {option.id === "all" ? t("analyticsCharts.rangeAll") : option.label}
           </button>
         ))}
       </Box>
@@ -392,7 +382,7 @@ export default function EquityChart({
                 yAxisId="right"
                 orientation="right"
                 label={{
-                  value: "Drawdown (%)",
+                  value: t("charts.drawdownPercent"),
                   angle: 90,
                   position: "insideRight",
                   fill: "#fff",

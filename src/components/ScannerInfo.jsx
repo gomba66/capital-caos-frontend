@@ -1,8 +1,10 @@
 import React from "react";
-import { Box, Typography, Tooltip, Chip } from "@mui/material";
+import { Box, Typography, Tooltip } from "@mui/material";
 import { Info } from "@mui/icons-material";
+import { useTranslation } from "react-i18next";
 
 const ScannerInfo = ({ scannerInfo, compact = false }) => {
+  const { t } = useTranslation();
   if (!scannerInfo || !scannerInfo.scanner) {
     return <span style={{ color: "#888" }}>-</span>;
   }
@@ -11,16 +13,20 @@ const ScannerInfo = ({ scannerInfo, compact = false }) => {
 
   if (compact) {
     return (
-      <Chip
-        label={scanner.toUpperCase()}
-        size="small"
-        sx={{
-          backgroundColor: "#2de2e6",
-          color: "#000",
-          fontWeight: 600,
-          fontSize: "0.75rem",
-        }}
-      />
+      <span className="momentum-scanner-tag">
+        {(
+          {
+            explosive: "EXPLOSIVE",
+            performance_scanner: "PERFORMANCE",
+            unified: "UNIFIED",
+            original: "ORIGINAL",
+            aggressive: "AGGRESSIVE",
+            volume_momentum: "VOLUME",
+            breakout_momentum: "BREAKOUT",
+            weekly_performance: "WEEKLY",
+          }[scanner] || scanner.toUpperCase()
+        )}
+      </span>
     );
   }
 
@@ -37,7 +43,7 @@ const ScannerInfo = ({ scannerInfo, compact = false }) => {
         >
           {scanner}
         </Typography>
-        <Tooltip title="Scanner que detectó este trade">
+        <Tooltip title={t("scannerInfo.detectedTrade")}>
           <Info fontSize="small" sx={{ color: "#666", cursor: "help" }} />
         </Tooltip>
       </Box>
@@ -49,7 +55,7 @@ const ScannerInfo = ({ scannerInfo, compact = false }) => {
               variant="caption"
               sx={{ color: "#666", display: "block" }}
             >
-              Cambio 5m: {momentum_data.change_5m}%
+              {t("scannerInfo.change5m")}: {momentum_data.change_5m}%
             </Typography>
           )}
           {momentum_data.volume && (
@@ -65,7 +71,7 @@ const ScannerInfo = ({ scannerInfo, compact = false }) => {
               variant="caption"
               sx={{ color: "#666", display: "block" }}
             >
-              Cambio 30m: {momentum_data.change_30m}%
+              {t("scannerInfo.change30m")}: {momentum_data.change_30m}%
             </Typography>
           )}
         </Box>

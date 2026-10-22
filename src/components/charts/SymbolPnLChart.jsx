@@ -21,12 +21,14 @@ import {
 } from "@mui/material";
 import { useSymbolStatistics } from "../../hooks/useSymbolStatistics";
 import { convertFromUSDT, formatCurrency } from "../../utils/currencyConverter";
+import { useTranslation } from "react-i18next";
 
 /**
  * SymbolPnLChart - Displays historical total PnL per symbol
  * Shows symbols that have been traded historically with their cumulative PnL
  */
 export default function SymbolPnLChart() {
+  const { t } = useTranslation();
   const { data: symbolStats, loading, error } = useSymbolStatistics();
   const [currency, setCurrency] = useState(() => {
     return localStorage.getItem("capitalCurrency") || "USDT";
@@ -75,18 +77,18 @@ export default function SymbolPnLChart() {
     return (
       <Paper sx={{ p: 3, backgroundColor: "#1a1a2e", minHeight: 400 }}>
         <Typography variant="h6" gutterBottom sx={{ color: "#fff" }}>
-          Historical PnL by Symbol
+          {t("analyticsCharts.symbolPnl")}
         </Typography>
         <Typography align="center" sx={{ color: "#aaa", mt: 4 }}>
           {error
-            ? "Symbol statistics endpoint not available yet"
-            : "No historical trading data available"}
+            ? t("analyticsCharts.symbolStatsUnavailable")
+            : t("analyticsCharts.noHistoricalData")}
         </Typography>
         <Typography
           align="center"
           sx={{ color: "#666", mt: 2, fontSize: "0.85rem" }}
         >
-          This feature will be available once the backend is deployed
+          {t("analyticsCharts.backendRequired")}
         </Typography>
       </Paper>
     );
@@ -119,7 +121,11 @@ export default function SymbolPnLChart() {
     const longPnl = stat.long_pnl || 0;
     const shortPnl = stat.short_pnl || 0;
     const bestDirection =
-      longPnl > shortPnl ? "LONG" : shortPnl > longPnl ? "SHORT" : "BOTH";
+      longPnl > shortPnl
+    ? t("performance.long").toUpperCase()
+    : shortPnl > longPnl
+      ? t("performance.short").toUpperCase()
+      : t("analyticsCharts.both");
 
     return {
       symbol: stat.symbol,
@@ -161,7 +167,7 @@ export default function SymbolPnLChart() {
             variant="caption"
             sx={{ color: "#fff", display: "block" }}
           >
-            Total PnL: {data.totalPnLUSDT < 0 ? "-" : ""}
+            {t("metrics.totalPnl")}: {data.totalPnLUSDT < 0 ? "-" : ""}
             {formatCurrency(Math.abs(data.totalPnL), currency)}
             {currency !== "USDT" && (
               <span style={{ color: "#aaa", marginLeft: 4 }}>({currency})</span>
@@ -171,34 +177,36 @@ export default function SymbolPnLChart() {
             variant="caption"
             sx={{ color: "#aaa", display: "block" }}
           >
-            Win Rate: {data.winRate.toFixed(1)}%
+            {t("performance.winRate")}: {data.winRate.toFixed(1)}%
           </Typography>
           <Typography
             variant="caption"
             sx={{ color: "#aaa", display: "block" }}
           >
-            Total Trades: {data.totalTrades} ({data.longCount} L /{" "}
+            {t("analyticsCharts.totalTrades")}: {data.totalTrades} ({data.longCount} L /{" "}
             {data.shortCount} S)
           </Typography>
           <Typography
             variant="caption"
             sx={{ color: "#aaa", display: "block" }}
           >
-            Best Direction:{" "}
+            {t("analyticsCharts.bestDirection")}:{" "}
             <span style={{ color: "#2de2e6" }}>{data.bestDirection}</span>
           </Typography>
           <Typography
             variant="caption"
             sx={{ color: "#aaa", display: "block" }}
           >
-            Long PnL: {formatCurrency(Math.abs(data.longPnL), currency)} | Short
-            PnL: {formatCurrency(Math.abs(data.shortPnL), currency)}
+            {t("analyticsCharts.longPnl")}:{" "}
+            {formatCurrency(Math.abs(data.longPnL), currency)} |{" "}
+            {t("analyticsCharts.shortPnl")}:{" "}
+            {formatCurrency(Math.abs(data.shortPnL), currency)}
           </Typography>
           <Typography
             variant="caption"
             sx={{ color: "#aaa", display: "block" }}
           >
-            Avg PnL: {data.avgPnLUSDT < 0 ? "-" : ""}
+            {t("performance.avgPnl")}: {data.avgPnLUSDT < 0 ? "-" : ""}
             {formatCurrency(Math.abs(data.avgPnL), currency)}
             {currency !== "USDT" && (
               <span style={{ color: "#aaa", marginLeft: 4 }}>({currency})</span>
@@ -226,9 +234,15 @@ export default function SymbolPnLChart() {
         mb={2}
       >
         <Typography variant="h6" sx={{ color: "#fff" }}>
-          Historical PnL by Symbol
+          {t("analyticsCharts.symbolPnl")}
         </Typography>
-        <Box display="flex" gap={2} alignItems="center">
+        <Box
+          display="flex"
+          gap={2}
+          alignItems="center"
+          flexWrap="wrap"
+          justifyContent="flex-end"
+        >
           {/* Sort Order Toggle */}
           <ToggleButtonGroup
             value={sortOrder}
@@ -257,9 +271,11 @@ export default function SymbolPnLChart() {
               },
             }}
           >
-            <ToggleButton value="reliability">By Reliability</ToggleButton>
-            <ToggleButton value="desc">Best PnL</ToggleButton>
-            <ToggleButton value="asc">Worst PnL</ToggleButton>
+            <ToggleButton value="reliability">
+              {t("analyticsCharts.byReliability")}
+            </ToggleButton>
+            <ToggleButton value="desc">{t("analyticsCharts.bestPnl")}</ToggleButton>
+            <ToggleButton value="asc">{t("analyticsCharts.worstPnl")}</ToggleButton>
           </ToggleButtonGroup>
 
           {/* Display Count Selector */}
@@ -287,12 +303,12 @@ export default function SymbolPnLChart() {
               },
             }}
           >
-            <MenuItem value={10}>Top 10</MenuItem>
-            <MenuItem value={20}>Top 20</MenuItem>
-            <MenuItem value={50}>Top 50</MenuItem>
-            <MenuItem value={100}>Top 100</MenuItem>
+            <MenuItem value={10}>{t("analyticsCharts.topN", { count: 10 })}</MenuItem>
+            <MenuItem value={20}>{t("analyticsCharts.topN", { count: 20 })}</MenuItem>
+            <MenuItem value={50}>{t("analyticsCharts.topN", { count: 50 })}</MenuItem>
+            <MenuItem value={100}>{t("analyticsCharts.topN", { count: 100 })}</MenuItem>
             <MenuItem value={symbolStats.length}>
-              All ({symbolStats.length})
+              {t("analyticsCharts.allSymbols")} ({symbolStats.length})
             </MenuItem>
           </TextField>
         </Box>
@@ -311,7 +327,7 @@ export default function SymbolPnLChart() {
             }}
           >
             <Typography variant="caption" sx={{ color: "#aaa" }}>
-              Total Symbols
+              {t("analyticsCharts.totalSymbols")}
             </Typography>
             <Typography
               variant="h6"
@@ -330,7 +346,7 @@ export default function SymbolPnLChart() {
             }}
           >
             <Typography variant="caption" sx={{ color: "#aaa" }}>
-              Profitable
+              {t("analyticsCharts.profitable")}
             </Typography>
             <Typography
               variant="h6"
@@ -349,7 +365,7 @@ export default function SymbolPnLChart() {
             }}
           >
             <Typography variant="caption" sx={{ color: "#aaa" }}>
-              Losing
+              {t("analyticsCharts.losing")}
             </Typography>
             <Typography
               variant="h6"
@@ -368,7 +384,7 @@ export default function SymbolPnLChart() {
             }}
           >
             <Typography variant="caption" sx={{ color: "#aaa" }}>
-              Total PnL
+              {t("metrics.totalPnl")}
             </Typography>
             <Typography
               variant="h6"
@@ -411,7 +427,7 @@ export default function SymbolPnLChart() {
           <YAxis
             tick={{ fill: "#aaa" }}
             label={{
-              value: `PnL (${currency})`,
+              value: `${t("metrics.totalPnl")} (${currency})`,
               angle: -90,
               position: "insideLeft",
               fill: "#aaa",
@@ -444,7 +460,7 @@ export default function SymbolPnLChart() {
           variant="caption"
           sx={{ color: "#aaa", mt: 2, display: "block" }}
         >
-          Showing top 20 of {totalSymbols} symbols
+          {t("analyticsCharts.showingTop", { count: 20, total: totalSymbols })}
         </Typography>
       )}
     </Paper>

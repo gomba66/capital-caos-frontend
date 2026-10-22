@@ -15,6 +15,7 @@ import {
 } from "@mui/material";
 import { DateTime } from "luxon";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import { useTranslation } from "react-i18next";
 
 function formatTime(time, timeZone) {
   if (!time) return "-";
@@ -49,6 +50,7 @@ export default function MomentumPairsTable({
   openTrades = [],
   timeZone,
 }) {
+  const { t } = useTranslation();
   const [cooldowns, setCooldowns] = useState([]);
   const [loadingCooldowns, setLoadingCooldowns] = useState(true); // eslint-disable-line no-unused-vars
 
@@ -86,22 +88,30 @@ export default function MomentumPairsTable({
   }, []);
 
   return (
-    <Accordion sx={{ mb: 2 }} defaultExpanded={false}>
+    <Accordion
+      className="momentum-pairs"
+      sx={{ mb: 2 }}
+      defaultExpanded={false}
+    >
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
         <Typography>{title}</Typography>
       </AccordionSummary>
       <AccordionDetails>
         <TableContainer component={Paper} sx={{ overflowX: "auto" }}>
-          <Table size="small" sx={{ minWidth: 500 }}>
+          <Table
+            className="momentum-pairs-table"
+            size="small"
+            sx={{ minWidth: 500 }}
+          >
             <TableHead>
               <TableRow>
-                <TableCell>Symbol</TableCell>
-                <TableCell>Scanner</TableCell>
-                <TableCell>Change %</TableCell>
-                <TableCell>Volume</TableCell>
-                <TableCell>Type</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Time</TableCell>
+                <TableCell>{t("momentum.symbol")}</TableCell>
+                <TableCell>{t("momentum.scanner")}</TableCell>
+                <TableCell>{t("momentum.change")}</TableCell>
+                <TableCell>{t("momentum.volume")}</TableCell>
+                <TableCell>{t("momentum.type")}</TableCell>
+                <TableCell>{t("momentum.status")}</TableCell>
+                <TableCell>{t("momentum.time")}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -114,35 +124,14 @@ export default function MomentumPairsTable({
                   return (
                     <TableRow
                       key={idx}
-                      sx={{
-                        backgroundColor: isOpenTrade
-                          ? "rgba(255, 225, 86, 0.15)"
-                          : "transparent",
-                        "&:hover": {
-                          backgroundColor: isOpenTrade
-                            ? "rgba(255, 225, 86, 0.25)"
-                            : "rgba(45, 226, 230, 0.1)",
-                        },
-                        borderLeft: isOpenTrade ? "4px solid #ffe156" : "none",
-                      }}
+                      className={isOpenTrade ? "momentum-pair-open" : ""}
                     >
-                      <TableCell
-                        sx={{
-                          fontWeight: isOpenTrade ? 700 : 400,
-                          color: isOpenTrade ? "#ffe156" : "inherit",
-                        }}
-                      >
-                        {pair.symbol + " " || "-"}
+                      <TableCell className="momentum-pair-symbol">
+                        {pair.symbol || "-"}
                         {isOpenTrade && (
-                          <>
-                            🔥
-                            {openTrade.positionSide
-                              ?.toLowerCase()
-                              .includes("long") && " 📈"}
-                            {openTrade.positionSide
-                              ?.toLowerCase()
-                              .includes("short") && " 📉"}
-                          </>
+                          <span className="momentum-open-tag">
+                            {t("momentum.open")}
+                          </span>
                         )}
                       </TableCell>
                       <TableCell>
@@ -166,17 +155,7 @@ export default function MomentumPairsTable({
                             scannerLabels[scanner] || scanner.toUpperCase();
 
                           return (
-                            <span
-                              style={{
-                                backgroundColor: "#4ecdc4",
-                                color: "#000",
-                                padding: "4px 12px",
-                                borderRadius: "12px",
-                                fontSize: "11px",
-                                fontWeight: 600,
-                                display: "inline-block",
-                              }}
-                            >
+                            <span className="momentum-scanner-tag">
                               {label}
                             </span>
                           );
@@ -210,34 +189,37 @@ export default function MomentumPairsTable({
                               .map(Number);
                             const totalMinutes = hours * 60 + minutes;
 
-                            let emoji = "⏳";
-                            let color = "#ff9800"; // naranja por defecto
+                            let color = "var(--amber)";
 
                             if (totalMinutes <= 30) {
-                              emoji = "🔴"; // rojo para < 30 min
-                              color = "#f44336";
-                            } else if (totalMinutes <= 60) {
-                              emoji = "🟡"; // amarillo para < 1 hora
-                              color = "#ffeb3b";
+                              color = "var(--red)";
                             }
 
                             return (
                               <Tooltip
-                                title={`En cooldown - Tiempo restante: ${timeRemaining}`}
+                                title={t("momentum.cooldownTooltip", {
+                                  time: timeRemaining,
+                                })}
                                 arrow
                                 placement="top"
                               >
-                                <span style={{ color, fontSize: "16px" }}>
-                                  {emoji}
+                                <span
+                                  className="momentum-status"
+                                  data-status="cooldown"
+                                  style={{ color }}
+                                >
+                                  {t("momentum.cooldown")}
                                 </span>
                               </Tooltip>
                             );
                           }
                           return (
                             <span
-                              style={{ color: "#4caf50", fontSize: "16px" }}
+                              className="momentum-status"
+                              data-status="ready"
+                              style={{ color: "var(--green)" }}
                             >
-                              ✅
+                              {t("momentum.ready")}
                             </span>
                           );
                         })()}
@@ -249,7 +231,7 @@ export default function MomentumPairsTable({
               ) : (
                 <TableRow>
                   <TableCell colSpan={7} align="center">
-                    No momentum pairs found.
+                    {t("momentum.empty")}
                   </TableCell>
                 </TableRow>
               )}

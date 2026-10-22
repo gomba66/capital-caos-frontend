@@ -5,12 +5,19 @@ import { useState, useEffect } from "react";
  * @param {string|null} symbol - Optional symbol to filter by. If null, fetches all symbols.
  * @returns {Object} - { data, loading, error }
  */
-export const useSymbolStatistics = (symbol = null) => {
+export const useSymbolStatistics = (symbol = null, enabled = true) => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    if (!enabled) {
+      setLoading(false);
+      setData(null);
+      setError(null);
+      return undefined;
+    }
+
     const fetchStats = async () => {
       try {
         setLoading(true);
@@ -44,7 +51,7 @@ export const useSymbolStatistics = (symbol = null) => {
     };
 
     fetchStats();
-  }, [symbol]);
+  }, [symbol, enabled]);
 
   return { data, loading, error };
 };

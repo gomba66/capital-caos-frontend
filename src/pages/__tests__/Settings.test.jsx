@@ -31,8 +31,9 @@ describe("Settings", () => {
     expect(screen.getByText("Settings")).toBeInTheDocument();
   });
 
-  test("renders timezone selector", () => {
+  test("does not duplicate shared header timezone and currency selectors", () => {
     renderWithProviders(<Settings />);
-    expect(screen.getByLabelText("Time zone")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Time zone")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Capital currency")).not.toBeInTheDocument();
   });
 });

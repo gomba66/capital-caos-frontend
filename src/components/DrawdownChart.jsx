@@ -10,6 +10,7 @@ import {
 } from "recharts";
 import { Typography, Box, Paper } from "@mui/material";
 import { DateTime } from "luxon";
+import { useTranslation } from "react-i18next";
 
 function buildDrawdownData(operations) {
   let equity = 0;
@@ -44,14 +45,15 @@ function formatDateLuxon(date, timeZone = "UTC") {
 }
 
 export default function DrawdownChart({ operations, timeZone = "UTC" }) {
+  const { t } = useTranslation();
   const data = buildDrawdownData(operations);
   if (!data.length) {
-    return <Typography>No closed trades to display drawdown.</Typography>;
+    return <Typography>{t("analyticsCharts.noDrawdown")}</Typography>;
   }
   return (
     <Box mb={4}>
       <Typography variant="h6" gutterBottom>
-        Drawdown (%)
+        {t("analyticsCharts.drawdownPercent")}
       </Typography>
       <Paper sx={{ p: 2 }}>
         <ResponsiveContainer width="100%" height={250}>
@@ -69,9 +71,15 @@ export default function DrawdownChart({ operations, timeZone = "UTC" }) {
             <Tooltip
               formatter={(value, name) => [
                 value,
-                name === "drawdown" ? "Drawdown (%)" : "Equity",
+                name === "drawdown"
+                  ? t("analyticsCharts.drawdownPercent")
+                  : t("analyticsCharts.equityLabel"),
               ]}
-              labelFormatter={(d) => `Date: ${formatDateLuxon(d, timeZone)}`}
+              labelFormatter={(d) =>
+                t("analyticsCharts.dateWithValue", {
+                  date: formatDateLuxon(d, timeZone),
+                })
+              }
               cursor={false}
             />
             <Line
@@ -80,7 +88,7 @@ export default function DrawdownChart({ operations, timeZone = "UTC" }) {
               stroke="#d32f2f"
               strokeWidth={2}
               dot={false}
-              name="Drawdown"
+              name={t("analyticsCharts.drawdown")}
             />
           </LineChart>
         </ResponsiveContainer>
