@@ -1,5 +1,11 @@
 import React from "react";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
 import PlatformHeader from "../PlatformHeader";
 import NotificationProvider, {
@@ -10,8 +16,15 @@ import {
   PlatformThemeContext,
   TimeZoneContext,
 } from "../../contexts/AppContexts";
+import { AuthContext } from "../../contexts/authState";
+import { APP_PALETTES } from "../../theme";
+import i18n from "../../i18n";
 
 const renderHeader = ({
+  user = {
+    role: "member",
+    features: ["signals", "bot_trades"],
+  },
   mode = "dark",
   setMode = vi.fn(),
   palette = "classic",
@@ -23,21 +36,23 @@ const renderHeader = ({
 } = {}) =>
   render(
     <BrowserRouter>
-      <PlatformThemeContext.Provider
-        value={{ mode, setMode, palette, setPalette }}
-      >
-        <TimeZoneContext.Provider
-          value={{ timeZone, setTimeZone }}
+      <AuthContext.Provider value={{ user }}>
+        <PlatformThemeContext.Provider
+          value={{ mode, setMode, palette, setPalette }}
         >
-          <CurrencyContext.Provider
-            value={{ currency, setCurrency }}
+          <TimeZoneContext.Provider
+            value={{ timeZone, setTimeZone }}
           >
-            <NotificationProvider>
-              <PlatformHeader />
-            </NotificationProvider>
-          </CurrencyContext.Provider>
-        </TimeZoneContext.Provider>
-      </PlatformThemeContext.Provider>
+            <CurrencyContext.Provider
+              value={{ currency, setCurrency }}
+            >
+              <NotificationProvider>
+                <PlatformHeader />
+              </NotificationProvider>
+            </CurrencyContext.Provider>
+          </TimeZoneContext.Provider>
+        </PlatformThemeContext.Provider>
+      </AuthContext.Provider>
     </BrowserRouter>,
   );
 
@@ -54,6 +69,7 @@ describe("PlatformHeader", () => {
     renderHeader();
 
     expect(screen.getByText("CIPHER DESK")).toBeInTheDocument();
+    expect(screen.queryByText("ADMIN")).not.toBeInTheDocument();
     expect(
       screen.getByRole("combobox", { name: "Time zone" }),
     ).toHaveValue("America/Bogota");
@@ -71,6 +87,38 @@ describe("PlatformHeader", () => {
     expect(
       screen.getByRole("button", { name: "Open notification history" }),
     ).toBeInTheDocument();
+  });
+
+  test("shows a concise ADMIN badge only for administrators", () => {
+    renderHeader({ user: { role: "admin", features: [] } });
+
+    expect(screen.getByText("ADMIN")).toBeInTheDocument();
+    expect(screen.queryByText("ADMIN MODE")).not.toBeInTheDocument();
+  });
+
+  test("hides platform data and sections for a no-access account", () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    renderHeader({
+      user: { role: "member", plan_code: "no_access", features: [] },
+    });
+
+    expect(screen.getByText("CIPHER DESK")).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Language" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Color theme: Classic Green" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("combobox", { name: "Time zone" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("combobox", { name: "Capital currency" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Open notification history" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Platform status")).not.toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   test("updates and persists the shared timezone selection", () => {
@@ -112,6 +160,68 @@ describe("PlatformHeader", () => {
       screen.getByRole("button", { name: "Color theme: Classic Green" }),
     ).toHaveAttribute("aria-expanded", "false");
   });
+
+  test("shows all admin palettes only to administrators", () => {
+    const adminPalettes = APP_PALETTES.filter(({ adminOnly }) => adminOnly);
+    renderHeader();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Color theme: Classic Green" }),
+    );
+    for (const { id } of adminPalettes) {
+      const name = i18n.t(`theme.palettes.${id}`);
+      expect(screen.queryByRole("button", { name })).not.toBeInTheDocument();
+    }
+    expect(
+      screen.getByRole("button", { name: "Classic Green" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Ocean" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Violet" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Graphite" })).not.toBeInTheDocument();
+
+    cleanup();
+    const setPalette = vi.fn();
+    const setMode = vi.fn();
+    renderHeader({ user: { role: "admin" }, setPalette, setMode });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Color theme: Classic Green" }),
+    );
+    for (const { id } of adminPalettes) {
+      const name = i18n.t(`theme.palettes.${id}`);
+      fireEvent.click(screen.getByRole("button", { name }));
+      expect(setPalette).toHaveBeenCalledWith(id);
+      fireEvent.click(
+        screen.getByRole("button", { name: /^Color theme:/ }),
+      );
+    }
+  });
+
+  test.each(["admin-monochrome", "admin-lime", "admin-arctic"])(
+    "forces dark mode and disables the mode switch for %s",
+    (palette) => {
+      const setPalette = vi.fn();
+      const setMode = vi.fn();
+      const selectedName = i18n.t(`theme.palettes.${palette}`);
+      renderHeader({
+        user: { role: "admin" },
+        palette: "classic",
+        setPalette,
+        setMode,
+      });
+
+      fireEvent.click(
+        screen.getByRole("button", { name: "Color theme: Classic Green" }),
+      );
+      fireEvent.click(screen.getByRole("button", { name: selectedName }));
+      expect(setPalette).toHaveBeenCalledWith(palette);
+      expect(setMode).toHaveBeenCalledWith("dark");
+
+      cleanup();
+      renderHeader({ user: { role: "admin" }, palette, mode: "dark" });
+      expect(
+        screen.getByRole("button", { name: "This theme is available in dark mode only" }),
+      ).toBeDisabled();
+    },
+  );
 
   test("shows scanner status and active signal count from the API", async () => {
     vi.stubGlobal(
@@ -223,6 +333,7 @@ describe("PlatformHeader", () => {
           id: "BTCUSDT:LONG:1000",
           symbol: "BTCUSDT",
           side: "LONG",
+          signal_type: "HTF_2H, LO_ADR_D",
           timestamp_ms: 1000,
           read: false,
         },
@@ -240,6 +351,10 @@ describe("PlatformHeader", () => {
       screen.getByRole("button", { name: "1 unread notifications" }),
     );
     expect(screen.getByText("BTCUSDT")).toBeInTheDocument();
+    expect(screen.queryByText(/HTF_2H|LO_ADR_D/)).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "View BTCUSDT chart" }),
+    ).toBeInTheDocument();
     await waitFor(() => {
       expect(
         JSON.parse(
@@ -247,5 +362,29 @@ describe("PlatformHeader", () => {
         )[0].read,
       ).toBe(true);
     });
+  });
+
+  test("opens a TradingView chart from a notification", () => {
+    window.localStorage.setItem(
+      NOTIFICATION_HISTORY_STORAGE_KEY,
+      JSON.stringify([
+        {
+          id: "BTCUSDT:LONG:1000",
+          symbol: "BTCUSDT",
+          side: "LONG",
+          timestamp_ms: 1000,
+          read: true,
+        },
+      ]),
+    );
+    renderHeader();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Open notification history" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "View BTCUSDT chart" }));
+
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "BTCUSDT" })).toBeInTheDocument();
   });
 });

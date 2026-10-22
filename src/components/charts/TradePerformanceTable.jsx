@@ -8,6 +8,7 @@ import {
   TableHead,
   TableRow,
   Typography,
+  Skeleton,
 } from "@mui/material";
 import { calculateProfitFactors } from "../../utils/formatting";
 import { convertFromUSDT, formatCurrency } from "../../utils/currencyConverter";
@@ -35,6 +36,7 @@ export default function TradePerformanceTable({
   stats,
   currency = "USDT",
   hideDescription = false,
+  loading = false,
 }) {
   const { t } = useTranslation();
   const profitFactors = calculateProfitFactors(operations);
@@ -138,8 +140,35 @@ export default function TradePerformanceTable({
               )}
             </TableRow>
           </TableHead>
-          <TableBody>
-            {rows.map((row) => (
+          <TableBody aria-busy={loading}>
+            {loading ? (
+              [0, 1, 2].map((rowIndex) => (
+                <TableRow key={`loading-${rowIndex}`}>
+                  <TableCell
+                    component="th"
+                    scope="row"
+                  >
+                    <Skeleton variant="text" width={72} aria-hidden="true" />
+                  </TableCell>
+                  {Array.from(
+                    { length: includeTradeStats ? 5 : 2 },
+                    (_, cellIndex) => (
+                      <TableCell
+                        key={`loading-${rowIndex}-${cellIndex}`}
+                        align="right"
+                      >
+                        <Skeleton
+                          variant="text"
+                          width={cellIndex === 0 ? 48 : 36}
+                          sx={{ ml: "auto" }}
+                          aria-hidden="true"
+                        />
+                      </TableCell>
+                    ),
+                  )}
+                </TableRow>
+              ))
+            ) : rows.map((row) => (
               <TableRow key={row.label}>
                 <TableCell component="th" scope="row">
                   {row.label}

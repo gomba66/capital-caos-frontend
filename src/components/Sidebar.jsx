@@ -15,29 +15,57 @@ import {
   useMediaQuery,
   Tooltip,
   ListItemButton,
+  SvgIcon,
 } from "@mui/material";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import SettingsIcon from "@mui/icons-material/Settings";
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import GroupIcon from "@mui/icons-material/Group";
+import LogoutIcon from "@mui/icons-material/Logout";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import AssessmentIcon from "@mui/icons-material/Assessment";
 import RadarIcon from "@mui/icons-material/Radar";
+import { Activity } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { SidebarContext } from "../contexts/AppContexts";
+import { useAuth } from "../contexts/authState";
 import { getBackendVersion } from "../api/version";
 
-const navItems = [
-  { label: "navigation.dashboard", icon: <DashboardIcon />, path: "/" },
-  { label: "navigation.charts", icon: <BarChartIcon />, path: "/charts" },
-  { label: "navigation.evaluations", icon: <AssessmentIcon />, path: "/evaluations" },
-  { label: "navigation.scanner", icon: <RadarIcon />, path: "/#scanner" },
-  { label: "navigation.settings", icon: <SettingsIcon />, path: "/settings" },
-];
+function AdminAstronautIcon() {
+  return (
+    <SvgIcon data-testid="admin-astronaut-icon" viewBox="0 0 24 24">
+      <path
+        d="M12 2.75a7.25 7.25 0 0 0-7.25 7.25v1.1a2 2 0 0 0 2 2h10.5a2 2 0 0 0 2-2V10A7.25 7.25 0 0 0 12 2.75Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M7 9.7a5 5 0 0 1 10 0v1.65H7V9.7Z"
+        fill="none"
+        stroke="var(--green)"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M9.2 9.3a2.8 2.8 0 0 1 5.6 0v1.35H9.2V9.3Zm-6.45 11c.4-3.3 2.7-5.55 6-6.15m6.5 0c3.3.6 5.6 2.85 6 6.15H2.75Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </SvgIcon>
+  );
+}
 
 export default function Sidebar() {
   const location = useLocation();
+  const { user, logout } = useAuth();
   const { setSidebarWidth, mobileNavOpen, setMobileNavOpen } =
     useContext(SidebarContext);
   const { t } = useTranslation();
@@ -45,8 +73,64 @@ export default function Sidebar() {
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [collapsed, setCollapsed] = useState(true);
   const [backendVersion, setBackendVersion] = useState(null);
+  const [logoutError, setLogoutError] = useState("");
   const isCollapsed = !isMobile && collapsed;
   const currentWidth = isMobile ? 248 : isCollapsed ? 64 : 220;
+  const canViewSignals =
+    user?.role === "admin" || user?.features?.includes("signals") === true;
+  const canViewTrades =
+    user?.role === "admin" || user?.features?.includes("bot_trades") === true;
+  const navItems = [
+    ...(canViewSignals || canViewTrades
+      ? [{ label: "navigation.dashboard", icon: <DashboardIcon />, path: "/" }]
+      : []),
+    ...(canViewTrades
+      ? [
+          { label: "navigation.charts", icon: <BarChartIcon />, path: "/charts" },
+        ]
+      : []),
+    ...(user?.role === "admin"
+      ? [
+          {
+            label: "navigation.systemStatus",
+            icon: <Activity />,
+            path: "/system-status",
+          },
+          {
+            label: "navigation.evaluations",
+            icon: <AssessmentIcon />,
+            path: "/evaluations",
+          },
+        ]
+      : []),
+    ...(canViewSignals
+      ? [{ label: "navigation.scanner", icon: <RadarIcon />, path: "/#scanner" }]
+      : []),
+    ...(user?.role === "admin"
+      ? [
+          {
+            label: "navigation.users",
+            icon: <GroupIcon />,
+            path: "/admin/users",
+          },
+          {
+            label: "navigation.settings",
+            icon: <SettingsIcon />,
+            path: "/settings",
+          },
+        ]
+      : []),
+    {
+      label: "navigation.account",
+      icon:
+        user?.role === "admin" ? (
+          <AdminAstronautIcon />
+        ) : (
+          <AccountCircleIcon />
+        ),
+      path: "/account",
+    },
+  ];
 
   React.useEffect(() => {
     setSidebarWidth(isMobile ? 0 : currentWidth);
@@ -147,11 +231,59 @@ export default function Sidebar() {
           ))}
         </List>
 
+        <Box
+          sx={{
+            position: "absolute",
+            bottom: !isMobile ? 56 : 8,
+            left: 0,
+            right: 0,
+            px: 1,
+          }}
+        >
+          <Tooltip
+            title={isCollapsed ? t("navigation.logout") : ""}
+            placement="right"
+            arrow
+          >
+            <ListItem disablePadding>
+              <ListItemButton
+                onClick={async () => {
+                  setLogoutError("");
+                  try {
+                    await logout();
+                  } catch (error) {
+                    setLogoutError(error.message);
+                  }
+                }}
+                aria-label={t("navigation.logout")}
+                sx={{
+                  minHeight: 44,
+                  justifyContent: isCollapsed ? "center" : "flex-start",
+                }}
+              >
+                <ListItemIcon
+                  sx={{ minWidth: isCollapsed ? "auto" : 36, margin: 0 }}
+                >
+                  <LogoutIcon />
+                </ListItemIcon>
+                {!isCollapsed && (
+                  <ListItemText primary={t("navigation.logout")} />
+                )}
+              </ListItemButton>
+            </ListItem>
+          </Tooltip>
+          {logoutError && (
+            <Typography variant="caption" color="error" role="alert">
+              {logoutError}
+            </Typography>
+          )}
+        </Box>
+
         {/* Versión del backend */}
         <Box
           sx={{
             position: "absolute",
-            bottom: !isMobile ? 80 : 16,
+            bottom: !isMobile ? 110 : 64,
             left: 0,
             right: 0,
             display: "flex",

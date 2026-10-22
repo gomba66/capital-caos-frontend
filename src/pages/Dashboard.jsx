@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from "react";
+import React, { useEffect, useRef, useState, useContext } from "react";
 import { getStats } from "../api/stats";
 import { getOperations } from "../api/operations";
 import { getOpenTrades } from "../api/openTrades";
@@ -17,11 +17,13 @@ import {
   Tooltip,
   FormControlLabel,
   Switch,
+  Skeleton,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import InfoIcon from "@mui/icons-material/Info";
 import { RefreshCw, WifiOff } from "lucide-react";
 import OperationsTable from "../components/OperationsTable";
+import StickyTradeSummary from "../components/StickyTradeSummary";
 import MomentumPairsTable from "../components/MomentumPairsTable";
 import DashboardMetrics from "../components/DashboardMetrics";
 import EquityChart from "../components/charts/EquityChart";
@@ -49,6 +51,9 @@ export default function Dashboard({ interactiveSection }) {
   const [totalFees, setTotalFees] = useState(0);
   const [brokerMode, setBrokerMode] = useState(null);
   const [apiUnavailable, setApiUnavailable] = useState(false);
+  const [openTradesExpanded, setOpenTradesExpanded] = useState(false);
+  const [openTradesSticky, setOpenTradesSticky] = useState(false);
+  const openTradesSummaryRef = useRef(null);
   const { timeZone } = useContext(TimeZoneContext);
   const { currency: capitalCurrency, setCurrency: setCapitalCurrency } =
     useContext(CurrencyContext);
@@ -322,11 +327,6 @@ export default function Dashboard({ interactiveSection }) {
               <span style={{ marginLeft: 8 }}>{t("dashboard.updating")}</span>
             )}
           </Typography>
-          {loading && (
-            <Typography variant="caption" color="text.secondary">
-              {t("dashboard.loading")}
-            </Typography>
-          )}
         </Box>
         {brokerMode === "paper" && (
           <Tooltip title={t("dashboard.feesTooltip")}>
@@ -357,12 +357,12 @@ export default function Dashboard({ interactiveSection }) {
         )}
       </Box>
 
-      {!stats && (
+      {!loading && !stats && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {t("dashboard.statsError")}
         </Alert>
       )}
-      {apiUnavailable && (
+      {!loading && apiUnavailable && (
         <div className="api-notice" role="status">
           <WifiOff size={16} />
           <span>{t("dashboard.apiUnavailable")}</span>
@@ -379,6 +379,7 @@ export default function Dashboard({ interactiveSection }) {
         includeFees={includeFeesInCapital}
         totalFees={totalFees}
         apiUnavailable={apiUnavailable}
+        loading={loading}
       />
 
       <Box className="dashboard-section dashboard-performance">
@@ -386,6 +387,7 @@ export default function Dashboard({ interactiveSection }) {
           <Grid size={{ xs: 12, md: 8 }} sx={{ minWidth: 0 }}>
             <EquityChart
               operations={closedTrades}
+              loading={loading}
               showDrawdown={false}
               timeZone={timeZone}
               currency={capitalCurrency}
@@ -399,14 +401,25 @@ export default function Dashboard({ interactiveSection }) {
               stats={stats}
               currency={capitalCurrency}
               hideDescription
+              loading={loading}
             />
           </Grid>
         </Grid>
       </Box>
 
       <Box className="dashboard-section dashboard-open-positions">
-        <Accordion>
+        <Accordion
+          className="operations-table__open-trades-accordion"
+          expanded={openTradesExpanded}
+          onChange={(_, expanded) => setOpenTradesExpanded(expanded)}
+        >
           <AccordionSummary
+            ref={openTradesSummaryRef}
+            className={
+              openTradesSticky ? "trade-summary-source--disabled" : undefined
+            }
+            aria-disabled={openTradesSticky || undefined}
+            tabIndex={openTradesSticky ? -1 : undefined}
             expandIcon={<ExpandMoreIcon />}
             aria-label={t("dashboard.openTrades")}
             aria-describedby="open-trades-summary"
@@ -414,29 +427,48 @@ export default function Dashboard({ interactiveSection }) {
             <Box className="dashboard-open-summary">
               <Typography>{t("dashboard.openTrades")}</Typography>
               <Box className="dashboard-open-summary-details">
-                <span>
-                  {t("dashboard.openTradeCount", { count: openTrades.length })}
-                </span>
-                <span>{t("dashboard.openTradeLong", { count: openTradeSummary.long })}</span>
-                <span>{t("dashboard.openTradeShort", { count: openTradeSummary.short })}</span>
-                <span
-                  className={[
-                    "dashboard-open-pnl",
-                    openTradeSummary.unrealizedPnl > 0 && "performance-win",
-                    openTradeSummary.unrealizedPnl < 0 && "performance-loss",
-                  ]
-                    .filter(Boolean)
-                    .join(" ")}
-                >
-                  {openTradePnlPrefix}
-                  <span
-                    key={`${openTradeSummary.unrealizedPnl}-${capitalCurrency}`}
-                    className="dashboard-value-update"
+                {loading ? (
+                  <Box
+                    role="status"
+                    aria-label={t("dashboard.loading")}
+                    sx={{ display: "inline-flex", alignItems: "center", gap: 1 }}
                   >
-                    {openTradePnl}
-                  </span>
-                  {openTradePnlSuffix}
-                </span>
+                    {[44, 38, 42, 88].map((width) => (
+                      <Skeleton
+                        key={width}
+                        variant="text"
+                        width={width}
+                        aria-hidden="true"
+                      />
+                    ))}
+                  </Box>
+                ) : (
+                  <>
+                    <span>
+                      {t("dashboard.openTradeCount", { count: openTrades.length })}
+                    </span>
+                    <span>{t("dashboard.openTradeLong", { count: openTradeSummary.long })}</span>
+                    <span>{t("dashboard.openTradeShort", { count: openTradeSummary.short })}</span>
+                    <span
+                      className={[
+                        "dashboard-open-pnl",
+                        openTradeSummary.unrealizedPnl > 0 && "performance-win",
+                        openTradeSummary.unrealizedPnl < 0 && "performance-loss",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
+                    >
+                      {openTradePnlPrefix}
+                      <span
+                        key={`${openTradeSummary.unrealizedPnl}-${capitalCurrency}`}
+                        className="dashboard-value-update"
+                      >
+                        {openTradePnl}
+                      </span>
+                      {openTradePnlSuffix}
+                    </span>
+                  </>
+                )}
               </Box>
               <Typography
                 id="open-trades-summary"
@@ -460,9 +492,64 @@ export default function Dashboard({ interactiveSection }) {
               binanceCount={openTrades.length}
               dbCount={dbTradeCount}
               config={config}
+              dataLoading={loading}
             />
           </AccordionDetails>
         </Accordion>
+        <StickyTradeSummary
+          anchorRef={openTradesSummaryRef}
+          expanded={openTradesExpanded}
+          label={t("dashboard.openTradesSummary", {
+            count: openTrades.length,
+            long: openTradeSummary.long,
+            short: openTradeSummary.short,
+            pnl: openTradePnl,
+          })}
+          onVisibilityChange={setOpenTradesSticky}
+        >
+          <Box className="dashboard-open-summary-details">
+            {loading ? (
+              <Box
+                role="status"
+                aria-label={t("dashboard.loading")}
+                sx={{ display: "inline-flex", alignItems: "center", gap: 1 }}
+              >
+                {[44, 38, 42, 88].map((width) => (
+                  <Skeleton
+                    key={width}
+                    variant="text"
+                    width={width}
+                    aria-hidden="true"
+                  />
+                ))}
+              </Box>
+            ) : (
+              <>
+                <span>{t("dashboard.openTradeCount", { count: openTrades.length })}</span>
+                <span>{t("dashboard.openTradeLong", { count: openTradeSummary.long })}</span>
+                <span>{t("dashboard.openTradeShort", { count: openTradeSummary.short })}</span>
+                <span
+                  className={[
+                    "dashboard-open-pnl",
+                    openTradeSummary.unrealizedPnl > 0 && "performance-win",
+                    openTradeSummary.unrealizedPnl < 0 && "performance-loss",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                >
+                  {openTradePnlPrefix}
+                  <span
+                    key={`${openTradeSummary.unrealizedPnl}-${capitalCurrency}`}
+                    className="dashboard-value-update"
+                  >
+                    {openTradePnl}
+                  </span>
+                  {openTradePnlSuffix}
+                </span>
+              </>
+            )}
+          </Box>
+        </StickyTradeSummary>
       </Box>
 
       {interactiveSection}
@@ -477,6 +564,7 @@ export default function Dashboard({ interactiveSection }) {
               operations={closedTrades}
               title={t("dashboard.closedTrades")}
               timeZone={timeZone}
+              dataLoading={loading}
             />
           </AccordionDetails>
         </Accordion>

@@ -1,5 +1,6 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
+import Skeleton from "@mui/material/Skeleton";
 import { normalizeCapitalCaosPayload } from "../api/legacyDashboardAdapter";
 import {
   Activity,
@@ -205,9 +206,6 @@ function SignalToast({ event, onDismiss }) {
                 minutes: event.recent_age_bars * 5,
               })
             : t("signal.active", { side: event.side })}
-          {event.signal_type && event.signal_type !== "-"
-            ? ` · ${event.signal_type}`
-            : ""}
         </small>
       </div>
       <button
@@ -514,6 +512,24 @@ function EmptyRow({ columns, children }) {
       </td>
     </tr>
   );
+}
+
+function LoadingRows({ columns }) {
+  return [0, 1, 2, 3, 4].map((rowIndex) => (
+    <tr key={`loading-${rowIndex}`}>
+      {Array.from({ length: columns }, (_, columnIndex) => (
+        <td
+          key={`loading-${rowIndex}-${columnIndex}`}
+        >
+          <Skeleton
+            variant="text"
+            width={columnIndex === 0 ? 22 : columnIndex === 1 ? 72 : 48}
+            aria-hidden="true"
+          />
+        </td>
+      ))}
+    </tr>
+  ));
 }
 
 function MarketRows({ rows, setChartSymbol, crowded = false }) {
@@ -845,6 +861,7 @@ export default function ScannerDashboard() {
   }, [showSessionDisclaimer]);
 
   const lastScan = dashboard?.last_scan;
+  const initialLoading = !dashboard && !error;
   const rows = lastScan?.top || [];
   const activity = dashboard?.activity || [];
   const scannerStatus =
@@ -966,7 +983,13 @@ export default function ScannerDashboard() {
             {t("intro.lastUpdate")} · {formatUtcOffset(timeZone)}
           </span>
           <strong>
-            {formatTime(lastScan?.timestamp, language, t, timeZone)}
+            {initialLoading ? (
+              <span role="status" aria-label={t("dashboard.loading")}>
+                <Skeleton variant="text" width={112} aria-hidden="true" />
+              </span>
+            ) : (
+              formatTime(lastScan?.timestamp, language, t, timeZone)
+            )}
           </strong>
           <small>
             {dashboard?.scanning
@@ -1070,14 +1093,28 @@ export default function ScannerDashboard() {
         </section>
       )}
 
-      <section className="stats-strip" aria-label={t("stats.summary")}>
+      <section
+        className="stats-strip"
+        aria-label={t("stats.summary")}
+        aria-busy={initialLoading}
+      >
         <div className="stat-item">
           <span className="stat-label">
             <Database size={13} /> {t("stats.validPairs")}
           </span>
-          <strong>{lastScan?.valid_count ?? "—"}</strong>
+          <strong>
+            {initialLoading ? (
+              <Skeleton variant="text" width={42} aria-hidden="true" />
+            ) : (
+              lastScan?.valid_count ?? "—"
+            )}
+          </strong>
           <small>
-            {t("stats.scannedOf", { count: lastScan?.symbols_count ?? "—" })}
+            {initialLoading ? (
+              <Skeleton variant="text" width={92} aria-hidden="true" />
+            ) : (
+              t("stats.scannedOf", { count: lastScan?.symbols_count ?? "—" })
+            )}
           </small>
         </div>
         <div className="stat-item">
@@ -1093,7 +1130,9 @@ export default function ScannerDashboard() {
                   : ""
             }
           >
-            {lastScan ? activeCount : "—"}
+            {initialLoading ? (
+              <Skeleton variant="text" width={42} aria-hidden="true" />
+            ) : lastScan ? activeCount : "—"}
           </strong>
           <small>{t("stats.inLatestScan")}</small>
         </div>
@@ -1102,7 +1141,9 @@ export default function ScannerDashboard() {
             <Clock3 size={13} /> {t("stats.recentSignals")}
           </span>
           <strong className={recentCount ? "stat-accent-amber" : ""}>
-            {lastScan ? recentCount : "—"}
+            {initialLoading ? (
+              <Skeleton variant="text" width={42} aria-hidden="true" />
+            ) : lastScan ? recentCount : "—"}
           </strong>
           <small>{t("stats.withinLookback")}</small>
         </div>
@@ -1110,7 +1151,13 @@ export default function ScannerDashboard() {
           <span className="stat-label">
             <Radio size={13} /> {t("stats.candidates")}
           </span>
-          <strong>{candidateCount}</strong>
+          <strong>
+            {initialLoading ? (
+              <Skeleton variant="text" width={42} aria-hidden="true" />
+            ) : (
+              candidateCount
+            )}
+          </strong>
           <small>{t("stats.watchlistPairs")}</small>
         </div>
       </section>
@@ -1192,16 +1239,24 @@ export default function ScannerDashboard() {
       )}
 
       <div className="data-sections">
-        {signalRows.length > 0 && (
+        {(signalRows.length > 0 || initialLoading) && (
           <section className="data-section active-signals-section">
             <div className="section-heading">
               <div className="section-title-group">
                 <div>
                   <h2>{t("activeSignals.title")}</h2>
                   <p>
-                    {t("activeSignals.subtitle", {
-                      count: scanActiveRows.length,
-                    })}
+                    {initialLoading ? (
+                      <Skeleton
+                        variant="text"
+                        width={132}
+                        aria-hidden="true"
+                      />
+                    ) : (
+                      t("activeSignals.subtitle", {
+                        count: scanActiveRows.length,
+                      })
+                    )}
                   </p>
                 </div>
               </div>
@@ -1222,19 +1277,29 @@ export default function ScannerDashboard() {
                     <th className="chart-col">{t("latest.chart")}</th>
                   </tr>
                 </thead>
-                <tbody>
-                  <MarketRows
-                    rows={signalRows}
-                    setChartSymbol={setChartSymbol}
-                    crowded={signalCrowded}
-                  />
+                <tbody aria-busy={initialLoading}>
+                  {initialLoading ? (
+                    <LoadingRows
+                      columns={10}
+                    />
+                  ) : (
+                    <MarketRows
+                      rows={signalRows}
+                      setChartSymbol={setChartSymbol}
+                      crowded={signalCrowded}
+                    />
+                  )}
                 </tbody>
               </table>
             </div>
             <div className="table-foot">
               <span>{t("activeSignals.liveOnly")}</span>
               <span>
-                {t("activeSignals.count", { count: signalRows.length })}
+                {initialLoading ? (
+                  <Skeleton variant="text" width={70} aria-hidden="true" />
+                ) : (
+                  t("activeSignals.count", { count: signalRows.length })
+                )}
               </span>
             </div>
           </section>
@@ -1246,10 +1311,14 @@ export default function ScannerDashboard() {
               <div>
                 <h2>{t("latest.title")}</h2>
                 <p>
-                  {t("latest.subtitle", {
-                    visible: visibleRows.length,
-                    total: filteredRows.length,
-                  })}
+                  {initialLoading ? (
+                    <Skeleton variant="text" width={180} aria-hidden="true" />
+                  ) : (
+                    t("latest.subtitle", {
+                      visible: visibleRows.length,
+                      total: filteredRows.length,
+                    })
+                  )}
                 </p>
               </div>
             </div>
@@ -1308,8 +1377,14 @@ export default function ScannerDashboard() {
                   <th className="chart-col">{t("latest.chart")}</th>
                 </tr>
               </thead>
-              <tbody>
-                {visibleRows.map((row, index) => (
+              <tbody aria-busy={initialLoading}>
+                {initialLoading ? (
+                  <LoadingRows
+                    columns={13}
+                  />
+                ) : (
+                  <>
+                    {visibleRows.map((row, index) => (
                   <tr key={row.symbol}>
                     <td className="rank-col">
                       {String(index + 1).padStart(2, "0")}
@@ -1424,24 +1499,39 @@ export default function ScannerDashboard() {
                       />
                     </td>
                   </tr>
-                ))}
-                {!filteredRows.length && (
-                  <EmptyRow columns={13}>
-                    {lastScan ? t("latest.noMatches") : t("latest.waiting")}
-                  </EmptyRow>
+                    ))}
+                    {!filteredRows.length && (
+                      <EmptyRow columns={13}>
+                        {lastScan ? t("latest.noMatches") : t("latest.waiting")}
+                      </EmptyRow>
+                    )}
+                  </>
                 )}
               </tbody>
             </table>
           </div>
           <div className="table-foot">
             <span>
-              {t("latest.source")} · {t("recurring.persistent")} ·{" "}
-              {t("recurring.criteria")} · {dashboard?.history_count ?? 0}{" "}
-              {t("recurring.scans")}
+              {initialLoading ? (
+                <Skeleton variant="text" width={230} aria-hidden="true" />
+              ) : (
+                <>
+                  {t("latest.source")} · {t("recurring.persistent")} ·{" "}
+                  {t("recurring.criteria")} · {dashboard?.history_count ?? 0}{" "}
+                  {t("recurring.scans")}
+                </>
+              )}
             </span>
             <span>
               {t("latest.scan")}{" "}
-              {lastScan
+              {initialLoading ? (
+                <Skeleton
+                  component="span"
+                  variant="text"
+                  width={84}
+                  aria-hidden="true"
+                />
+              ) : lastScan
                 ? formatTime(lastScan.timestamp, language, t, timeZone)
                 : "—"}{" "}
               {formatUtcOffset(timeZone)}
@@ -1453,14 +1543,32 @@ export default function ScannerDashboard() {
       <footer className="footer-bar">
         <span>
           <span
-            className={`footer-dot ${connected ? "footer-dot--online" : ""}`}
+            className={`footer-dot${connected ? " footer-dot--online" : ""}`}
           />{" "}
-          {connectedLabel.toUpperCase()}
+          {initialLoading ? (
+            <Skeleton
+              component="span"
+              variant="text"
+              width={58}
+              aria-label={t("dashboard.loading")}
+            />
+          ) : (
+            connectedLabel.toUpperCase()
+          )}
         </span>
         <span>
-          {t("footer.updated", {
-            time: formatTime(refreshTime, language, t, timeZone),
-          })}
+          {initialLoading ? (
+            <Skeleton
+              component="span"
+              variant="text"
+              width={136}
+              aria-hidden="true"
+            />
+          ) : (
+            t("footer.updated", {
+              time: formatTime(refreshTime, language, t, timeZone),
+            })
+          )}
         </span>
         <span>{t("footer.product")}</span>
       </footer>

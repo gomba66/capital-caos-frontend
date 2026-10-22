@@ -1,10 +1,11 @@
 import React from "react";
 import { afterEach, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import Sidebar from "../Sidebar";
 import { SidebarContext } from "../../contexts/AppContexts";
+import { AuthContext } from "../../contexts/authState";
 
 const renderSidebar = ({
   isMobile = false,
@@ -34,7 +35,14 @@ const renderSidebar = ({
             setMobileNavOpen,
           }}
         >
-          <Sidebar />
+          <AuthContext.Provider
+            value={{
+              user: { role: "admin", features: ["bot_trades"] },
+              logout: vi.fn(),
+            }}
+          >
+            <Sidebar />
+          </AuthContext.Provider>
         </SidebarContext.Provider>
       </ThemeProvider>
     </BrowserRouter>,
@@ -67,12 +75,115 @@ describe("Sidebar", () => {
     expect(screen.getByText("Dashboard")).toBeInTheDocument();
     expect(screen.getByText("Charts")).toBeInTheDocument();
     expect(screen.queryByText("Trading Chart")).not.toBeInTheDocument();
+    expect(screen.getByText("System status")).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "System status" }),
+    ).toHaveAttribute("href", "/system-status");
     expect(screen.getByText("Settings")).toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: "Live Scanner" }),
     ).toHaveAttribute("href", "/#scanner");
     expect(screen.queryByText("CAPITAL CAOS")).not.toBeInTheDocument();
     expect(screen.queryByText("UTC")).not.toBeInTheDocument();
+    expect(
+      within(screen.getByText("My account").closest("a")).getByTestId(
+        "admin-astronaut-icon",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  test("limits a signals account to scanner and account navigation", () => {
+    vi.spyOn(window, "matchMedia").mockImplementation((query) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }));
+    render(
+      <BrowserRouter>
+        <ThemeProvider theme={createTheme()}>
+          <SidebarContext.Provider
+            value={{
+              sidebarWidth: 220,
+              setSidebarWidth: vi.fn(),
+              mobileNavOpen: false,
+              setMobileNavOpen: vi.fn(),
+            }}
+          >
+            <AuthContext.Provider
+              value={{
+                user: { role: "member", features: ["signals"] },
+                logout: vi.fn(),
+              }}
+            >
+              <Sidebar />
+            </AuthContext.Provider>
+          </SidebarContext.Provider>
+        </ThemeProvider>
+      </BrowserRouter>,
+    );
+
+    expect(screen.getByText("Dashboard")).toBeInTheDocument();
+    expect(screen.getByText("My account")).toBeInTheDocument();
+    expect(
+      within(screen.getByText("My account").closest("a")).queryByTestId(
+        "admin-astronaut-icon",
+      ),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Charts")).not.toBeInTheDocument();
+    expect(screen.queryByText("System status")).not.toBeInTheDocument();
+    expect(screen.queryByText("Evaluations")).not.toBeInTheDocument();
+    expect(screen.queryByText("Settings")).not.toBeInTheDocument();
+    expect(screen.queryByText("Users")).not.toBeInTheDocument();
+  });
+
+  test("limits a no-access account to account navigation", () => {
+    vi.spyOn(window, "matchMedia").mockImplementation((query) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }));
+    render(
+      <BrowserRouter>
+        <ThemeProvider theme={createTheme()}>
+          <SidebarContext.Provider
+            value={{
+              sidebarWidth: 220,
+              setSidebarWidth: vi.fn(),
+              mobileNavOpen: false,
+              setMobileNavOpen: vi.fn(),
+            }}
+          >
+            <AuthContext.Provider
+              value={{
+                user: { role: "member", plan_code: "no_access", features: [] },
+                logout: vi.fn(),
+              }}
+            >
+              <Sidebar />
+            </AuthContext.Provider>
+          </SidebarContext.Provider>
+        </ThemeProvider>
+      </BrowserRouter>,
+    );
+
+    expect(screen.getByText("My account")).toBeInTheDocument();
+    expect(screen.queryByText("Dashboard")).not.toBeInTheDocument();
+    expect(screen.queryByText("Charts")).not.toBeInTheDocument();
+    expect(screen.queryByText("System status")).not.toBeInTheDocument();
+    expect(screen.queryByText("Live Scanner")).not.toBeInTheDocument();
+    expect(screen.queryByText("Evaluations")).not.toBeInTheDocument();
+    expect(screen.queryByText("Settings")).not.toBeInTheDocument();
+    expect(screen.queryByText("Users")).not.toBeInTheDocument();
   });
 
   test("opens as a temporary drawer and closes after navigation on mobile", () => {

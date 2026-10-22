@@ -150,9 +150,17 @@ describe("Dashboard", () => {
       renderWithProviders(<Dashboard />);
     });
 
-    expect(screen.getByText("Loading available data…")).toBeInTheDocument();
+    expect(screen.queryByText("Loading available data…")).not.toBeInTheDocument();
     expect(screen.getByText("Open Trades")).toBeInTheDocument();
     expect(screen.queryByText("$1.00")).not.toBeInTheDocument();
+    expect(screen.queryByText("Failed to load stats.")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Local API unavailable: API temporarily unavailable."),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("No closed trades to display equity curve."),
+    ).not.toBeInTheDocument();
+    expect(screen.getAllByRole("status").length).toBeGreaterThan(0);
   });
 
   test("renders dashboard with data after loading", async () => {
@@ -204,6 +212,11 @@ describe("Dashboard", () => {
     );
     fireEvent.click(openTradesToggle);
     expect(openTradesToggle).toHaveAttribute("aria-expanded", "true");
+    expect(
+      document.querySelector(
+        ".dashboard-open-positions .operations-table__open-trades-accordion",
+      ),
+    ).toBeInTheDocument();
     expect(
       within(document.querySelector(".dashboard-open-positions")).getByText(
         "BTCUSDT",
@@ -375,7 +388,7 @@ describe("Dashboard", () => {
 
     renderWithProviders(<Dashboard />);
 
-    expect(screen.getByText("Loading available data…")).toBeInTheDocument();
+    expect(screen.queryByText("Loading available data…")).not.toBeInTheDocument();
     expect(screen.getByText("Open Trades")).toBeInTheDocument();
     expect(screen.getByText("Trading Performance")).toBeInTheDocument();
   });

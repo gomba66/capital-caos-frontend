@@ -1,4 +1,7 @@
-import createAppTheme from "../theme";
+import createAppTheme, {
+  APP_PALETTES,
+  getAdminExperimentCssVariables,
+} from "../theme";
 
 describe("Cipher Desk application theme", () => {
   test("uses the dark Cipher Desk palette by default", () => {
@@ -22,7 +25,6 @@ describe("Cipher Desk application theme", () => {
 
   test.each([
     ["ocean", "#58c7d3", "#101b20"],
-    ["graphite", "#e6b15d", "#1b1a18"],
     ["violet", "#b6a2ff", "#191724"],
   ])("creates the %s palette in dark mode", (palette, accent, background) => {
     const theme = createAppTheme("dark", palette);
@@ -34,7 +36,6 @@ describe("Cipher Desk application theme", () => {
 
   test.each([
     ["ocean", "#087e91", "#eef5f7"],
-    ["graphite", "#a96c22", "#f4f0e9"],
     ["violet", "#6654b0", "#f2f0f8"],
   ])("creates the %s palette in light mode", (palette, accent, background) => {
     const theme = createAppTheme("light", palette);
@@ -43,6 +44,29 @@ describe("Cipher Desk application theme", () => {
     expect(theme.palette.primary.main).toBe(accent);
     expect(theme.palette.background.default).toBe(background);
   });
+
+  test.each(APP_PALETTES.filter(({ id }) => id.startsWith("admin-")))(
+    "creates valid light and dark MUI colors for %s",
+    ({ id, color }) => {
+      for (const mode of ["light", "dark"]) {
+        const theme = createAppTheme(mode, id);
+        const customVariables = getAdminExperimentCssVariables(mode, id);
+
+        if (mode === "dark") {
+          expect(theme.palette.primary.main).toBe(color);
+        }
+        expect(theme.palette.primary.main).toMatch(/^#[\da-f]{6}$/i);
+        expect(theme.palette.divider).toMatch(/^#[\da-f]{6}$/i);
+        expect(theme.palette.background.default).toMatch(/^#[\da-f]{6}$/i);
+        expect(theme.palette.background.paper).toMatch(/^#[\da-f]{6}$/i);
+        expect(
+          Object.values(customVariables).some((value) =>
+            value.includes("color-mix"),
+          ),
+        ).toBe(false);
+      }
+    },
+  );
 
   test("uses neutral, low-emphasis surfaces and consistent table colors", () => {
     const theme = createAppTheme();

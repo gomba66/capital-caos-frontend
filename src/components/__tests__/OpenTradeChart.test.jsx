@@ -25,6 +25,7 @@ vi.mock("../../api/priceHistory", () => ({
 vi.mock("lightweight-charts", () => ({
   CandlestickSeries: {},
   ColorType: { Solid: "solid" },
+  CrosshairMode: { Normal: 0 },
   LineStyle: { Dashed: 2 },
   createChart: chartMocks.createChart.mockImplementation(() => ({
     addSeries: vi.fn((_, options) => {
@@ -102,6 +103,7 @@ describe("OpenTradeChart", () => {
     expect(chartMocks.createChart).toHaveBeenCalledWith(
       expect.any(HTMLElement),
       expect.objectContaining({
+        crosshair: { mode: 0 },
         rightPriceScale: expect.objectContaining({
           visible: true,
           ticksVisible: true,

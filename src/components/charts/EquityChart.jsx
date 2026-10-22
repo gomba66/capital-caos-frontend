@@ -25,6 +25,7 @@ import {
   FormGroup,
   FormControlLabel,
   Checkbox,
+  Skeleton,
 } from "@mui/material";
 import { DateTime } from "luxon";
 import { useTranslation } from "react-i18next";
@@ -149,6 +150,7 @@ export default function EquityChart({
   timeZone = "UTC",
   height = 416,
   currency = "USDT",
+  loading = false,
 }) {
   const { t } = useTranslation();
   const data = buildEquityDrawdownData(operations, t("charts.startingPoint"));
@@ -267,6 +269,20 @@ export default function EquityChart({
   // Verificar si hay operaciones reales (no solo el punto inicial)
   const hasRealOperations =
     operations && operations.some((op) => op.closed_at || op.closeTime);
+
+  if (loading) {
+    return (
+      <Box
+        role="status"
+        aria-label={t("dashboard.loading")}
+        aria-busy="true"
+        sx={{ minHeight: height, width: "100%" }}
+      >
+        <Skeleton variant="text" width="42%" height={34} sx={{ mb: 1 }} />
+        <Skeleton variant="rounded" width="100%" height={height - 48} />
+      </Box>
+    );
+  }
 
   if (!hasRealOperations) {
     return <Typography>{t("analyticsCharts.noEquity")}</Typography>;

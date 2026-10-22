@@ -3,6 +3,7 @@ import { Box, CircularProgress, Typography } from "@mui/material";
 import {
   CandlestickSeries,
   ColorType,
+  CrosshairMode,
   createChart,
   LineStyle,
 } from "lightweight-charts";
@@ -134,6 +135,9 @@ export default function OpenTradeChart({ trade }) {
     const styles = getComputedStyle(document.documentElement);
     const chart = createChart(container, {
       autoSize: true,
+      crosshair: {
+        mode: CrosshairMode.Normal,
+      },
       layout: {
         background: {
           type: ColorType.Solid,

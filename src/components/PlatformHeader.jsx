@@ -5,6 +5,7 @@ import "../i18n";
 import {
   Activity,
   Bell,
+  CandlestickChart,
   Clock3,
   Coins,
   Languages,
@@ -29,11 +30,13 @@ import {
   formatUtcOffset,
 } from "../utils/timeZones";
 import { APP_PALETTES } from "../theme";
+import { useAuth } from "../contexts/authState";
 import {
   getSessionPresentation,
   getUpcomingParentSessionOpening,
   getSessionCountdownClass,
 } from "../utils/sessionPresentation";
+import TradingViewChartDialog from "./TradingViewChartDialog";
 
 const STATUS_POLL_MS = 10000;
 
@@ -74,14 +77,26 @@ function formatSessionCountdown(milliseconds, language) {
 
 export default function PlatformHeader() {
   const { t, i18n } = useTranslation();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
+  const canViewSignals =
+    isAdmin || user?.features?.includes("signals") === true;
+  const canViewTrades =
+    isAdmin || user?.features?.includes("bot_trades") === true;
+  const availablePalettes = isAdmin
+    ? APP_PALETTES
+    : APP_PALETTES.filter(({ adminOnly }) => !adminOnly);
   const { mode, setMode, palette, setPalette } =
     useContext(PlatformThemeContext);
+  const currentPalette = availablePalettes.find(({ id }) => id === palette);
+  const darkModeOnly = currentPalette?.darkOnly === true;
   const { timeZone, setTimeZone } = useContext(TimeZoneContext);
   const { currency, setCurrency } = useContext(CurrencyContext);
   const { notificationHistory, setNotificationHistory } =
     useContext(NotificationContext);
   const { setMobileNavOpen } = useContext(SidebarContext);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [chartSymbol, setChartSymbol] = useState(null);
   const [paletteMenuOpen, setPaletteMenuOpen] = useState(false);
   const [systemStatus, setSystemStatus] = useState({
     connection: "connecting",
@@ -114,6 +129,11 @@ export default function PlatformHeader() {
   }, []);
 
   useEffect(() => {
+    if (!canViewSignals) {
+      setSystemStatus({ connection: "connected", scanner: "unknown" });
+      setMarketSession(null);
+      return undefined;
+    }
     let alive = true;
     let timer;
     let polling = false;
@@ -186,13 +206,15 @@ export default function PlatformHeader() {
       window.clearTimeout(timer);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [t]);
+  }, [canViewSignals, t]);
 
   const updateTimeZone = (event) => {
     const nextTimeZone = event.target.value;
     setTimeZone(nextTimeZone);
     window.localStorage.setItem("timeZone", nextTimeZone);
   };
+
+  const closeChart = () => setChartSymbol(null);
 
   const toggleNotifications = () => {
     const opening = !notificationsOpen;
@@ -228,6 +250,11 @@ export default function PlatformHeader() {
             by <b>SIGLO CAPITAL</b>
           </small>
         </span>
+        {isAdmin && (
+          <span className="admin-mode-badge">
+            {t("accountPage.adminMode")}
+          </span>
+        )}
       </Link>
       <button
         className="platform-nav-trigger"
@@ -238,11 +265,12 @@ export default function PlatformHeader() {
       >
         <Menu size={17} />
       </button>
-      <div
-        className="header-system-status"
-        aria-label={t("headerStatus.region")}
-        aria-live="polite"
-      >
+      {canViewSignals && (
+        <div
+          className="header-system-status"
+          aria-label={t("headerStatus.region")}
+          aria-live="polite"
+        >
         <span
           className={`header-status-item header-status-connection header-status-connection--${systemStatus.connection}`}
         >
@@ -333,9 +361,11 @@ export default function PlatformHeader() {
             </span>
           </span>
         )}
-      </div>
+        </div>
+      )}
       <div className="topbar-meta platform-header-meta">
-        <label className="timezone-select-label">
+        {canViewTrades && (
+          <label className="timezone-select-label">
           <Clock3 size={14} />
           <span className="sr-only">{t("settingsPage.timezone")}</span>
           <select
@@ -356,8 +386,10 @@ export default function PlatformHeader() {
               </option>
             ))}
           </select>
-        </label>
-        <label className="currency-select-label">
+          </label>
+        )}
+        {canViewTrades && (
+          <label className="currency-select-label">
           <Coins size={14} aria-hidden="true" />
           <span className="sr-only">{t("settingsPage.currency")}</span>
           <select
@@ -373,7 +405,8 @@ export default function PlatformHeader() {
               </option>
             ))}
           </select>
-        </label>
+          </label>
+        )}
         <label className="language-select-label">
           <Languages size={14} />
           <span className="sr-only">{t("language.label")}</span>
@@ -404,7 +437,9 @@ export default function PlatformHeader() {
               className="palette-current-swatch"
               style={{
                 backgroundColor:
-                  APP_PALETTES.find(({ id }) => id === palette)?.color,
+                  mode === "light"
+                    ? currentPalette?.lightColor || currentPalette?.color
+                    : currentPalette?.color,
               }}
               aria-hidden="true"
             />
@@ -416,7 +451,7 @@ export default function PlatformHeader() {
             hidden={!paletteMenuOpen}
           >
             <strong>{t("theme.choosePalette")}</strong>
-            {APP_PALETTES.map(({ id, color }) => (
+            {availablePalettes.map(({ id, color, lightColor }) => (
               <button
                 className={`palette-option${
                   palette === id ? " palette-option--selected" : ""
@@ -426,10 +461,19 @@ export default function PlatformHeader() {
                 aria-pressed={palette === id}
                 onClick={() => {
                   setPalette(id);
+                  if (APP_PALETTES.find((option) => option.id === id)?.darkOnly) {
+                    setMode("dark");
+                  }
                   setPaletteMenuOpen(false);
                 }}
               >
-                <i style={{ backgroundColor: color }} aria-hidden="true" />
+                <i
+                  style={{
+                    backgroundColor:
+                      mode === "light" ? lightColor || color : color,
+                  }}
+                  aria-hidden="true"
+                />
                 {t(`theme.palettes.${id}`)}
               </button>
             ))}
@@ -438,21 +482,29 @@ export default function PlatformHeader() {
         <button
           className="theme-toggle"
           type="button"
-          onClick={() => setMode(mode === "dark" ? "light" : "dark")}
+          disabled={darkModeOnly}
+          onClick={() => {
+            if (!darkModeOnly) setMode(mode === "dark" ? "light" : "dark");
+          }}
           aria-label={
-            mode === "dark"
-              ? t("theme.switchToLight")
-              : t("theme.switchToDark")
+            darkModeOnly
+              ? t("theme.darkModeOnly")
+              : mode === "dark"
+                ? t("theme.switchToLight")
+                : t("theme.switchToDark")
           }
           title={
-            mode === "dark"
-              ? t("theme.switchToLight")
-              : t("theme.switchToDark")
+            darkModeOnly
+              ? t("theme.darkModeOnly")
+              : mode === "dark"
+                ? t("theme.switchToLight")
+                : t("theme.switchToDark")
           }
         >
           {mode === "dark" ? <Sun size={15} /> : <Moon size={15} />}
         </button>
-        <div className="notification-menu">
+        {canViewSignals && (
+          <div className="notification-menu">
           <button
             className="notification-trigger"
             type="button"
@@ -530,10 +582,20 @@ export default function PlatformHeader() {
                                 minutes: event.recent_age_bars * 5,
                               })
                             : t("signal.active", { side: event.side })}
-                          {event.signal_type && event.signal_type !== "-"
-                            ? ` · ${event.signal_type}`
-                            : ""}
                         </small>
+                        <button
+                          className="chart-button notification-chart-button"
+                          type="button"
+                          onClick={() => setChartSymbol(event.symbol)}
+                          title={t("charts.view", {
+                            symbol: event.symbol.replace(":USDT", ""),
+                          })}
+                          aria-label={t("charts.view", {
+                            symbol: event.symbol.replace(":USDT", ""),
+                          })}
+                        >
+                          <CandlestickChart size={15} />
+                        </button>
                         <time>
                           {formatTime(
                             Number(event.timestamp_ms),
@@ -549,8 +611,14 @@ export default function PlatformHeader() {
               </ol>
             )}
           </section>
-        </div>
+          </div>
+        )}
       </div>
+      <TradingViewChartDialog
+        symbol={chartSymbol}
+        onClose={closeChart}
+        timeZone={timeZone}
+      />
     </header>
   );
 }

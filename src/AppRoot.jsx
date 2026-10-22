@@ -1,7 +1,11 @@
-import { useLayoutEffect, useMemo, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { CssBaseline, ThemeProvider } from "@mui/material";
 import App from "./App";
-import createAppTheme, { APP_PALETTES } from "./theme";
+import createAppTheme, {
+  APP_PALETTES,
+  getAdminExperimentCssVariables,
+  normalizePaletteMode,
+} from "./theme";
 import { PlatformThemeContext } from "./contexts/AppContexts";
 import NotificationProvider from "./contexts/NotificationProvider";
 
@@ -15,14 +19,26 @@ export default function AppRoot() {
       ? storedPalette
       : "classic";
   });
-  const theme = useMemo(() => createAppTheme(mode, palette), [mode, palette]);
+  const appliedPaletteVariables = useRef([]);
+  const effectiveMode = normalizePaletteMode(mode, palette);
+  const theme = useMemo(
+    () => createAppTheme(effectiveMode, palette),
+    [effectiveMode, palette],
+  );
 
   useLayoutEffect(() => {
-    document.documentElement.dataset.theme = mode;
-    document.documentElement.dataset.palette = palette;
-    localStorage.setItem("market-watch-theme", mode);
-    localStorage.setItem("market-watch-palette", palette);
-  }, [mode, palette]);
+    const root = document.documentElement;
+    root.dataset.theme = effectiveMode;
+    root.dataset.palette = palette;
+    appliedPaletteVariables.current.forEach((name) =>
+      root.style.removeProperty(name),
+    );
+    const variables = getAdminExperimentCssVariables(effectiveMode, palette);
+    Object.entries(variables).forEach(([name, value]) =>
+      root.style.setProperty(name, value),
+    );
+    appliedPaletteVariables.current = Object.keys(variables);
+  }, [effectiveMode, palette]);
 
   useLayoutEffect(() => {
     const syncTheme = (event) => {
@@ -36,7 +52,7 @@ export default function AppRoot() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <PlatformThemeContext.Provider
-        value={{ mode, setMode, palette, setPalette }}
+        value={{ mode: effectiveMode, setMode, palette, setPalette }}
       >
         <NotificationProvider>
           <App />

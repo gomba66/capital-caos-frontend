@@ -1,5 +1,9 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  Button,
   Table,
   TableBody,
   TableCell,
@@ -10,11 +14,18 @@ import {
   Typography,
   Box,
   Tooltip,
+  Skeleton,
 } from "@mui/material";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import { DateTime } from "luxon";
+import { Link as RouterLink } from "react-router-dom";
 
 import ScannerInfo from "./ScannerInfo";
 import OpenTradeChartDialog from "./OpenTradeChartDialog";
+import StickyTradeSummary from "./StickyTradeSummary";
+import { getClosedTradesPreview } from "../api/closedTradesPreview";
+import { getOpenTradesPreview } from "../api/openTradesPreview";
 import { convertFromUSDT, formatCurrency } from "../utils/currencyConverter";
 import { useSymbolStatistics } from "../hooks/useSymbolStatistics";
 import { useTranslation } from "react-i18next";
@@ -50,6 +61,57 @@ function formatDate(date, timeZone) {
   }
   if (!dt.isValid) return date;
   return dt.setZone(timeZone).toFormat("dd/MM/yy - h:mm:ss a");
+}
+
+function ProtectedDataHint({ t, kind = "symbol", size = "medium" }) {
+  return (
+    <Tooltip
+      arrow
+      placement="top"
+      enterDelay={200}
+      slotProps={{
+        tooltip: { className: "protected-upgrade-tooltip" },
+      }}
+      title={
+        <Box className="protected-upgrade-tooltip__content">
+          <Typography variant="subtitle2">
+            {t("protectedOpenTrades.tooltipTitle")}
+          </Typography>
+          <Typography variant="body2">
+            {t("protectedOpenTrades.tooltipMessage")}
+          </Typography>
+          <Button
+            component={RouterLink}
+            to="/upgrade"
+            size="small"
+            variant="contained"
+          >
+            {t("protectedOpenTrades.upgradeAction")}
+          </Button>
+        </Box>
+      }
+    >
+      <span
+        className={`operations-table__protected-hint operations-table__protected-hint--${kind}`}
+        data-mask-size={kind === "side" ? undefined : size}
+        tabIndex={0}
+        aria-label={t("protectedOpenTrades.tooltipTitle")}
+      >
+        {kind === "target" ? (
+          <span className="operations-table__mask-target" aria-hidden="true">
+            <span className="operations-table__mask" />
+            <span className="operations-table__mask" />
+          </span>
+        ) : (
+          <span className="operations-table__mask" aria-hidden="true" />
+        )}
+        <HelpOutlineIcon
+          className="operations-table__protected-help"
+          aria-hidden="true"
+        />
+      </span>
+    </Tooltip>
+  );
 }
 
 function _formatNumber(val, decimals = 4) {
@@ -177,16 +239,170 @@ export default function OperationsTable({
   dbCount,
   isOpenTrades: openTradesMode,
   config = null,
+  protectedMode = false,
+  protectedClosedMode = false,
+  includeProtectedClosedPreview = false,
+  protectedEmbeddedMode = false,
+  onProtectedClosedSummaryChange,
+  dataLoading = false,
 }) {
   const { t } = useTranslation();
   const [chartTradeKey, setChartTradeKey] = useState(null);
+  const [protectedPreview, setProtectedPreview] = useState(null);
+  const [protectedPreviewError, setProtectedPreviewError] = useState(false);
+  const [protectedClosedTrades, setProtectedClosedTrades] = useState(null);
+  const [protectedClosedSummary, setProtectedClosedSummary] = useState(null);
+  const [protectedClosedError, setProtectedClosedError] = useState(false);
+  const [protectedClosedLoading, setProtectedClosedLoading] =
+    useState(protectedClosedMode);
+  const [embeddedClosedState, setEmbeddedClosedState] = useState({
+    summary: null,
+    error: false,
+  });
+  const [protectedExpanded, setProtectedExpanded] =
+    useState(!protectedEmbeddedMode);
+  const [protectedSummarySticky, setProtectedSummarySticky] = useState(false);
+  const protectedSummaryRef = useRef(null);
+  const [protectedPreviewLoading, setProtectedPreviewLoading] =
+    useState(protectedMode);
   const closeChart = useCallback(() => setChartTradeKey(null), []);
   const [currency, setCurrency] = useState(() => {
     return localStorage.getItem("capitalCurrency") || "USDT";
   });
+  const handleEmbeddedClosedSummaryChange = useCallback(
+    (summary, error = false) => {
+      setEmbeddedClosedState((current) => ({
+        summary: summary ?? current.summary,
+        error,
+      }));
+    },
+    [],
+  );
 
   // Fetch all symbol statistics for performance data
-  const { data: symbolStats, loading: _statsLoading } = useSymbolStatistics();
+  const { data: symbolStats, loading: _statsLoading } = useSymbolStatistics(
+    null,
+    !protectedMode && !protectedClosedMode,
+  );
+
+  useEffect(() => {
+    if (!protectedMode) return undefined;
+    let isMounted = true;
+    let refreshing = false;
+
+    const refreshPreview = async () => {
+      if (refreshing) return;
+      refreshing = true;
+      try {
+        const preview = await getOpenTradesPreview();
+        const isValid =
+          Number.isInteger(preview?.open_count) &&
+          preview.open_count >= 0 &&
+          Array.isArray(preview?.positions) &&
+          preview.positions.length === preview.open_count &&
+          Number.isInteger(preview?.long_count) &&
+          Number.isInteger(preview?.short_count) &&
+          typeof preview?.total_tp_target === "number" &&
+          Number.isFinite(preview.total_tp_target) &&
+          (preview.pnl_percentage === null ||
+            (typeof preview.pnl_percentage === "number" &&
+              Number.isFinite(preview.pnl_percentage))) &&
+          preview.positions.every(
+            (position) =>
+              (position?.unrealized_pnl === null ||
+                (typeof position?.unrealized_pnl === "number" &&
+                  Number.isFinite(position.unrealized_pnl))) &&
+              (position?.open_time === null ||
+                typeof position?.open_time === "number" ||
+                typeof position?.open_time === "string"),
+          ) &&
+          (preview.revealed_trade_index === null ||
+            (Number.isInteger(preview.revealed_trade_index) &&
+              preview.revealed_trade_index >= 0 &&
+              preview.revealed_trade_index < preview.open_count)) &&
+          (preview.revealed_trade_index === null
+            ? preview.revealed_trade === null
+            : preview.revealed_trade &&
+              typeof preview.revealed_trade === "object");
+        if (!isValid) throw new Error("Invalid open trade preview response");
+        if (isMounted) {
+          setProtectedPreview(preview);
+          setProtectedPreviewError(false);
+        }
+      } catch (error) {
+        console.error("Open trade preview refresh failed:", error);
+        if (isMounted) setProtectedPreviewError(true);
+      } finally {
+        refreshing = false;
+        if (isMounted) setProtectedPreviewLoading(false);
+      }
+    };
+
+    refreshPreview();
+    const intervalId = window.setInterval(refreshPreview, 30_000);
+    return () => {
+      isMounted = false;
+      window.clearInterval(intervalId);
+    };
+  }, [protectedMode]);
+
+  useEffect(() => {
+    if (!protectedClosedMode) return undefined;
+    let isMounted = true;
+    let refreshing = false;
+
+    const refreshPreview = async () => {
+      if (refreshing) return;
+      refreshing = true;
+      try {
+        const preview = await getClosedTradesPreview();
+        const isValid =
+          Array.isArray(preview?.closed_trades) &&
+          preview.closed_trades.length <= 10 &&
+          preview?.summary &&
+          Number.isInteger(preview.summary.total_trades) &&
+          preview.summary.total_trades >= 0 &&
+          typeof preview.summary.total_pnl === "number" &&
+          Number.isFinite(preview.summary.total_pnl) &&
+          preview.closed_trades.every(
+            (trade) =>
+              trade &&
+              typeof trade === "object" &&
+              !Object.prototype.hasOwnProperty.call(trade, "reason") &&
+              typeof trade.symbol === "string" &&
+              typeof trade.side === "string" &&
+              (trade.pnl === null ||
+                (typeof trade.pnl === "number" &&
+                  Number.isFinite(trade.pnl))) &&
+              (trade.closed_at === null ||
+                typeof trade.closed_at === "string"),
+          );
+        if (!isValid) throw new Error("Invalid closed trade preview response");
+        if (isMounted) {
+          setProtectedClosedTrades(preview.closed_trades);
+          setProtectedClosedSummary(preview.summary);
+          setProtectedClosedError(false);
+          onProtectedClosedSummaryChange?.(preview.summary);
+        }
+      } catch (error) {
+        console.error("Closed trade preview refresh failed:", error);
+        if (isMounted) {
+          setProtectedClosedError(true);
+          onProtectedClosedSummaryChange?.(undefined, true);
+        }
+      } finally {
+        refreshing = false;
+        if (isMounted) setProtectedClosedLoading(false);
+      }
+    };
+
+    refreshPreview();
+    const intervalId = window.setInterval(refreshPreview, 30_000);
+    return () => {
+      isMounted = false;
+      window.clearInterval(intervalId);
+    };
+  }, [onProtectedClosedSummaryChange, protectedClosedMode]);
 
   // Create a map for quick lookup of symbol stats
   const symbolStatsMap = React.useMemo(() => {
@@ -218,11 +434,41 @@ export default function OperationsTable({
   }, []);
 
   // Detect if open_trades format (Binance) or closed trades (tracker)
-  const isOpenTrades =
-    openTradesMode ??
-    (operations?.length > 0 &&
-      (operations[0].positionAmt !== undefined ||
-        operations[0].status === "open"));
+  const isOpenTrades = protectedClosedMode
+    ? false
+    : (protectedMode ? true : openTradesMode) ??
+      (operations?.length > 0 &&
+        (operations[0].positionAmt !== undefined ||
+          operations[0].status === "open"));
+
+  const tableOperations = protectedMode
+    ? (protectedPreview?.positions ?? []).map((position, index) => {
+        const revealedTrade =
+          index === protectedPreview.revealed_trade_index
+            ? protectedPreview.revealed_trade
+            : null;
+        if (revealedTrade) {
+          return {
+            ...revealedTrade,
+            side: revealedTrade.side,
+            positionSide: revealedTrade.side,
+            entryPrice: revealedTrade.entry_price,
+            markPrice: revealedTrade.mark_price,
+            unrealizedProfit: revealedTrade.unrealized_pnl,
+            updateTime: revealedTrade.update_time,
+            __protectedRow: false,
+          };
+        }
+        return {
+          unrealizedProfit: position.unrealized_pnl,
+          updateTime: position.open_time,
+          __protectedRow: true,
+          __maskSize: ["long", "short", "medium", "wide"][index % 4],
+        };
+      })
+    : protectedClosedMode
+      ? protectedClosedTrades || []
+      : operations || [];
 
   // Estado para ordenamiento
   // Para open trades, ordenar por defecto por Open Time (updateTime) descendente (más recientes primero)
@@ -326,14 +572,14 @@ export default function OperationsTable({
     };
   }
 
-  let sortedOps = operations;
+  let sortedOps = tableOperations;
   if (orderBy) {
-    sortedOps = [...operations].sort(getComparator(orderBy));
+    sortedOps = [...tableOperations].sort(getComparator(orderBy));
   }
   const selectedTrade =
     chartTradeKey === null
       ? null
-      : (operations || []).find(
+      : tableOperations.find(
           (operation) =>
             `${operation.symbol}:${operation.side || operation.positionSide}` ===
             chartTradeKey,
@@ -341,7 +587,7 @@ export default function OperationsTable({
 
   // Sumatoria de PnL para open trades (en USDT)
   const totalPnL = isOpenTrades
-    ? operations.reduce(
+    ? tableOperations.reduce(
         (acc, op) =>
           acc + (Number(op.unrealizedProfit || op.unRealizedProfit) || 0),
         0
@@ -350,7 +596,9 @@ export default function OperationsTable({
 
   // Sumatoria de TP targets potenciales (en USDT)
   const totalTPTarget = isOpenTrades
-    ? operations.reduce((acc, op) => {
+    ? protectedMode
+      ? protectedPreview?.total_tp_target ?? 0
+      : tableOperations.reduce((acc, op) => {
         if (op.take_profit_target) {
           const targetValue =
             typeof op.take_profit_target === "object"
@@ -376,6 +624,24 @@ export default function OperationsTable({
   const totalTPTargetFormatted =
     totalTPTargetConverted !== null
       ? formatCurrency(totalTPTargetConverted, currency)
+      : "";
+  const closedTotalPnl = protectedClosedSummary?.total_pnl;
+  const closedTotalPnlConverted =
+    closedTotalPnl !== undefined
+      ? convertFromUSDT(Math.abs(closedTotalPnl), currency)
+      : null;
+  const closedTotalPnlFormatted =
+    closedTotalPnlConverted !== null
+      ? formatCurrency(closedTotalPnlConverted, currency)
+      : "";
+  const embeddedRealizedPnl = embeddedClosedState.summary?.total_pnl;
+  const embeddedRealizedPnlConverted =
+    embeddedRealizedPnl !== undefined
+      ? convertFromUSDT(Math.abs(embeddedRealizedPnl), currency)
+      : null;
+  const embeddedRealizedPnlFormatted =
+    embeddedRealizedPnlConverted !== null
+      ? formatCurrency(embeddedRealizedPnlConverted, currency)
       : "";
 
   // Mostrar contador solo para "Open Trades"
@@ -415,18 +681,67 @@ export default function OperationsTable({
   };
 
   const activeSidesAndLimits = getActiveSidesAndLimits();
+  const protectedTableMode = protectedMode || protectedClosedMode;
+  const protectedAccordionMode = protectedTableMode;
+  const tableColumnCount = isOpenTrades
+    ? protectedMode
+      ? 6
+      : 7
+    : protectedClosedMode
+      ? 7
+      : 9;
+  const SectionWrapper = protectedAccordionMode ? Accordion : React.Fragment;
+  const SectionContent = protectedAccordionMode
+    ? AccordionDetails
+    : React.Fragment;
+  const sectionWrapperProps = protectedAccordionMode
+    ? {
+        expanded: protectedExpanded,
+        onChange: (_, expanded) => setProtectedExpanded(expanded),
+        className: protectedMode
+          ? "operations-table__open-trades-accordion"
+          : protectedEmbeddedMode
+            ? "operations-table__embedded-accordion"
+            : undefined,
+        sx: { bgcolor: "var(--white)" },
+      }
+    : {};
 
   return (
     <>
+    <SectionWrapper {...sectionWrapperProps}>
       <Box
+        component={protectedAccordionMode ? AccordionSummary : "div"}
+        ref={protectedAccordionMode ? protectedSummaryRef : undefined}
+        className={
+          protectedMode && protectedSummarySticky
+            ? "trade-summary-source--disabled"
+            : undefined
+        }
+        aria-disabled={
+          protectedMode && protectedSummarySticky ? true : undefined
+        }
+        tabIndex={
+          protectedMode && protectedSummarySticky ? -1 : undefined
+        }
+        {...(protectedAccordionMode ? { expandIcon: <ExpandMoreIcon /> } : {})}
+        aria-label={
+          protectedAccordionMode
+            ? title || t("dashboard.openTrades")
+            : undefined
+        }
         display="flex"
         justifyContent="space-between"
         alignItems="center"
-        mb={1}
+        mb={protectedAccordionMode ? 0 : 1}
         flexWrap="wrap"
         gap={2}
       >
-        <Typography variant="h6" gutterBottom sx={{ mb: 0 }}>
+        <Typography
+          variant={protectedTableMode ? "body1" : "h6"}
+          gutterBottom={!protectedTableMode}
+          sx={{ mb: 0 }}
+        >
           {title}
         </Typography>
 
@@ -438,8 +753,143 @@ export default function OperationsTable({
             flexWrap="wrap"
             sx={{ ml: "auto" }}
           >
+            {includeProtectedClosedPreview &&
+              (embeddedClosedState.summary ? (
+                <>
+                  <Box
+                    className="protected-realized-summary"
+                    aria-live="polite"
+                  >
+                    <Typography variant="caption">
+                      {t("protectedClosedTrades.totalRealizedPnl")}{" "}
+                      <span
+                        className={`protected-realized-summary__pnl protected-realized-summary__pnl--${
+                          embeddedRealizedPnl > 0
+                            ? "positive"
+                            : embeddedRealizedPnl < 0
+                              ? "negative"
+                              : "neutral"
+                        }`}
+                      >
+                        {embeddedRealizedPnl > 0
+                          ? "+"
+                          : embeddedRealizedPnl < 0
+                            ? "-"
+                            : ""}
+                        {embeddedRealizedPnlFormatted}
+                        {currency !== "USDT" && ` (${currency})`}
+                      </span>
+                    </Typography>
+                    <Typography variant="caption">
+                      {t("protectedClosedTrades.historicalTradeCount", {
+                        count:
+                          embeddedClosedState.summary.total_trades.toLocaleString(),
+                      })}
+                    </Typography>
+                    {embeddedClosedState.error && (
+                      <Typography
+                        color="error"
+                        role="status"
+                        variant="caption"
+                      >
+                        {t("protectedClosedTrades.loadError")}
+                      </Typography>
+                    )}
+                  </Box>
+                  <Box
+                    aria-hidden="true"
+                    sx={{
+                      width: "1px",
+                      height: "14px",
+                      bgcolor: "var(--line)",
+                    }}
+                  />
+                </>
+              ) : embeddedClosedState.error ? (
+                <Typography color="error" role="status" variant="caption">
+                  {t("protectedClosedTrades.loadError")}
+                </Typography>
+              ) : (
+                <Skeleton
+                  role="status"
+                  aria-label={t("dashboard.loading")}
+                  variant="text"
+                  width={180}
+                />
+              ))}
+            {protectedMode && (
+              <Box
+                className="protected-open-trades-summary"
+                display="flex"
+                alignItems="center"
+                gap={1.5}
+                flexWrap="wrap"
+              >
+                {protectedPreview ? (
+                  <>
+                    <Typography variant="caption">
+                      {t("dashboard.openTradeCount", {
+                        count: protectedPreview.open_count,
+                      })}
+                    </Typography>
+                    <Typography variant="caption">
+                      {t("dashboard.openTradeLong", {
+                        count: protectedPreview.long_count,
+                      })}
+                    </Typography>
+                    <Typography variant="caption">
+                      {t("dashboard.openTradeShort", {
+                        count: protectedPreview.short_count,
+                      })}
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color:
+                          totalPnL > 0
+                            ? "var(--green)"
+                            : totalPnL < 0
+                              ? "var(--red)"
+                              : "var(--muted)",
+                      }}
+                    >
+                      <span
+                        key={`${totalPnL}-${currency}`}
+                        className="dashboard-value-update"
+                      >
+                        {t("dashboard.openTradePnl", {
+                          amount:
+                            totalPnL === null
+                              ? "—"
+                              : `${totalPnL > 0 ? "+" : totalPnL < 0 ? "-" : ""}${totalPnLFormatted}`,
+                        })}
+                      </span>
+                    </Typography>
+                  </>
+                ) : protectedPreviewLoading ? (
+                  <Box
+                    role="status"
+                    aria-label={t("dashboard.loading")}
+                    sx={{ display: "flex", gap: 1 }}
+                  >
+                    {[54, 42, 48, 72].map((width) => (
+                      <Skeleton
+                        key={width}
+                        variant="text"
+                        width={width}
+                        aria-hidden="true"
+                      />
+                    ))}
+                  </Box>
+                ) : (
+                  <Typography variant="caption" role={protectedPreviewError ? "status" : undefined}>
+                    {t("protectedOpenTrades.loadError")}
+                  </Typography>
+                )}
+              </Box>
+            )}
             {/* Información de trades */}
-            {showCounter && (
+            {!protectedMode && showCounter && (
               <Box display="flex" alignItems="center" gap={1.5} flexWrap="wrap">
                 <Box display="flex" alignItems="center" gap={0.5}>
                   <Typography
@@ -536,7 +986,7 @@ export default function OperationsTable({
             )}
 
             {/* Límites */}
-            {activeSidesAndLimits && (
+            {!protectedMode && activeSidesAndLimits && (
               <>
                 {showCounter && (
                   <Box
@@ -576,11 +1026,12 @@ export default function OperationsTable({
           </Box>
         )}
       </Box>
+      <SectionContent>
       <TableContainer component={Paper} sx={{ mb: 4, overflowX: "auto" }}>
         <Table
           className={`operations-table ${
             openTradesMode ? "operations-table--open" : "operations-table--closed"
-          }`}
+          } ${protectedMode ? "operations-table--protected-open" : ""}`}
           size="small"
           sx={{ minWidth: 650 }}
         >
@@ -620,15 +1071,19 @@ export default function OperationsTable({
                   {t("operations.tpTarget")}
                 </TableCell>
               )}
-              <TableCell
-                className={isOpenTrades ? "operations-table__numeric-head" : undefined}
-                style={{ cursor: "pointer" }}
-                onClick={() => handleSort("winRate")}
-              >
-                <Tooltip title={t("operations.winRateTooltip")}>
-                  <span>{t("operations.winRate")}</span>
-                </Tooltip>
-              </TableCell>
+              {!protectedClosedMode && !protectedMode && (
+                <TableCell
+                  className={
+                    isOpenTrades ? "operations-table__numeric-head" : undefined
+                  }
+                  style={{ cursor: "pointer" }}
+                  onClick={() => handleSort("winRate")}
+                >
+                  <Tooltip title={t("operations.winRateTooltip")}>
+                    <span>{t("operations.winRate")}</span>
+                  </Tooltip>
+                </TableCell>
+              )}
 
               <TableCell
                 onClick={() =>
@@ -648,7 +1103,7 @@ export default function OperationsTable({
                   {t("operations.closeDate")}
                 </TableCell>
               )}
-              {!isOpenTrades && (
+              {!isOpenTrades && !protectedClosedMode && (
                 <TableCell
                   onClick={() => handleSort("reason")}
                   style={{ cursor: "pointer" }}
@@ -667,21 +1122,120 @@ export default function OperationsTable({
               {isOpenTrades && <TableCell>{t("operations.chart")}</TableCell>}
             </TableRow>
           </TableHead>
-          <TableBody>
-            {sortedOps && sortedOps.length > 0 ? (
+          <TableBody
+            aria-busy={
+              dataLoading ||
+              (protectedMode && protectedPreviewLoading) ||
+              (protectedClosedMode && protectedClosedLoading)
+            }
+          >
+            {dataLoading ? (
+              [0, 1, 2, 3].map((rowIndex) => (
+                <TableRow key={`loading-${rowIndex}`}>
+                  {Array.from(
+                    { length: tableColumnCount },
+                    (_, cellIndex) => (
+                      <TableCell key={`loading-${rowIndex}-${cellIndex}`}>
+                        <Skeleton
+                          variant="text"
+                          width={cellIndex === 0 ? 76 : cellIndex % 2 ? 48 : 64}
+                          aria-hidden="true"
+                        />
+                      </TableCell>
+                    ),
+                  )}
+                </TableRow>
+              ))
+            ) : protectedMode && protectedPreviewLoading ? (
+              [0, 1, 2, 3].map((rowIndex) => (
+                <TableRow key={`protected-loading-${rowIndex}`}>
+                  {Array.from({ length: tableColumnCount }, (_, cellIndex) => (
+                    <TableCell key={`protected-loading-${rowIndex}-${cellIndex}`}>
+                      <Skeleton
+                        variant="text"
+                        width={cellIndex === 0 ? 76 : 48}
+                        aria-hidden="true"
+                      />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : protectedMode && protectedPreviewError && !protectedPreview ? (
+              <TableRow>
+                <TableCell colSpan={tableColumnCount} align="center" role="status">
+                  {t("protectedOpenTrades.loadError")}
+                </TableCell>
+              </TableRow>
+            ) : protectedClosedMode && protectedClosedLoading ? (
+              [0, 1, 2, 3].map((rowIndex) => (
+                <TableRow key={`closed-preview-loading-${rowIndex}`}>
+                  {Array.from({ length: tableColumnCount }, (_, cellIndex) => (
+                    <TableCell
+                      key={`closed-preview-loading-${rowIndex}-${cellIndex}`}
+                    >
+                      <Skeleton
+                        variant="text"
+                        width={cellIndex === 0 ? 76 : 48}
+                        aria-hidden="true"
+                      />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : protectedClosedMode &&
+              protectedClosedError &&
+              !protectedClosedTrades ? (
+              <TableRow>
+                <TableCell
+                  colSpan={tableColumnCount}
+                  align="center"
+                  role="status"
+                >
+                  {t("protectedClosedTrades.loadError")}
+                </TableCell>
+              </TableRow>
+            ) : sortedOps.length > 0 ? (
               sortedOps.map((op, idx) => (
                 <React.Fragment key={idx}>
                   <TableRow>
                     <TableCell
+                      className={
+                        op.__protectedRow
+                          ? "operations-table__protected-cell"
+                          : undefined
+                      }
                       style={{
                         fontWeight: 600,
                         color: "var(--ink)",
                       }}
                     >
-                      {op.symbol || "-"}
+                      {op.__protectedRow ? (
+                        <ProtectedDataHint
+                          t={t}
+                          kind="symbol"
+                          size={op.__maskSize}
+                        />
+                      ) : (
+                        op.symbol || "-"
+                      )}
                     </TableCell>
-                    <TableCell style={getSideStyle(op.side || op.positionSide)}>
-                      {formatSide(op.side || op.positionSide)}
+                    <TableCell
+                      className={
+                        op.__protectedRow
+                          ? "operations-table__protected-cell"
+                          : undefined
+                      }
+                      style={getSideStyle(op.side || op.positionSide)}
+                    >
+                      {op.__protectedRow ? (
+                        <ProtectedDataHint
+                          t={t}
+                          kind="side"
+                          size={op.__maskSize}
+                        />
+                      ) : (
+                        formatSide(op.side || op.positionSide)
+                      )}
                       {op.protected && (
                         <span
                           title={t("operations.protected")}
@@ -707,8 +1261,20 @@ export default function OperationsTable({
                       <TableCell>{getWinLoss(op.pnl, t)}</TableCell>
                     )}
                     {isOpenTrades && (
-                      <TableCell className="operations-table__numeric-cell">
-                        {op.take_profit_target ? (
+                      <TableCell
+                        className={`operations-table__numeric-cell ${
+                          op.__protectedRow
+                            ? "operations-table__protected-cell"
+                            : ""
+                        }`}
+                      >
+                        {op.__protectedRow ? (
+                          <ProtectedDataHint
+                            t={t}
+                            kind="target"
+                            size={op.__maskSize}
+                          />
+                        ) : op.take_profit_target ? (
                           typeof op.take_profit_target === "object" ? (
                             <Box>
                               <Typography
@@ -767,67 +1333,90 @@ export default function OperationsTable({
                         )}
                       </TableCell>
                     )}
-                    <TableCell
-                      className={
-                        isOpenTrades ? "operations-table__numeric-cell" : undefined
-                      }
-                    >
-                      {symbolStatsMap[op.symbol] ? (
-                        (() => {
-                          const stats = symbolStatsMap[op.symbol];
-                          const isLong = op.side === "LONG";
-                          const sideCount = isLong
-                            ? stats.long_count
-                            : stats.short_count;
+                    {!protectedClosedMode && !protectedMode && (
+                      <TableCell
+                        className={
+                          isOpenTrades
+                            ? "operations-table__numeric-cell"
+                            : undefined
+                        }
+                      >
+                        {op.__protectedRow ? (
+                          <ProtectedDataHint t={t} />
+                        ) : symbolStatsMap[op.symbol] ? (
+                          (() => {
+                            const stats = symbolStatsMap[op.symbol];
+                            const isLong = op.side === "LONG";
+                            const sideCount = isLong
+                              ? stats.long_count
+                              : stats.short_count;
 
-                          // Calculate win rate for this specific direction using exact data
-                          let displayWinRate = stats.win_rate;
-                          let displayTrades = `${stats.total_trades}`;
+                            let displayWinRate = stats.win_rate;
+                            let displayTrades = `${stats.total_trades}`;
 
-                          if (sideCount > 0) {
-                            // Use exact win rate for this direction from backend
-                            const sideWinRate = isLong
-                              ? stats.long_win_rate
-                              : stats.short_win_rate;
-                            displayWinRate = sideWinRate;
-                            displayTrades = `${sideCount} ${
-                              isLong ? "L" : "S"
-                            }`;
-                          }
+                            if (sideCount > 0) {
+                              const sideWinRate = isLong
+                                ? stats.long_win_rate
+                                : stats.short_win_rate;
+                              displayWinRate = sideWinRate;
+                              displayTrades = `${sideCount} ${
+                                isLong ? "L" : "S"
+                              }`;
+                            }
 
-                          return (
-                            <Typography
-                              variant="body2"
-                              sx={{
-                                fontFamily: "monospace",
-                                fontWeight: 600,
-                                color:
-                                  displayWinRate >= 50
-                                    ? "var(--green)"
-                                    : displayWinRate >= 30
-                                    ? "var(--amber)"
-                                    : "var(--red)",
-                              }}
-                              title={t("operations.basedOnTrades", {
-                                count: displayTrades,
-                              })}
-                            >
-                              {displayWinRate.toFixed(1)}%
-                            </Typography>
-                          );
-                        })()
-                      ) : (
-                        <Typography
-                          variant="body2"
-                          sx={{ color: "text.disabled" }}
-                        >
-                          -
-                        </Typography>
-                      )}
-                    </TableCell>
+                            if (
+                              !Number.isFinite(stats.total_trades) ||
+                              stats.total_trades <= 0 ||
+                              !Number.isFinite(displayWinRate)
+                            ) {
+                              return (
+                                <Typography
+                                  variant="body2"
+                                  sx={{ color: "text.disabled" }}
+                                >
+                                  —
+                                </Typography>
+                              );
+                            }
+
+                            return (
+                              <Typography
+                                variant="body2"
+                                sx={{
+                                  fontFamily: "monospace",
+                                  fontWeight: 600,
+                                  color:
+                                    displayWinRate >= 50
+                                      ? "var(--green)"
+                                      : displayWinRate >= 30
+                                        ? "var(--amber)"
+                                        : "var(--red)",
+                                }}
+                                title={t("operations.basedOnTrades", {
+                                  count: displayTrades,
+                                })}
+                              >
+                                {displayWinRate.toFixed(1)}%
+                              </Typography>
+                            );
+                          })()
+                        ) : (
+                          <Typography
+                            variant="body2"
+                            sx={{ color: "text.disabled" }}
+                          >
+                            -
+                          </Typography>
+                        )}
+                      </TableCell>
+                    )}
 
                     <TableCell>
-                      {isOpenTrades
+                      {op.__protectedRow ? (
+                        op.updateTime
+                          ? getDurationString(op.updateTime)
+                          : "-"
+                      ) : isOpenTrades
                         ? getDurationString(op.updateTime)
                         : formatDate(op.timestamp || op.openTime, timeZone)}
                     </TableCell>
@@ -836,7 +1425,7 @@ export default function OperationsTable({
                         {formatDate(op.closed_at || op.closeTime, timeZone)}
                       </TableCell>
                     )}
-                    {!isOpenTrades && (
+                    {!isOpenTrades && !protectedClosedMode && (
                       <TableCell>{formatReason(op.reason, t)}</TableCell>
                     )}
                     {!isOpenTrades && (
@@ -848,7 +1437,8 @@ export default function OperationsTable({
                       </TableCell>
                     )}
                     {isOpenTrades && (
-                      <TableCell>
+                      <TableCell className="operations-table__chart-cell">
+                        {op.__protectedRow ? null : (
                         <button
                           className="chart-button"
                           type="button"
@@ -867,6 +1457,7 @@ export default function OperationsTable({
                         >
                           <CandlestickChart size={15} />
                         </button>
+                        )}
                       </TableCell>
                     )}
                   </TableRow>
@@ -875,37 +1466,53 @@ export default function OperationsTable({
             ) : (
               <TableRow>
                 <TableCell
-                  colSpan={isOpenTrades ? 7 : 9}
+                  colSpan={tableColumnCount}
                   align="center"
+                  role={
+                    protectedClosedMode && protectedClosedError
+                      ? "status"
+                      : undefined
+                  }
                 >
-                  {t("operations.noOperations")}
+                  {protectedMode && protectedPreviewError
+                    ? t("protectedOpenTrades.loadError")
+                    : protectedClosedMode && protectedClosedError
+                      ? t("protectedClosedTrades.loadError")
+                      : protectedClosedMode
+                        ? t("protectedClosedTrades.empty")
+                    : t("operations.noOperations")}
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
           {/* Total PnL para open trades */}
-          {isOpenTrades && totalPnL !== null && (
+          {((isOpenTrades &&
+            totalPnL !== null &&
+            (!dataLoading || protectedMode) &&
+            (!protectedMode || protectedPreview)) ||
+            (protectedClosedMode &&
+              protectedClosedSummary &&
+              !protectedEmbeddedMode)) && (
             <tfoot>
-              <TableRow>
-                <TableCell colSpan={2} />
-                <TableCell
-                  className="operations-table__pnl-total"
-                  style={{
-                    fontWeight: 700,
-                    color:
-                      totalPnL > 0
-                        ? "var(--green)"
-                        : totalPnL < 0
-                        ? "var(--red)"
-                        : undefined,
-                  }}
-                >
-                  {t("operations.total")}:{" "}
-                  {totalPnL > 0 ? "+" : totalPnL < 0 ? "-" : ""}
-                  {totalPnLFormatted}
-                  {currency !== "USDT" && (
-                    <>
-                      {" "}
+              {isOpenTrades ? (
+                <TableRow>
+                  <TableCell colSpan={2} />
+                  <TableCell
+                    className="operations-table__pnl-total"
+                    style={{
+                      fontWeight: 700,
+                      color:
+                        totalPnL > 0
+                          ? "var(--green)"
+                          : totalPnL < 0
+                            ? "var(--red)"
+                            : undefined,
+                    }}
+                  >
+                    {t("operations.total")}:{" "}
+                    {totalPnL > 0 ? "+" : totalPnL < 0 ? "-" : ""}
+                    {totalPnLFormatted}
+                    {currency !== "USDT" && (
                       <span
                         style={{
                           color: "var(--muted)",
@@ -913,13 +1520,11 @@ export default function OperationsTable({
                           fontSize: "0.9em",
                         }}
                       >
+                        {" "}
                         ({currency})
                       </span>
-                    </>
-                  )}
-                  {totalTPTarget > 0 && (
-                    <>
-                      {" "}
+                    )}
+                    {totalTPTarget > 0 && (
                       <span
                         style={{
                           color: "var(--muted)",
@@ -927,24 +1532,22 @@ export default function OperationsTable({
                           fontSize: "0.85em",
                         }}
                       >
+                        {" "}
                         ({((totalPnL / totalTPTarget) * 100).toFixed(1)}%)
                       </span>
-                    </>
-                  )}
-                </TableCell>
-                <TableCell
-                  className="operations-table__numeric-cell"
-                  style={{
-                    fontWeight: 500,
-                    color: "var(--muted)",
-                  }}
-                >
-                  {totalTPTarget > 0 ? (
-                    <>
-                      {t("operations.target")}: ~{totalTPTargetFormatted}
-                      {currency !== "USDT" && (
-                        <>
-                          {" "}
+                    )}
+                  </TableCell>
+                  <TableCell
+                    className="operations-table__numeric-cell"
+                    style={{
+                      fontWeight: 500,
+                      color: "var(--muted)",
+                    }}
+                  >
+                    {totalTPTarget > 0 ? (
+                      <>
+                        {t("operations.target")}: ~{totalTPTargetFormatted}
+                        {currency !== "USDT" && (
                           <span
                             style={{
                               color: "var(--muted)",
@@ -952,25 +1555,158 @@ export default function OperationsTable({
                               fontSize: "0.9em",
                             }}
                           >
+                            {" "}
                             ({currency})
                           </span>
-                        </>
-                      )}
-                    </>
-                  ) : (
-                    "-"
-                  )}
-                </TableCell>
-                <TableCell colSpan={3} />
-              </TableRow>
+                        )}
+                      </>
+                    ) : (
+                      "-"
+                    )}
+                  </TableCell>
+                  <TableCell colSpan={3} />
+                </TableRow>
+              ) : (
+                <TableRow className="operations-table__closed-summary">
+                  <TableCell colSpan={2} />
+                  <TableCell
+                    className={`operations-table__closed-total operations-table__closed-total--${
+                      closedTotalPnl > 0
+                        ? "positive"
+                        : closedTotalPnl < 0
+                          ? "negative"
+                          : "neutral"
+                    }`}
+                    sx={{ fontWeight: 700 }}
+                  >
+                    {t("protectedClosedTrades.totalRealizedPnl")}:{" "}
+                    {closedTotalPnl > 0
+                      ? "+"
+                      : closedTotalPnl < 0
+                        ? "-"
+                        : ""}
+                    {closedTotalPnlFormatted}
+                    {currency !== "USDT" && (
+                      <span className="operations-table__closed-summary-currency">
+                        {" "}
+                        ({currency})
+                      </span>
+                    )}
+                  </TableCell>
+                  <TableCell colSpan={tableColumnCount - 3}>
+                    {t("protectedClosedTrades.historicalTradeCount", {
+                      count: protectedClosedSummary.total_trades.toLocaleString(),
+                    })}
+                  </TableCell>
+                </TableRow>
+              )}
             </tfoot>
           )}
         </Table>
       </TableContainer>
+      {protectedMode && protectedPreviewError && protectedPreview && (
+        <Typography
+          color="error"
+          role="status"
+          sx={{ mb: 1, fontSize: "0.75rem" }}
+        >
+          {t("protectedOpenTrades.loadError")}
+        </Typography>
+      )}
+      {protectedClosedMode &&
+        protectedClosedError &&
+        protectedClosedTrades && (
+          <Typography
+            color="error"
+            role="status"
+            sx={{ mb: 1, fontSize: "0.75rem" }}
+          >
+            {t("protectedClosedTrades.loadError")}
+          </Typography>
+        )}
+      {includeProtectedClosedPreview && (
+        <OperationsTable
+          operations={[]}
+          title={t("dashboard.closedTradesPreview")}
+          protectedClosedMode
+          protectedEmbeddedMode
+          onProtectedClosedSummaryChange={handleEmbeddedClosedSummaryChange}
+        />
+      )}
+      </SectionContent>
       <OpenTradeChartDialog
         trade={selectedTrade}
         onClose={closeChart}
       />
+    </SectionWrapper>
+    {protectedMode && (
+      <StickyTradeSummary
+        anchorRef={protectedSummaryRef}
+        expanded={protectedExpanded}
+        label={t("dashboard.openTradesSummary", {
+          count: protectedPreview?.open_count ?? 0,
+          long: protectedPreview?.long_count ?? 0,
+          short: protectedPreview?.short_count ?? 0,
+          pnl:
+            totalPnL === null
+              ? "—"
+              : `${totalPnL > 0 ? "+" : totalPnL < 0 ? "-" : ""}${totalPnLFormatted}`,
+        })}
+        onVisibilityChange={setProtectedSummarySticky}
+      >
+        <Box
+          className="protected-open-trades-summary"
+          display="flex"
+          alignItems="center"
+          gap={1.5}
+          flexWrap="wrap"
+        >
+          {protectedPreview ? (
+            <>
+              <Typography variant="caption">
+                {t("dashboard.openTradeCount", {
+                  count: protectedPreview.open_count,
+                })}
+              </Typography>
+              <Typography variant="caption">
+                {t("dashboard.openTradeLong", {
+                  count: protectedPreview.long_count,
+                })}
+              </Typography>
+              <Typography variant="caption">
+                {t("dashboard.openTradeShort", {
+                  count: protectedPreview.short_count,
+                })}
+              </Typography>
+              <Typography
+                variant="caption"
+                sx={{
+                  color:
+                    totalPnL > 0
+                      ? "var(--green)"
+                      : totalPnL < 0
+                        ? "var(--red)"
+                        : "var(--muted)",
+                }}
+              >
+                {t("dashboard.openTradePnl", {
+                  amount:
+                    totalPnL === null
+                      ? "—"
+                      : `${totalPnL > 0 ? "+" : totalPnL < 0 ? "-" : ""}${totalPnLFormatted}`,
+                })}
+              </Typography>
+            </>
+          ) : (
+            <Typography variant="caption">
+              {protectedPreviewLoading
+                ? t("dashboard.loading")
+                : t("protectedOpenTrades.loadError")}
+            </Typography>
+          )}
+        </Box>
+      </StickyTradeSummary>
+    )}
     </>
   );
 }

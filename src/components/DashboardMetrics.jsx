@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, Tooltip, Typography } from "@mui/material";
+import { Box, Skeleton, Tooltip, Typography } from "@mui/material";
 import WarningIcon from "@mui/icons-material/Warning";
 import {
   convertFromUSDT,
@@ -11,7 +11,7 @@ function pnlColor(value) {
   return value > 0 ? "var(--green)" : value < 0 ? "var(--red)" : "var(--ink)";
 }
 
-function renderMetric(metric, t) {
+function renderMetric(metric, t, loading) {
   return (
     <Box className="dashboard-metric" role="listitem" key={metric.label}>
       <Box className="dashboard-metric-copy">
@@ -29,7 +29,7 @@ function renderMetric(metric, t) {
         className="dashboard-metric-value"
         sx={{ color: metric.color || "var(--ink)" }}
       >
-        {metric.warning && (
+        {!loading && metric.warning && (
           <Tooltip
             title={t("metrics.capitalWarning")}
             arrow
@@ -44,12 +44,21 @@ function renderMetric(metric, t) {
             />
           </Tooltip>
         )}
-        <span
-          key={metric.animationKey ?? metric.value}
-          className="dashboard-value-update"
-        >
-          {metric.value}
-        </span>
+        {loading ? (
+          <Skeleton
+            variant="text"
+            width={76}
+            height={24}
+            aria-label={t("dashboard.loading")}
+          />
+        ) : (
+          <span
+            key={metric.animationKey ?? metric.value}
+            className="dashboard-value-update"
+          >
+            {metric.value}
+          </span>
+        )}
       </Box>
     </Box>
   );
@@ -64,6 +73,7 @@ export default function DashboardMetrics({
   includeFees,
   totalFees,
   apiUnavailable = false,
+  loading = false,
 }) {
   const { t } = useTranslation();
   const feesApply =
@@ -152,7 +162,7 @@ export default function DashboardMetrics({
         className="dashboard-metric-grid dashboard-metric-grid-financial"
         role="list"
       >
-        {metrics.map((metric) => renderMetric(metric, t))}
+        {metrics.map((metric) => renderMetric(metric, t, loading))}
       </Box>
     </Box>
   );
