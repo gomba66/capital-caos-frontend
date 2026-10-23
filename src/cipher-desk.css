@@ -1446,6 +1446,645 @@ h1 {
   border-bottom: 1px solid var(--line);
   background: var(--white);
 }
+.signal-tide {
+  --signal-tide-accent: var(--brand-mark);
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(250px, 0.9fr) minmax(260px, 1.1fr);
+  gap: 22px;
+  overflow: hidden;
+  margin-top: 12px;
+  padding: 16px 18px 14px;
+  border-left: 3px solid var(--signal-tide-accent);
+  color: var(--brand-mark);
+  background:
+    linear-gradient(120deg, transparent 42%, rgba(255, 255, 255, 0.025)),
+    var(--brand-tile);
+  animation: signal-tide-arrive 360ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.signal-tide::before {
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+  content: "";
+}
+.signal-tide::before {
+  inset: -45% 25% auto -10%;
+  height: 180%;
+  background: radial-gradient(
+    ellipse,
+    color-mix(in srgb, var(--signal-tide-accent) 10%, transparent),
+    transparent 68%
+  );
+  opacity: 0.42;
+  animation: signal-tide-aurora 9s ease-in-out infinite alternate;
+}
+.signal-tide > * {
+  position: relative;
+  z-index: 1;
+}
+.signal-tide--quiet,
+.signal-tide--warming,
+.signal-tide--cooling {
+  --signal-tide-accent: var(--amber);
+}
+.signal-tide--rising,
+.signal-tide--surge {
+  --signal-tide-accent: var(--green);
+}
+.signal-tide--surge {
+  animation:
+    signal-tide-arrive 360ms cubic-bezier(0.2, 0.8, 0.2, 1) both,
+    signal-tide-surge-frame 1.8s ease-in-out infinite;
+}
+.signal-tide--surge::before {
+  opacity: 0.75;
+  animation: signal-tide-surge-aurora 2.8s ease-in-out infinite alternate;
+}
+.signal-tide--surge .signal-tide-mark svg {
+  animation-duration: 5s;
+}
+.signal-tide--surge .signal-tide-live i {
+  animation-duration: 850ms;
+}
+.signal-tide--surge .signal-tide-gauge-value {
+  animation: signal-tide-surge-gauge 900ms ease-in-out infinite;
+}
+.signal-tide--surge .signal-tide-needle-wobble {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: signal-tide-needle-surge 1.3s ease-in-out infinite;
+}
+.signal-tide--surge .signal-tide-score,
+.signal-tide--surge .signal-tide-count {
+  animation: signal-tide-surge-text 1.3s ease-in-out infinite;
+}
+.signal-tide--surge .signal-tide-state-label {
+  animation-duration: 1s;
+}
+.signal-tide--surge .signal-tide-comparison {
+  animation-duration: 1.5s;
+}
+.signal-tide--surge .signal-tide-timeline-line {
+  filter: drop-shadow(0 0 3px var(--signal-tide-accent));
+  animation: signal-tide-surge-chart 1.1s ease-in-out infinite alternate;
+}
+.signal-tide--surge .signal-tide-disturbance-wave {
+  animation-duration: 900ms;
+}
+.signal-tide--surge .signal-tide-credo {
+  animation: signal-tide-surge-text 1.8s ease-in-out infinite;
+}
+.signal-tide-main {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(140px, 0.9fr) minmax(155px, 1.1fr);
+  align-items: center;
+  column-gap: 10px;
+}
+.signal-tide-heading {
+  min-width: 0;
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  gap: 9px;
+}
+.signal-tide-mark {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--signal-tide-accent) 60%, transparent);
+  color: var(--signal-tide-accent);
+  background: color-mix(in srgb, var(--signal-tide-accent) 12%, transparent);
+}
+.signal-tide-mark svg {
+  animation: signal-tide-orbit 18s linear infinite;
+}
+.signal-tide-live,
+.signal-tide-current > span,
+.signal-tide-comparison > span,
+.signal-tide-history-heading {
+  color: color-mix(in srgb, var(--brand-mark) 67%, transparent);
+  font: 9px var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.signal-tide-heading h2 {
+  margin: 0;
+  color: var(--brand-mark);
+  font: 700 15px var(--mono);
+  letter-spacing: 0.025em;
+}
+.signal-tide-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+.signal-tide-live i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--signal-tide-accent);
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, var(--signal-tide-accent) 15%, transparent);
+  animation: signal-tide-beacon 2.2s ease-in-out infinite;
+}
+.signal-tide-gauge {
+  min-width: 0;
+  align-self: end;
+  margin-top: 4px;
+}
+.signal-tide-gauge svg {
+  display: block;
+  width: min(100%, 248px);
+  margin: 0 auto;
+  overflow: visible;
+}
+.signal-tide-gauge-track,
+.signal-tide-gauge-value {
+  fill: none;
+  stroke-linecap: round;
+  stroke-width: 7;
+}
+.signal-tide-gauge-track {
+  stroke: color-mix(in srgb, var(--brand-mark) 14%, transparent);
+}
+.signal-tide-gauge-value {
+  stroke: url(#signal-tide-gradient);
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--signal-tide-accent) 35%, transparent));
+  animation: signal-tide-gauge-glow 3.6s ease-in-out infinite;
+}
+.signal-tide-needle {
+  transform-box: view-box;
+  transition: transform 700ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.signal-tide-needle line {
+  stroke: var(--brand-mark);
+  stroke-linecap: round;
+  stroke-width: 2;
+}
+.signal-tide-needle--calibrating .signal-tide-needle-wobble {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: signal-tide-needle-calibrate 2.8s ease-in-out infinite;
+}
+.signal-tide-hub {
+  fill: var(--signal-tide-accent);
+  stroke: var(--brand-tile);
+  stroke-width: 2;
+}
+.signal-tide-score {
+  fill: var(--brand-mark);
+  font: 700 26px var(--mono);
+  text-anchor: middle;
+}
+.signal-tide-score-unit,
+.signal-tide-scale {
+  fill: color-mix(in srgb, var(--brand-mark) 55%, transparent);
+  font: 7px var(--mono);
+  letter-spacing: 0.06em;
+  text-anchor: middle;
+}
+.signal-tide-state {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 4px;
+  margin-top: -2px;
+}
+.signal-tide-state strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--signal-tide-accent);
+  font: 600 11px var(--mono);
+  letter-spacing: 0.07em;
+  animation: signal-tide-state-glow 3s ease-in-out infinite;
+}
+.signal-tide-calibrating-gear {
+  flex: 0 0 auto;
+  filter: drop-shadow(0 0 3px color-mix(in srgb, var(--signal-tide-accent) 50%, transparent));
+  animation: signal-tide-gear-turn 3s linear infinite;
+}
+.signal-tide-state span {
+  color: color-mix(in srgb, var(--brand-mark) 74%, transparent);
+  font-size: 10.5px;
+  line-height: 1.45;
+}
+.signal-tide-context {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(120px, 0.65fr) minmax(0, 1.35fr);
+  align-content: center;
+  gap: 14px 18px;
+  padding-left: 18px;
+  border-left: 1px solid color-mix(in srgb, var(--brand-mark) 15%, transparent);
+}
+.signal-tide-current {
+  display: grid;
+  align-content: start;
+  gap: 3px;
+}
+.signal-tide-current > strong {
+  color: var(--signal-tide-accent);
+  font: 500 32px var(--mono);
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+  transition: color 180ms ease;
+}
+.signal-tide-count {
+  transform-origin: left center;
+  animation: signal-tide-count-arrive 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.signal-tide-current > small {
+  color: color-mix(in srgb, var(--brand-mark) 58%, transparent);
+  font: 9px var(--mono);
+  line-height: 1.4;
+}
+.signal-tide-comparisons {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.signal-tide-comparison {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  padding: 9px 10px;
+  border: 1px solid color-mix(in srgb, var(--brand-mark) 13%, transparent);
+  background: color-mix(in srgb, var(--brand-mark) 4%, transparent);
+  animation: signal-tide-card-breathe 5s ease-in-out infinite;
+}
+.signal-tide-comparison:nth-child(2) {
+  animation-delay: 350ms;
+}
+.signal-tide-comparison:nth-child(3) {
+  animation-delay: 700ms;
+}
+.signal-tide-comparison > span {
+  min-width: 0;
+  font-size: 8px;
+  letter-spacing: 0.035em;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+.signal-tide-comparison > strong {
+  min-width: 0;
+  color: var(--brand-mark);
+  font: 500 clamp(9px, 0.8vw, 12px) var(--mono);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+.signal-tide-history {
+  min-width: 0;
+  grid-column: 1 / -1;
+  padding-top: 10px;
+  border-top: 1px solid color-mix(in srgb, var(--brand-mark) 13%, transparent);
+}
+.signal-tide-history-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.signal-tide-history-heading > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.signal-tide-history-heading small {
+  color: color-mix(in srgb, var(--brand-mark) 53%, transparent);
+  font: 8px var(--mono);
+}
+.signal-tide-sparkline {
+  width: 100%;
+  height: 42px;
+  display: block;
+  margin-top: 7px;
+  overflow: visible;
+}
+.signal-tide-timeline-line {
+  fill: none;
+  stroke: var(--signal-tide-accent);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 240;
+  stroke-dashoffset: 240;
+  animation: signal-tide-chart-draw 1.4s cubic-bezier(0.2, 0.8, 0.2, 1) 250ms forwards;
+}
+.signal-tide-timeline-threshold {
+  fill: none;
+  stroke: color-mix(in srgb, var(--signal-tide-accent) 26%, transparent);
+  stroke-width: 0.6;
+  stroke-dasharray: 1.5 2.5;
+  vector-effect: non-scaling-stroke;
+}
+.signal-tide-disturbance-wave {
+  fill: var(--signal-tide-accent);
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: signal-tide-disturbance-wave 2.2s ease-out infinite;
+}
+.signal-tide-disturbance:nth-of-type(3n) .signal-tide-disturbance-wave {
+  animation-delay: 600ms;
+}
+.signal-tide-disturbance-point {
+  fill: var(--signal-tide-accent);
+  stroke: var(--brand-tile);
+  stroke-width: 0.7;
+  vector-effect: non-scaling-stroke;
+}
+.signal-tide-sparkline-point {
+  fill: var(--brand-tile);
+  stroke: var(--signal-tide-accent);
+  stroke-width: 1.2;
+  vector-effect: non-scaling-stroke;
+}
+.signal-tide-timeline-axis {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 2px;
+  color: color-mix(in srgb, var(--brand-mark) 48%, transparent);
+  font: 7px var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.signal-tide-warming {
+  margin: 8px 0 0;
+  color: color-mix(in srgb, var(--brand-mark) 58%, transparent);
+  font: 9px var(--mono);
+  line-height: 1.45;
+}
+.signal-tide-credo {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding-top: 9px;
+  border-top: 1px solid color-mix(in srgb, var(--brand-mark) 13%, transparent);
+  color: color-mix(in srgb, var(--brand-mark) 72%, transparent);
+  font-size: 10px;
+  font-style: italic;
+  line-height: 1.45;
+  animation: signal-tide-credo-arrive 850ms ease-out 500ms both;
+}
+@keyframes signal-tide-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes signal-tide-beacon {
+  0%,
+  100% {
+    box-shadow: 0 0 0 2px
+      color-mix(in srgb, var(--signal-tide-accent) 12%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 5px
+      color-mix(in srgb, var(--signal-tide-accent) 3%, transparent);
+  }
+}
+@keyframes signal-tide-aurora {
+  from {
+    transform: translate3d(-4%, -2%, 0) scale(0.92);
+    opacity: 0.28;
+  }
+  to {
+    transform: translate3d(7%, 3%, 0) scale(1.08);
+    opacity: 0.58;
+  }
+}
+@keyframes signal-tide-orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes signal-tide-gear-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes signal-tide-needle-calibrate {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  13% {
+    transform: rotate(-2deg);
+  }
+  21% {
+    transform: rotate(1deg);
+  }
+  49% {
+    transform: rotate(0deg);
+  }
+  63% {
+    transform: rotate(3deg);
+  }
+  72% {
+    transform: rotate(-1deg);
+  }
+}
+@keyframes signal-tide-needle-surge {
+  0%,
+  100% {
+    transform: rotate(-1.5deg);
+  }
+  50% {
+    transform: rotate(1.5deg);
+  }
+}
+@keyframes signal-tide-surge-frame {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--signal-tide-accent) 12%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 24px 3px color-mix(in srgb, var(--signal-tide-accent) 30%, transparent);
+  }
+}
+@keyframes signal-tide-surge-aurora {
+  from {
+    opacity: 0.42;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 0.9;
+    transform: scale(1.1);
+  }
+}
+@keyframes signal-tide-surge-gauge {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 4px color-mix(in srgb, var(--signal-tide-accent) 45%, transparent));
+  }
+  50% {
+    filter: drop-shadow(0 0 11px color-mix(in srgb, var(--signal-tide-accent) 85%, transparent));
+  }
+}
+@keyframes signal-tide-surge-text {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 0 color-mix(in srgb, var(--signal-tide-accent) 0%, transparent));
+  }
+  50% {
+    filter: drop-shadow(0 0 7px color-mix(in srgb, var(--signal-tide-accent) 70%, transparent));
+  }
+}
+@keyframes signal-tide-surge-chart {
+  from {
+    stroke-width: 1.8;
+    opacity: 0.72;
+  }
+  to {
+    stroke-width: 2.8;
+    opacity: 1;
+  }
+}
+@keyframes signal-tide-gauge-glow {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 3px color-mix(in srgb, var(--signal-tide-accent) 25%, transparent));
+  }
+  50% {
+    filter: drop-shadow(0 0 7px color-mix(in srgb, var(--signal-tide-accent) 52%, transparent));
+  }
+}
+@keyframes signal-tide-state-glow {
+  0%,
+  100% {
+    text-shadow: 0 0 0 color-mix(in srgb, var(--signal-tide-accent) 0%, transparent);
+  }
+  50% {
+    text-shadow: 0 0 9px color-mix(in srgb, var(--signal-tide-accent) 34%, transparent);
+  }
+}
+@keyframes signal-tide-count-arrive {
+  from {
+    opacity: 0.45;
+    transform: translateY(5px) scale(0.96);
+    text-shadow: 0 0 14px var(--signal-tide-accent);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    text-shadow: 0 0 0 transparent;
+  }
+}
+@keyframes signal-tide-card-breathe {
+  0%,
+  100% {
+    border-color: color-mix(in srgb, var(--brand-mark) 13%, transparent);
+    background-color: color-mix(in srgb, var(--brand-mark) 4%, transparent);
+  }
+  50% {
+    border-color: color-mix(in srgb, var(--signal-tide-accent) 28%, transparent);
+    background-color: color-mix(in srgb, var(--signal-tide-accent) 6%, transparent);
+  }
+}
+@keyframes signal-tide-chart-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes signal-tide-disturbance-wave {
+  0% {
+    opacity: 0.64;
+    transform: scale(0.55);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(3.8);
+  }
+}
+@keyframes signal-tide-credo-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (max-width: 700px) {
+  .signal-tide {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+    padding: 14px;
+  }
+  .signal-tide-main {
+    grid-template-columns: minmax(110px, 0.8fr) minmax(150px, 1.2fr);
+  }
+  .signal-tide-context {
+    grid-template-columns: minmax(110px, 0.65fr) minmax(0, 1.35fr);
+    gap: 12px;
+    padding-top: 12px;
+    padding-left: 0;
+    border-top: 1px solid color-mix(in srgb, var(--brand-mark) 15%, transparent);
+    border-left: 0;
+  }
+}
+@media (max-width: 420px) {
+  .signal-tide-main {
+    grid-template-columns: minmax(92px, 0.72fr) minmax(135px, 1.28fr);
+    column-gap: 4px;
+  }
+  .signal-tide-context {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .signal-tide-comparisons {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-width: 320px;
+  }
+  .signal-tide-comparison:last-child {
+    grid-column: 1 / -1;
+  }
+  .signal-tide-state span {
+    font-size: 10px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .signal-tide,
+  .signal-tide::before,
+  .signal-tide-live i,
+  .signal-tide-mark svg,
+  .signal-tide-gauge-value,
+  .signal-tide-score,
+  .signal-tide-needle-wobble,
+  .signal-tide-state strong,
+  .signal-tide-calibrating-gear,
+  .signal-tide-needle-wobble,
+  .signal-tide-count,
+  .signal-tide-comparison,
+  .signal-tide-timeline-line,
+  .signal-tide-disturbance-wave,
+  .signal-tide-credo {
+    animation: none;
+  }
+  .signal-tide-needle {
+    transition: none;
+  }
+  .signal-tide-timeline-line {
+    stroke-dasharray: none;
+    stroke-dashoffset: 0;
+  }
+  .signal-tide-disturbance-wave {
+    animation: none;
+    opacity: 0.2;
+    transform: scale(2);
+  }
+}
 .session-notice {
   display: flex;
   align-items: center;
@@ -1540,32 +2179,40 @@ h1 {
   font-size: 11.5px;
   font-weight: 700;
 }
-.signal-pressure-warning {
+.signal-availability-notice {
   display: flex;
   align-items: flex-start;
   gap: 10px;
   margin-top: 12px;
   padding: 10px 12px;
-  border-left: 3px solid var(--red);
-  color: var(--error-ink);
-  background: var(--surface-error);
+  border-left: 3px solid var(--line);
+  color: var(--text-secondary);
+  background: var(--surface-muted);
 }
-.signal-pressure-warning > svg {
+.signal-availability-notice > svg {
   flex: 0 0 auto;
   margin-top: 1px;
-  color: var(--red);
+  color: var(--score-ink);
 }
-.signal-pressure-warning strong {
+.signal-availability-notice strong {
   display: block;
   font: 11.5px var(--mono);
   letter-spacing: 0.025em;
-  color: var(--error-ink);
+  color: var(--ink);
 }
-.signal-pressure-warning p {
+.signal-availability-notice p {
   margin: 4px 0 0;
   color: var(--text-secondary);
   font-size: 11.5px;
   line-height: 1.5;
+}
+.signal-availability-notice--low {
+  border-left-color: var(--amber);
+  background: var(--amber-soft);
+}
+.signal-availability-notice--low > svg,
+.signal-availability-notice--low strong {
+  color: var(--amber-ink);
 }
 .session-notice-copy span {
   font-size: 11.5px;
@@ -2225,9 +2872,9 @@ h2 {
   align-items: center;
   gap: 4px;
   padding: 3px 5px;
-  border: 1px solid var(--red);
-  color: var(--error-ink);
-  background: var(--surface-error);
+  border: 1px solid var(--line);
+  color: var(--neutral-ink);
+  background: var(--surface-muted);
   font: 9.2px var(--mono);
   letter-spacing: 0.025em;
   white-space: nowrap;

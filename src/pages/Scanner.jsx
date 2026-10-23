@@ -11,6 +11,7 @@ import {
   Clock3,
   ChevronDown,
   Database,
+  Info,
   Radio,
   RefreshCw,
   Search,
@@ -23,6 +24,7 @@ import {
   TimeZoneContext,
 } from "../contexts/AppContexts";
 import { NOTIFICATION_HISTORY_LIMIT } from "../contexts/NotificationProvider";
+import SignalTide from "../components/SignalTide";
 import { formatUtcOffset } from "../utils/timeZones";
 import {
   getUpcomingParentSessionOpening,
@@ -33,13 +35,15 @@ import {
   SESSION_URGENT_WINDOW_MS,
 } from "../utils/sessionPresentation";
 import { selectNewSignalNotifications } from "../utils/signalNotifications";
+import { SIGNAL_TIDE_MIN_ACTIVE } from "../utils/signalTide";
 import TradingViewChartDialog from "../components/TradingViewChartDialog";
 
 const POLL_MS = 5000;
 const SESSION_HANDOFF_WINDOW_MS = 15 * 60 * 1000;
 const SIGNAL_TOAST_COOLDOWN_MS = 60 * 60 * 1000;
 const SIGNAL_TOAST_STORAGE_KEY = "market-watch-reported-signals";
-const ACTIVE_SIGNAL_CROWDING_THRESHOLD = 20;
+const MIN_ACTIVE_SIGNALS_FOR_TRADING = SIGNAL_TIDE_MIN_ACTIVE;
+const ACTIVE_SIGNAL_DENSITY_THRESHOLD = 20;
 const PRIORITY_SIGNAL_CONFIDENCE = 80;
 
 function prioritySignalSides(row) {
@@ -574,8 +578,8 @@ function MarketRows({ rows, setChartSymbol, crowded = false }) {
                 aria-label={t("activeSignals.crowdedPairTitle")}
                 title={t("activeSignals.crowdedPairTitle")}
               >
-                <AlertTriangle size={11} aria-hidden="true" />
-                {t("activeSignals.crowdedPair")}
+                <Signal size={11} aria-hidden="true" />
+                {t("activeSignals.activePool")}
               </span>
             )}
             {prioritySignal && (
@@ -921,7 +925,7 @@ export default function ScannerDashboard() {
   const signalPressure = lastScan?.signal_pressure;
   const signalCrowded =
     signalPressure?.crowded ??
-    scanActiveRows.length > ACTIVE_SIGNAL_CROWDING_THRESHOLD;
+    scanActiveRows.length > ACTIVE_SIGNAL_DENSITY_THRESHOLD;
   const hasPrioritySignal = (row) =>
     row.priority_signal ??
     (signalCrowded && prioritySignalSides(row).length > 0);
@@ -1123,9 +1127,9 @@ export default function ScannerDashboard() {
           </span>
           <strong
             className={
-              signalCrowded
+              lastScan && activeCount < MIN_ACTIVE_SIGNALS_FOR_TRADING
                 ? "stat-accent-amber"
-                : activeCount
+                : lastScan && activeCount >= MIN_ACTIVE_SIGNALS_FOR_TRADING
                   ? "stat-accent-green"
                   : ""
             }
@@ -1134,7 +1138,13 @@ export default function ScannerDashboard() {
               <Skeleton variant="text" width={42} aria-hidden="true" />
             ) : lastScan ? activeCount : "—"}
           </strong>
-          <small>{t("stats.inLatestScan")}</small>
+          <small>
+            {lastScan
+              ? t("activeSignals.entryThreshold", {
+                  threshold: MIN_ACTIVE_SIGNALS_FOR_TRADING,
+                })
+              : t("stats.inLatestScan")}
+          </small>
         </div>
         <div className="stat-item">
           <span className="stat-label">
@@ -1162,27 +1172,50 @@ export default function ScannerDashboard() {
         </div>
       </section>
 
-      {signalCrowded && (
+      {lastScan && (
+        <SignalTide
+          activeCount={activeCount}
+          history={dashboard?.signal_tide?.history || []}
+        />
+      )}
+
+      {lastScan && activeCount < MIN_ACTIVE_SIGNALS_FOR_TRADING && (
         <div
-          className="signal-pressure-warning"
-          role="alert"
+          className="signal-availability-notice signal-availability-notice--low"
+          role="status"
           aria-live="polite"
         >
           <AlertTriangle size={16} aria-hidden="true" />
           <div>
             <strong>
-              {t("activeSignals.crowdingTitle", { count: activeCount })}
+              {t("activeSignals.lowSignalsTitle", {
+                count: activeCount,
+                threshold: MIN_ACTIVE_SIGNALS_FOR_TRADING,
+              })}
             </strong>
             <p>
-              {t("activeSignals.crowdingMessage", {
+              {t("activeSignals.lowSignalsMessage", {
                 count: activeCount,
-                threshold:
-                  signalPressure?.threshold ??
-                  ACTIVE_SIGNAL_CROWDING_THRESHOLD,
-                priorityCount:
-                  signalPressure?.priority_count ??
-                  scanActiveRows.filter(hasPrioritySignal).length,
+                threshold: MIN_ACTIVE_SIGNALS_FOR_TRADING,
               })}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {signalCrowded && (
+        <div
+          className="signal-availability-notice signal-availability-notice--high"
+          role="status"
+          aria-live="polite"
+        >
+          <Info size={16} aria-hidden="true" />
+          <div>
+            <strong>
+              {t("activeSignals.highSignalsTitle", { count: activeCount })}
+            </strong>
+            <p>
+              {t("activeSignals.highSignalsMessage")}
             </p>
           </div>
         </div>
