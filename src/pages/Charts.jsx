@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useContext } from "react";
-import { getOperations } from "../api/operations";
-import { getStats } from "../api/stats";
-import { Box, CircularProgress, Typography } from "@mui/material";
+import { getChartData } from "../api/chartData";
+import { Alert, Box, CircularProgress, Typography } from "@mui/material";
 import EquityChart from "../components/charts/EquityChart";
 import PnLHistogram from "../components/charts/PnLHistogram";
 import LongShortWinLossChart from "../components/charts/LongShortWinLossChart";
@@ -15,31 +14,28 @@ import { useTranslation } from "react-i18next";
 
 export default function Charts() {
   const { t } = useTranslation();
-  const [closedTrades, setClosedTrades] = useState([]);
-  const [winrates, setWinrates] = useState(null);
+  const [chartData, setChartData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const { timeZone } = useContext(TimeZoneContext);
   const { currency } = useContext(CurrencyContext);
 
   useEffect(() => {
-    async function fetchOps() {
+    let active = true;
+    async function fetchChartData() {
       setLoading(true);
-      // Obtener datos de ambos endpoints
-      const [opsData, statsData] = await Promise.all([
-        getOperations(),
-        getStats(),
-      ]);
-
-      const closed = opsData?.closed || [];
-      setClosedTrades(closed);
-
-      // Usar winrates calculados en el backend (fuente única de verdad)
-      setWinrates(statsData?.winrates || null);
-
-      setLoading(false);
+      const response = await getChartData(timeZone);
+      if (active) {
+        setChartData(response);
+        setError(!response);
+        setLoading(false);
+      }
     }
-    fetchOps();
-  }, []);
+    fetchChartData();
+    return () => {
+      active = false;
+    };
+  }, [timeZone]);
 
   if (loading) {
     return (
@@ -59,10 +55,15 @@ export default function Charts() {
       <Typography variant="h4" gutterBottom>
         {t("chartsPage.advanced")}
       </Typography>
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {t("dashboard.apiUnavailable")}
+        </Alert>
+      )}
 
       {/* 1. Gráfica Principal (Equity) */}
       <EquityChart
-        operations={closedTrades}
+        seriesData={chartData?.equity}
         showDrawdown={true}
         timeZone={timeZone}
         currency={currency}
@@ -79,8 +80,8 @@ export default function Charts() {
       >
         <Box sx={{ width: { xs: "100%", md: "48%" }, minWidth: 0 }}>
           <TradePerformanceTable
-            operations={closedTrades}
-            winrates={winrates}
+            performanceSummary={chartData?.performance}
+            winrates={chartData?.stats?.winrates}
           />
         </Box>
         <Box
@@ -93,20 +94,28 @@ export default function Charts() {
             minWidth: 0,
           }}
         >
-          <PnLHistogram operations={closedTrades} />
-          <LongShortWinLossChart operations={closedTrades} />
+          <PnLHistogram summaryData={chartData?.pnlHistogram} />
+          <LongShortWinLossChart
+            summaryData={chartData?.longShortWinLoss}
+          />
         </Box>
       </Box>
 
       {/* 3. Análisis Temporal (3 en fila) */}
       <Box display="flex" flexWrap="wrap" gap={4} justifyContent="center">
-        <WeeklyPerformanceChart operations={closedTrades} timeZone={timeZone} />
+        <WeeklyPerformanceChart
+          summaryData={chartData?.weeklyPerformance}
+          hasTrades={chartData?.hasTrades}
+          timeZone={timeZone}
+        />
         <MonthlyPerformanceChart
-          operations={closedTrades}
+          summaryData={chartData?.monthlyPerformance}
+          hasTrades={chartData?.hasTrades}
           timeZone={timeZone}
         />
         <WeeklyMonthlyPerformanceChart
-          operations={closedTrades}
+          summaryData={chartData?.weeklyMonthlyPerformance}
+          hasTrades={chartData?.hasTrades}
           timeZone={timeZone}
         />
       </Box>

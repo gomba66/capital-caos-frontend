@@ -10,8 +10,7 @@ import {
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { BrowserRouter } from "react-router-dom";
 import Dashboard from "../Dashboard";
-import { getStats } from "../../api/stats";
-import { getOperations } from "../../api/operations";
+import { getChartData, getClosedTradesPage } from "../../api/chartData";
 import { getOpenTrades } from "../../api/openTrades";
 import { getMomentumPairs } from "../../api/momentumPairs";
 import { getConfig } from "../../api/config";
@@ -20,12 +19,9 @@ import { getCommissionRate } from "../../api/paperBroker";
 import { TimeZoneContext, SidebarContext } from "../../contexts/AppContexts";
 
 // Mock de las APIs
-vi.mock("../../api/stats", () => ({
-  getStats: vi.fn(),
-}));
-
-vi.mock("../../api/operations", () => ({
-  getOperations: vi.fn(),
+vi.mock("../../api/chartData", () => ({
+  getChartData: vi.fn(),
+  getClosedTradesPage: vi.fn(),
 }));
 
 vi.mock("../../api/openTrades", () => ({
@@ -105,6 +101,31 @@ describe("Dashboard", () => {
       },
     ],
   };
+  const mockChartData = {
+    hasTrades: true,
+    equity: [
+      {
+        date: "2024-01-01T10:00:00Z",
+        equity: 100,
+        drawdown: 0,
+        pnl: 100,
+      },
+    ],
+    performance: {
+      total: { profitFactor: 2, winrate: 65, wins: 65, losses: 35, average: 15 },
+      long: { profitFactor: 2, winrate: 70, wins: 7, losses: 3, average: 20 },
+      short: { profitFactor: 2, winrate: 60, wins: 6, losses: 4, average: 10 },
+    },
+    stats: mockStats,
+    total_fees: 0,
+  };
+  const mockClosedPage = {
+    trades: mockOperations.closed,
+    page: 1,
+    page_size: 50,
+    total: mockOperations.closed.length,
+    total_pages: 1,
+  };
 
   const mockOpenTrades = {
     open_trades: [
@@ -133,16 +154,47 @@ describe("Dashboard", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    getChartData.mockResolvedValue(mockChartData);
+    getClosedTradesPage.mockResolvedValue(mockClosedPage);
   });
 
   afterEach(() => {
     vi.useRealTimers();
   });
 
+  test("loads closed history one page at a time", async () => {
+    getChartData.mockResolvedValue(mockChartData);
+    getClosedTradesPage
+      .mockResolvedValueOnce({ ...mockClosedPage, total: 105, total_pages: 3 })
+      .mockResolvedValue({
+        ...mockClosedPage,
+        trades: [{ ...mockOperations.closed[0], symbol: "PAGE2USDT" }],
+        page: 2,
+        total: 105,
+        total_pages: 3,
+      });
+    getOpenTrades.mockResolvedValue(mockOpenTrades);
+    getMomentumPairs.mockResolvedValue(mockMomentumPairs);
+    getConfig.mockResolvedValue({ database: { total: 10 } });
+    getCapital.mockResolvedValue(3253.83);
+    getCommissionRate.mockResolvedValue({ broker_mode: "paper" });
+
+    renderWithProviders(<Dashboard />);
+
+    await screen.findByText("Open Trades");
+    fireEvent.click(screen.getByText("Closed trade history"));
+    fireEvent.click(screen.getByLabelText("Go to next page"));
+
+    await waitFor(() => {
+      expect(getClosedTradesPage).toHaveBeenCalledWith(2);
+      expect(screen.getByText("PAGE2USDT")).toBeInTheDocument();
+    });
+  });
+
   test("renders dashboard content while initial data is loading", () => {
     // Mock APIs para que retornen datos
-    getStats.mockResolvedValue(mockStats);
-    getOperations.mockResolvedValue(mockOperations);
+    getChartData.mockResolvedValue(mockChartData);
+    getClosedTradesPage.mockResolvedValue(mockClosedPage);
     getOpenTrades.mockResolvedValue(mockOpenTrades);
     getMomentumPairs.mockResolvedValue(mockMomentumPairs);
 
@@ -165,8 +217,8 @@ describe("Dashboard", () => {
 
   test("renders dashboard with data after loading", async () => {
     // Mock APIs para que retornen datos
-    getStats.mockResolvedValue(mockStats);
-    getOperations.mockResolvedValue(mockOperations);
+    getChartData.mockResolvedValue(mockChartData);
+    getClosedTradesPage.mockResolvedValue(mockClosedPage);
     getOpenTrades.mockResolvedValue(mockOpenTrades);
     getMomentumPairs.mockResolvedValue(mockMomentumPairs);
 
@@ -226,8 +278,14 @@ describe("Dashboard", () => {
 
   test("handles empty data", async () => {
     // Mock APIs para que retornen datos vacíos
-    getStats.mockResolvedValue(null);
-    getOperations.mockResolvedValue({ closed: [] });
+    getChartData.mockResolvedValue(null);
+    getClosedTradesPage.mockResolvedValue({
+      trades: [],
+      total: 0,
+      page: 1,
+      page_size: 50,
+      total_pages: 0,
+    });
     getOpenTrades.mockResolvedValue({ open_trades: [] });
     getMomentumPairs.mockResolvedValue({ momentum_pairs: [] });
 
@@ -249,8 +307,8 @@ describe("Dashboard", () => {
 
   test("handles null data", async () => {
     // Mock APIs para que retornen null
-    getStats.mockResolvedValue(null);
-    getOperations.mockResolvedValue(null);
+    getChartData.mockResolvedValue(null);
+    getClosedTradesPage.mockResolvedValue(null);
     getOpenTrades.mockResolvedValue(null);
     getMomentumPairs.mockResolvedValue(null);
 
@@ -269,8 +327,8 @@ describe("Dashboard", () => {
 
   test("handles operations without closed property", async () => {
     // Mock API para que retorne datos sin la propiedad closed
-    getStats.mockResolvedValue(mockStats);
-    getOperations.mockResolvedValue({});
+    getChartData.mockResolvedValue(mockChartData);
+    getClosedTradesPage.mockResolvedValue(mockClosedPage);
     getOpenTrades.mockResolvedValue(mockOpenTrades);
     getMomentumPairs.mockResolvedValue(mockMomentumPairs);
 
@@ -287,8 +345,8 @@ describe("Dashboard", () => {
   });
 
   test("keeps dashboard visible when a refresh request rejects", async () => {
-    getStats.mockRejectedValue(new Error("API unavailable"));
-    getOperations.mockResolvedValue(mockOperations);
+    getChartData.mockRejectedValue(new Error("API unavailable"));
+    getClosedTradesPage.mockResolvedValue(mockClosedPage);
     getOpenTrades.mockResolvedValue(mockOpenTrades);
     getMomentumPairs.mockResolvedValue(mockMomentumPairs);
 
@@ -308,8 +366,8 @@ describe("Dashboard", () => {
 
   test("clears displayed data when the API becomes unavailable", async () => {
     vi.useFakeTimers();
-    getStats.mockResolvedValue(mockStats);
-    getOperations.mockResolvedValue(mockOperations);
+    getChartData.mockResolvedValue(mockChartData);
+    getClosedTradesPage.mockResolvedValue(mockClosedPage);
     getOpenTrades.mockResolvedValue(mockOpenTrades);
     getMomentumPairs.mockResolvedValue(mockMomentumPairs);
     getConfig.mockResolvedValue({ database: { total: 10 } });
@@ -327,8 +385,8 @@ describe("Dashboard", () => {
     expect(within(financialMetrics).getByText("$3,253.83")).toBeInTheDocument();
     expect(within(financialMetrics).getByText("+$1,500.50")).toBeInTheDocument();
 
-    getStats.mockResolvedValue(null);
-    getOperations.mockResolvedValue(null);
+    getChartData.mockResolvedValue(null);
+    getClosedTradesPage.mockResolvedValue(null);
     getOpenTrades.mockResolvedValue(null);
     getMomentumPairs.mockResolvedValue(null);
     getConfig.mockResolvedValue(null);
@@ -349,8 +407,12 @@ describe("Dashboard", () => {
 
   test("retries closed trades and PnL promptly after the API returns", async () => {
     vi.useFakeTimers();
-    getStats.mockResolvedValueOnce(null).mockResolvedValue(mockStats);
-    getOperations.mockResolvedValueOnce(null).mockResolvedValue(mockOperations);
+    getChartData
+      .mockResolvedValueOnce(null)
+      .mockResolvedValue(mockChartData);
+    getClosedTradesPage
+      .mockResolvedValueOnce(null)
+      .mockResolvedValue(mockClosedPage);
     getOpenTrades.mockResolvedValue(mockOpenTrades);
     getMomentumPairs.mockResolvedValue(mockMomentumPairs);
     getConfig.mockResolvedValue({ database: { total: 10 } });
@@ -381,8 +443,8 @@ describe("Dashboard", () => {
   });
 
   test("renders the dashboard while the initial API requests are pending", () => {
-    getStats.mockReturnValue(new Promise(() => {}));
-    getOperations.mockReturnValue(new Promise(() => {}));
+    getChartData.mockReturnValue(new Promise(() => {}));
+    getClosedTradesPage.mockReturnValue(new Promise(() => {}));
     getOpenTrades.mockReturnValue(new Promise(() => {}));
     getMomentumPairs.mockReturnValue(new Promise(() => {}));
 

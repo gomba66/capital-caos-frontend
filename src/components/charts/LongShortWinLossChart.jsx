@@ -56,9 +56,16 @@ const tooltipStyle = {
  * Gráfica de barras que muestra el número de operaciones ganadoras y perdedoras por tipo (Long/Short).
  * @param {Array} operations - Lista de operaciones cerradas.
  */
-export default function LongShortWinLossChart({ operations }) {
+export default function LongShortWinLossChart({ operations, summaryData }) {
   const { t } = useTranslation();
-  const data = buildLongShortWinLossData(operations).map((row) => ({
+  const sourceData = summaryData
+    ? ["long", "short"].map((direction) => ({
+        type: direction === "long" ? "Long" : "Short",
+        win: summaryData[direction]?.win ?? 0,
+        loss: summaryData[direction]?.loss ?? 0,
+      }))
+    : buildLongShortWinLossData(operations);
+  const data = sourceData.map((row) => ({
     ...row,
     type: t(`performance.${row.type.toLowerCase()}s`),
   }));

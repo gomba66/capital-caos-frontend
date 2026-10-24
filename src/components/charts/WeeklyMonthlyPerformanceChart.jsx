@@ -183,6 +183,8 @@ const CustomTooltip = ({
 
 export default function WeeklyMonthlyPerformanceChart({
   operations,
+  summaryData,
+  hasTrades,
   timeZone = "UTC",
 }) {
   const { t } = useTranslation();
@@ -212,16 +214,26 @@ export default function WeeklyMonthlyPerformanceChart({
   };
 
   const filterType = getFilterType();
-  const data = buildWeeklyMonthlyPerformanceData(
-    operations,
-    filterType,
-    selectedMonth,
-    selectedYear,
-    timeZone
-  );
+  const data = summaryData
+    ? summaryData[filterType]
+        .filter(
+          (entry) =>
+            entry.month === selectedMonth && entry.year === selectedYear,
+        )
+        .map((entry) => ({
+          ...entry,
+          week: `W${entry.weekIndex + 1}`,
+        }))
+    : buildWeeklyMonthlyPerformanceData(
+        operations,
+        filterType,
+        selectedMonth,
+        selectedYear,
+        timeZone,
+      );
 
   // Check if there are any operations at all
-  const hasAnyOperations = operations && operations.length > 0;
+  const hasAnyOperations = hasTrades ?? (operations && operations.length > 0);
   if (!hasAnyOperations) {
     return (
       <Typography>

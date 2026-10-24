@@ -2,6 +2,7 @@ import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import EquityChart from "../EquityChart";
+import { buildEquityDrawdownData } from "../equityChartUtils";
 
 const theme = createTheme();
 
@@ -27,6 +28,26 @@ describe("EquityChart", () => {
       symbol: "ADAUSDT",
     },
   ];
+
+  test("calculates drawdown as the loss from the previous equity peak", () => {
+    const data = buildEquityDrawdownData(
+      [
+        { closed_at: "2024-01-01T10:00:00Z", pnl: 100 },
+        { closed_at: "2024-01-02T10:00:00Z", pnl: -50 },
+        { closed_at: "2024-01-03T10:00:00Z", pnl: 75 },
+        { closed_at: "2024-01-04T10:00:00Z", pnl: -200 },
+      ],
+      "Start",
+    );
+
+    expect(data.map(({ equity, drawdown }) => ({ equity, drawdown }))).toEqual([
+      { equity: 0, drawdown: 0 },
+      { equity: 100, drawdown: 0 },
+      { equity: 50, drawdown: -50 },
+      { equity: 125, drawdown: 0 },
+      { equity: -75, drawdown: -200 },
+    ]);
+  });
 
   test("renders equity chart with title", () => {
     renderWithTheme(<EquityChart operations={mockOperations} />);
@@ -225,6 +246,35 @@ describe("EquityChart", () => {
     expect(screen.queryByRole("button", { name: "7d" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "30d" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "90d" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "All" })).toBeInTheDocument();
+  });
+
+  test("selects the 1d range by default", () => {
+    renderWithTheme(<EquityChart operations={mockOperations} />);
+
+    expect(screen.getByRole("button", { name: "1d" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "All" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+  });
+
+  test("keeps the 1d range available when history is shorter than one day", () => {
+    renderWithTheme(
+      <EquityChart
+        operations={[
+          { closed_at: "2024-01-01T10:00:00Z", pnl: 25, symbol: "BTCUSDT" },
+        ]}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "1d" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
     expect(screen.getByRole("button", { name: "All" })).toBeInTheDocument();
   });
 });

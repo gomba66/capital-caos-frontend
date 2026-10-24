@@ -126,6 +126,8 @@ const CustomTooltip = ({ active, payload, label, filterType }) => {
 
 export default function WeeklyPerformanceChart({
   operations,
+  summaryData,
+  hasTrades,
   timeZone = "UTC",
 }) {
   const { t } = useTranslation();
@@ -146,10 +148,12 @@ export default function WeeklyPerformanceChart({
   };
 
   const filterType = getFilterType();
-  const data = buildWeeklyPerformanceData(operations, filterType, timeZone);
+  const data = summaryData
+    ? summaryData[filterType]
+    : buildWeeklyPerformanceData(operations, filterType, timeZone);
 
   // Check if there are any operations at all
-  const hasAnyOperations = operations && operations.length > 0;
+  const hasAnyOperations = hasTrades ?? (operations && operations.length > 0);
   if (!hasAnyOperations) {
     return (
       <Typography>

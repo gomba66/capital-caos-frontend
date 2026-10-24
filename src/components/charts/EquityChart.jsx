@@ -29,86 +29,7 @@ import {
 } from "@mui/material";
 import { DateTime } from "luxon";
 import { useTranslation } from "react-i18next";
-
-function buildEquityDrawdownData(operations, startingPoint) {
-  let equity = 0;
-  let peak = -Infinity; // Inicializar en -Infinity para que el primer valor siempre sea mayor
-
-  const filteredOps = (operations || [])
-    .filter((op) => op.closed_at || op.closeTime)
-    .sort(
-      (a, b) =>
-        new Date(a.closed_at || a.closeTime) -
-        new Date(b.closed_at || b.closeTime)
-    );
-
-  // Si no hay operaciones, retornar solo el punto inicial
-  if (filteredOps.length === 0) {
-    return [
-      {
-        date: new Date().toISOString(),
-        equity: 0,
-        drawdown: 0,
-        pnl: 0,
-        symbol: startingPoint,
-      },
-    ];
-  }
-
-  // Agregar punto inicial antes del primer trade
-  const firstTrade = filteredOps[0];
-  const initialPoint = {
-    date: new Date(
-      new Date(firstTrade.closed_at || firstTrade.closeTime).getTime() - 60000
-    ).toISOString(), // 1 minuto antes del primer trade
-    equity: 0,
-    drawdown: 0,
-    pnl: 0,
-    symbol: startingPoint,
-  };
-
-  // Inicializar peak en 0 (el punto de inicio)
-  peak = 0;
-
-  // Encontrar el equity máximo para determinar un capital base razonable
-  // Esto nos ayuda a calcular el drawdown de forma significativa
-  let maxEquity = 0;
-  filteredOps.forEach((op) => {
-    maxEquity += Number(op.pnl || 0);
-    if (maxEquity > peak) {
-      peak = maxEquity;
-    }
-  });
-
-  // Si nunca hubo ganancias (peak <= 0), usar un capital base de 100 para el cálculo del drawdown
-  const capitalBase = peak > 0 ? peak : 100;
-
-  // Resetear para el cálculo real
-  equity = 0;
-  peak = 0;
-
-  const equityData = filteredOps.map((op) => {
-    equity += Number(op.pnl || 0);
-    // Actualizar peak si el equity actual es mayor
-    if (equity > peak) {
-      peak = equity;
-    }
-    // Drawdown como porcentaje del capital base (peak histórico o 100)
-    // Cuando equity < peak, el drawdown es negativo
-    const drawdown = ((equity - peak) / capitalBase) * 100;
-
-    return {
-      date: op.closed_at || op.closeTime,
-      equity: Number(equity.toFixed(4)),
-      drawdown: Number(drawdown.toFixed(2)),
-      pnl: Number(op.pnl || 0),
-      symbol: op.symbol,
-    };
-  });
-
-  // Combinar punto inicial con datos de equity
-  return [initialPoint, ...equityData];
-}
+import { buildEquityDrawdownData } from "./equityChartUtils";
 
 function formatDateLuxon(date, timeZone = "UTC") {
   if (!date) return "-";
@@ -146,6 +67,7 @@ const RANGE_OPTIONS = [
 
 export default function EquityChart({
   operations,
+  seriesData,
   showDrawdown = true,
   timeZone = "UTC",
   height = 416,
@@ -153,33 +75,39 @@ export default function EquityChart({
   loading = false,
 }) {
   const { t } = useTranslation();
-  const data = buildEquityDrawdownData(operations, t("charts.startingPoint"));
+  const data = useMemo(
+    () =>
+      seriesData ??
+      buildEquityDrawdownData(operations, t("charts.startingPoint")),
+    [operations, seriesData, t],
+  );
   const [showEquity, setShowEquity] = useState(true);
   const [showDrawdownState, setShowDrawdown] = useState(true);
   const [visibleRange, setVisibleRange] = useState({
     start: 0,
     end: data.length - 1,
   });
-  const [selectedButton, setSelectedButton] = useState("7d");
+  const [selectedButton, setSelectedButton] = useState("1d");
   const prevDataLengthRef = useRef(data.length);
   const chartContainerRef = useRef(null);
   const effectiveShowDrawdown = showDrawdown && showDrawdownState;
   const availableRangeOptions = useMemo(() => {
-    if (data.length < 2) {
-      return RANGE_OPTIONS.filter((option) => option.id === "all");
-    }
-
     const firstDate = DateTime.fromISO(data[0]?.date || "");
     const lastDate = DateTime.fromISO(data[data.length - 1]?.date || "");
 
-    if (!firstDate.isValid || !lastDate.isValid) {
-      return RANGE_OPTIONS.filter((option) => option.id === "all");
+    if (data.length < 2 || !firstDate.isValid || !lastDate.isValid) {
+      return RANGE_OPTIONS.filter(
+        (option) => option.id === "1d" || option.id === "all",
+      );
     }
 
     const coverageDays = lastDate.diff(firstDate, "days").days;
 
     return RANGE_OPTIONS.filter(
-      (option) => option.days === null || coverageDays >= option.days
+      (option) =>
+        option.id === "1d" ||
+        option.days === null ||
+        coverageDays >= option.days,
     );
   }, [data]);
 
@@ -196,7 +124,8 @@ export default function EquityChart({
       return;
     }
 
-    const cutoffDate = DateTime.now().minus({ days: selectedRange.days });
+    const latestDate = DateTime.fromISO(data[data.length - 1].date);
+    const cutoffDate = latestDate.minus({ days: selectedRange.days });
     const startIdx = data.findIndex((d) => DateTime.fromISO(d.date) >= cutoffDate);
     setVisibleRange({
       start: startIdx >= 0 ? startIdx : 0,
@@ -235,13 +164,14 @@ export default function EquityChart({
       return;
     }
 
-    const cutoffDate = DateTime.now().minus({ days: selectedRange.days });
+    const latestDate = DateTime.fromISO(data[data.length - 1].date);
+    const cutoffDate = latestDate.minus({ days: selectedRange.days });
     const startIdx = data.findIndex((d) => DateTime.fromISO(d.date) >= cutoffDate);
     setVisibleRange({
       start: startIdx >= 0 ? startIdx : 0,
       end: data.length - 1,
     });
-  }, [data.length, selectedButton]);
+  }, [data, selectedButton]);
 
   // Mantener el rango visible cuando los datos se actualizan
   useEffect(() => {
@@ -250,14 +180,15 @@ export default function EquityChart({
       const oldLength = prevDataLengthRef.current;
       const newLength = data.length;
 
-      if (oldLength > 0 && visibleRange.end === oldLength - 1) {
-        // Si estábamos viendo hasta el final, seguir viendo hasta el final
-        setVisibleRange({ start: visibleRange.start, end: newLength - 1 });
-      }
+      setVisibleRange((currentRange) =>
+        oldLength > 0 && currentRange.end === oldLength - 1
+          ? { start: currentRange.start, end: newLength - 1 }
+          : currentRange,
+      );
 
       prevDataLengthRef.current = newLength;
     }
-  }, [data.length]);
+  }, [data]);
 
   // Filtrar datos según el rango visible
   const visibleData = data.slice(visibleRange.start, visibleRange.end + 1);
@@ -267,8 +198,9 @@ export default function EquityChart({
   const refLineColor = lastEquity >= 0 ? "#2de2e6" : "#ff2e63";
 
   // Verificar si hay operaciones reales (no solo el punto inicial)
-  const hasRealOperations =
-    operations && operations.some((op) => op.closed_at || op.closeTime);
+  const hasRealOperations = seriesData
+    ? seriesData.length > 0
+    : operations && operations.some((op) => op.closed_at || op.closeTime);
 
   if (loading) {
     return (
@@ -382,7 +314,7 @@ export default function EquityChart({
                 yAxisId="right"
                 orientation="right"
                 label={{
-                  value: t("charts.drawdownPercent"),
+                  value: t("analyticsCharts.drawdown"),
                   angle: 90,
                   position: "insideRight",
                   fill: "#fff",
@@ -390,6 +322,13 @@ export default function EquityChart({
                 domain={["auto", 0]}
                 tick={getAxisStyle(currency)}
                 axisLine={{ stroke: "#ff2e63" }}
+                tickFormatter={(value) => {
+                  const converted = convertFromUSDT(value, currency);
+                  const symbol = getCurrencySymbol(currency);
+                  return `${symbol}${converted.toLocaleString(undefined, {
+                    maximumFractionDigits: 0,
+                  })}`;
+                }}
               />
             )}
             {/* Línea horizontal en y=0, color dinámico, sin label */}
@@ -411,8 +350,18 @@ export default function EquityChart({
                     currency
                   );
                   return [formatCurrency(convertedValue, currency), "Equity"];
-                } else if (name === "drawdown" || name === "Drawdown (%)") {
-                  return [`${Number(value).toFixed(2)}%`, "Drawdown (%)"];
+                } else if (
+                  name === t("analyticsCharts.drawdown") ||
+                  name === "drawdown" ||
+                  name === "Drawdown (%)"
+                ) {
+                  return [
+                    formatCurrency(
+                      convertFromUSDT(Number(value), currency),
+                      currency,
+                    ),
+                    t("analyticsCharts.drawdown"),
+                  ];
                 }
                 return [value, name];
               }}
@@ -445,7 +394,7 @@ export default function EquityChart({
                 stroke="#ff2e63"
                 strokeWidth={2}
                 dot={false}
-                name="Drawdown (%)"
+                name={t("analyticsCharts.drawdown")}
               />
             )}
           </LineChart>

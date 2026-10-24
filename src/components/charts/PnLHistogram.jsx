@@ -94,9 +94,9 @@ const tooltipStyle = {
   color: "#fff",
 };
 
-export default function PnLHistogram({ operations }) {
+export default function PnLHistogram({ operations, summaryData }) {
   const { t } = useTranslation();
-  const data = buildHistogramData(operations, 5);
+  const data = summaryData ?? buildHistogramData(operations, 5);
   if (!data.length) {
     return (
       <Typography>

@@ -350,7 +350,7 @@ const resources = {
       common: { perp: 'PERP', utc: 'UTC', oneMin: '1 MIN', threeMin: '3 MIN', oneM: '1M', heikinAshi: 'HEIKIN ASHI', binance: 'BINANCE' },
       charts: {
         view: 'View {{symbol}} chart', open: 'Open in TradingView', close: 'Close chart', title: 'TradingView chart for {{symbol}}',
-        marketData: 'MARKET DATA · TRADINGVIEW',         equityDescription: 'This chart shows your cumulative profit and loss (Equity) over time, and the drawdown percentage (maximum drop from a peak). Use the checkboxes to show/hide each line.',
+        marketData: 'MARKET DATA · TRADINGVIEW',         equityDescription: 'This chart shows your cumulative profit and loss (Equity) over time, and the drawdown amount from the previous peak. A percentage requires the account starting balance.',
         drawdownPercent: 'Drawdown (%)', startingPoint: 'Starting point', filterGeneral: 'General',
       },
       footer: { updated: 'DATA UPDATED {{time}}', product: 'SIGLO CAPITAL · CIPHER DESK' },
@@ -702,7 +702,7 @@ const resources = {
       common: { perp: 'PERP', utc: 'UTC', oneMin: '1 MIN', threeMin: '3 MIN', oneM: '1M', heikinAshi: 'HEIKIN ASHI', binance: 'BINANCE' },
       charts: {
         view: 'Ver gráfico de {{symbol}}', open: 'Abrir en TradingView', close: 'Cerrar gráfico', title: 'Gráfico TradingView de {{symbol}}',
-        marketData: 'DATOS DE MERCADO · TRADINGVIEW', equityDescription: 'Ganancia o pérdida acumulada a lo largo del tiempo y drawdown desde el máximo histórico.',
+        marketData: 'DATOS DE MERCADO · TRADINGVIEW', equityDescription: 'Ganancia o pérdida acumulada a lo largo del tiempo y drawdown en importe desde el máximo previo. Para mostrar un porcentaje se necesita el saldo inicial de la cuenta.',
         drawdownPercent: 'Drawdown (%)', startingPoint: 'Punto inicial', filterGeneral: 'General',
       },
       footer: { updated: 'DATOS ACTUALIZADOS {{time}}', product: 'SIGLO CAPITAL · CIPHER DESK' },
