@@ -10,6 +10,7 @@ A visual dashboard for the Capital Caos algorithmic trading system. It allows yo
 
 - View open and closed trades
 - Equity, PnL, winrate, and drawdown charts
+- Backend-aggregated chart summaries and paginated closed-trade history
 - Momentum pairs and operations tables
 - Cipher Desk visual system, with dark mode enabled by default and a persistent light-mode option
 - Integration with FastAPI backend
@@ -48,6 +49,11 @@ with compact square-edged surfaces, restrained borders, and a redesigned
 navigation rail. Dark mode is the default; the scanner's theme selector can
 switch the entire application to light mode, and the selected preference is
 remembered.
+
+Charts request compact summaries from `GET /api/chart-data` with an IANA
+timezone parameter. The equity series is capped at 1,200 points while chart
+aggregates use the full trade history. The dashboard history table requests
+one 50-trade page at a time from `GET /api/closed-trades`.
 
 ### Manual Setup
 

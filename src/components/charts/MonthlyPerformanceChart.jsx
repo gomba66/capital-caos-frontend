@@ -185,6 +185,8 @@ const CustomTooltip = ({ active, payload, /* label, */ filterType }) => {
 
 export default function MonthlyPerformanceChart({
   operations,
+  summaryData,
+  hasTrades,
   timeZone = "UTC",
 }) {
   const { t } = useTranslation();
@@ -206,16 +208,34 @@ export default function MonthlyPerformanceChart({
   };
 
   const filterType = getFilterType();
-  const data = buildMonthlyPerformanceData(
-    operations,
-    filterType,
-    timeZone,
-    showAllMonths,
-    t,
-  );
+  const now = DateTime.now().setZone(timeZone);
+  const summaryMonths = summaryData?.[filterType] ?? [];
+  const visibleSummaryMonths = showAllMonths
+    ? summaryMonths
+    : summaryMonths.filter(
+        (entry) =>
+          entry.monthIndex >= Math.max(0, now.month - 1 - 3) &&
+          entry.monthIndex <= Math.min(11, now.month - 1 + 1),
+      );
+  const data = summaryData
+    ? visibleSummaryMonths.map((entry) => ({
+        ...entry,
+        month:
+          showAllMonths
+            ? `${t(`analyticsCharts.${monthKeys[entry.monthIndex]}`).charAt(0)}${entry.monthIndex}`
+            : t(`analyticsCharts.${monthKeys[entry.monthIndex]}`).slice(0, 3),
+        monthIndex: entry.monthIndex,
+      }))
+    : buildMonthlyPerformanceData(
+        operations,
+        filterType,
+        timeZone,
+        showAllMonths,
+        t,
+      );
 
   // Check if there are any operations at all
-  const hasAnyOperations = operations && operations.length > 0;
+  const hasAnyOperations = hasTrades ?? (operations && operations.length > 0);
   if (!hasAnyOperations) {
     return (
       <Typography>

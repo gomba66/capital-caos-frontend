@@ -32,6 +32,11 @@ describe("TradePerformanceTable", () => {
     expect(within(table).getByText("63%")).toBeInTheDocument();
     expect(within(table).getByText("60%")).toBeInTheDocument();
     expect(within(table).getByText("65%")).toBeInTheDocument();
+    expect(
+      Array.from(table.querySelectorAll("tbody th")).map((cell) =>
+        cell.textContent.trim(),
+      ),
+    ).toEqual(["Long", "Short", "Total"]);
   });
 
   test("renders unavailable values clearly", () => {

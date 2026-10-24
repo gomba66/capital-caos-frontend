@@ -3,19 +3,11 @@ import { render, screen, waitFor, act } from "@testing-library/react";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { BrowserRouter } from "react-router-dom";
 import Charts from "../Charts";
-import { getOperations } from "../../api/operations";
-import { getStats } from "../../api/stats";
-import { getSymbolStatistics } from "../../api/stats";
+import { getChartData } from "../../api/chartData";
 import { TimeZoneContext, SidebarContext } from "../../contexts/AppContexts";
 
-// Mock de las APIs
-vi.mock("../../api/operations", () => ({
-  getOperations: vi.fn(),
-}));
-
-vi.mock("../../api/stats", () => ({
-  getStats: vi.fn(),
-  getSymbolStatistics: vi.fn(),
+vi.mock("../../api/chartData", () => ({
+  getChartData: vi.fn(),
 }));
 
 const theme = createTheme();
@@ -39,25 +31,16 @@ const renderWithProviders = (component) => {
 };
 
 describe("Charts", () => {
-  const mockOperations = {
-    closed: [
-      {
-        id: 1,
-        symbol: "BTCUSDT",
-        side: "LONG",
-        pnl: 100,
-        result: "win",
-        closed_at: "2024-01-01T10:00:00Z",
-      },
-      {
-        id: 2,
-        symbol: "ETHUSDT",
-        side: "SHORT",
-        pnl: -50,
-        result: "loss",
-        closed_at: "2024-01-02T10:00:00Z",
-      },
-    ],
+  const mockChartData = {
+    hasTrades: true,
+    equity: [],
+    performance: { total: {}, long: {}, short: {} },
+    stats: { total_trades: 0, winrates: {} },
+    pnlHistogram: [],
+    longShortWinLoss: { long: {}, short: {} },
+    weeklyPerformance: { all: [], long: [], short: [] },
+    monthlyPerformance: { all: [], long: [], short: [] },
+    weeklyMonthlyPerformance: { all: [], long: [], short: [] },
   };
 
   beforeEach(() => {
@@ -66,7 +49,7 @@ describe("Charts", () => {
 
   test("renders charts page with loading state", () => {
     // Mock API para que retorne datos
-    getOperations.mockResolvedValue(mockOperations);
+    getChartData.mockResolvedValue(mockChartData);
 
     act(() => {
       renderWithProviders(<Charts />);
@@ -78,9 +61,7 @@ describe("Charts", () => {
 
   test("renders charts page with data after loading", async () => {
     // Mock API para que retorne datos
-    getOperations.mockResolvedValue(mockOperations);
-    getStats.mockResolvedValue({});
-    getSymbolStatistics.mockResolvedValue([]);
+    getChartData.mockResolvedValue(mockChartData);
 
     act(() => {
       renderWithProviders(<Charts />);
@@ -97,9 +78,10 @@ describe("Charts", () => {
 
   test("handles empty data", async () => {
     // Mock API para que retorne datos vacíos
-    getOperations.mockResolvedValue({ closed: [] });
-    getStats.mockResolvedValue({});
-    getSymbolStatistics.mockResolvedValue([]);
+    getChartData.mockResolvedValue({
+      ...mockChartData,
+      hasTrades: false,
+    });
 
     act(() => {
       renderWithProviders(<Charts />);
@@ -116,7 +98,7 @@ describe("Charts", () => {
 
   test("handles null data", async () => {
     // Mock API para que retorne null
-    getOperations.mockResolvedValue(null);
+    getChartData.mockResolvedValue(null);
 
     act(() => {
       renderWithProviders(<Charts />);
@@ -133,7 +115,7 @@ describe("Charts", () => {
 
   test("handles operations without closed property", async () => {
     // Mock API para que retorne datos sin la propiedad closed
-    getOperations.mockResolvedValue({});
+    getChartData.mockResolvedValue(null);
 
     act(() => {
       renderWithProviders(<Charts />);

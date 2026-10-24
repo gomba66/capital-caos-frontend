@@ -34,6 +34,7 @@ export default function TradePerformanceTable({
   operations,
   winrates,
   stats,
+  performanceSummary,
   currency = "USDT",
   hideDescription = false,
   loading = false,
@@ -53,20 +54,19 @@ export default function TradePerformanceTable({
         .includes("short"),
     ),
   };
-  const rows = [
-    {
-      label: t("performance.total"),
-      profitFactor: profitFactors.total,
-      winrate: winrates?.total,
-      operations: directionalStats.total,
-      summary: summarizeOperations(directionalStats.total, {
-        ...(stats?.wins !== undefined ? { wins: stats.wins } : {}),
-        ...(stats?.losses !== undefined ? { losses: stats.losses } : {}),
-        ...(stats?.average_pnl !== undefined
-          ? { average: Number(stats.average_pnl) }
-          : {}),
-      }),
-    },
+  const rows = performanceSummary
+    ? ["long", "short", "total"].map((direction) => ({
+        label: t(`performance.${direction}`),
+        profitFactor: performanceSummary[direction]?.profitFactor,
+        winrate: performanceSummary[direction]?.winrate,
+        operations: [],
+        summary: {
+          wins: performanceSummary[direction]?.wins ?? 0,
+          losses: performanceSummary[direction]?.losses ?? 0,
+          average: performanceSummary[direction]?.average ?? null,
+        },
+      }))
+    : [
     {
       label: t("performance.long"),
       profitFactor: profitFactors.long,
@@ -81,7 +81,20 @@ export default function TradePerformanceTable({
       operations: directionalStats.short,
       summary: summarizeOperations(directionalStats.short),
     },
-  ];
+    {
+      label: t("performance.total"),
+      profitFactor: profitFactors.total,
+      winrate: winrates?.total,
+      operations: directionalStats.total,
+      summary: summarizeOperations(directionalStats.total, {
+        ...(stats?.wins !== undefined ? { wins: stats.wins } : {}),
+        ...(stats?.losses !== undefined ? { losses: stats.losses } : {}),
+        ...(stats?.average_pnl !== undefined
+          ? { average: Number(stats.average_pnl) }
+          : {}),
+      }),
+    },
+    ];
   const includeTradeStats = Boolean(stats);
 
   return (

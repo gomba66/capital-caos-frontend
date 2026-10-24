@@ -1,6 +1,11 @@
-import React, { useEffect, useRef, useState, useContext } from "react";
-import { getStats } from "../api/stats";
-import { getOperations } from "../api/operations";
+import React, {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useContext,
+} from "react";
+import { getChartData, getClosedTradesPage } from "../api/chartData";
 import { getOpenTrades } from "../api/openTrades";
 import { getMomentumPairs } from "../api/momentumPairs";
 import { getConfig } from "../api/config";
@@ -18,6 +23,7 @@ import {
   FormControlLabel,
   Switch,
   Skeleton,
+  TablePagination,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import InfoIcon from "@mui/icons-material/Info";
@@ -35,8 +41,11 @@ import { convertFromUSDT, formatCurrency } from "../utils/currencyConverter";
 export default function Dashboard({ interactiveSection }) {
   const { t, i18n } = useTranslation();
   const [stats, setStats] = useState(null);
+  const [chartData, setChartData] = useState(null);
   const [openTrades, setOpenTrades] = useState([]);
   const [closedTrades, setClosedTrades] = useState([]);
+  const [closedTradesPage, setClosedTradesPage] = useState(0);
+  const [closedTradesTotal, setClosedTradesTotal] = useState(0);
   const [momentumPairs, setMomentumPairs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState(null);
@@ -54,6 +63,8 @@ export default function Dashboard({ interactiveSection }) {
   const [openTradesExpanded, setOpenTradesExpanded] = useState(false);
   const [openTradesSticky, setOpenTradesSticky] = useState(false);
   const openTradesSummaryRef = useRef(null);
+  const closedTradesRequestRef = useRef(0);
+  const closedTradesPageRef = useRef(closedTradesPage);
   const { timeZone } = useContext(TimeZoneContext);
   const { currency: capitalCurrency, setCurrency: setCapitalCurrency } =
     useContext(CurrencyContext);
@@ -88,10 +99,12 @@ export default function Dashboard({ interactiveSection }) {
   const [openTradePnlPrefix, openTradePnlSuffix] =
     openTradePnlLabel.split("__OPEN_TRADE_PNL__");
 
-  const clearDashboardData = () => {
+  const clearDashboardData = useCallback(() => {
     setStats(null);
+    setChartData(null);
     setOpenTrades([]);
     setClosedTrades([]);
+    setClosedTradesTotal(0);
     setMomentumPairs([]);
     setDbTradeCount(null);
     setConfig(null);
@@ -99,31 +112,33 @@ export default function Dashboard({ interactiveSection }) {
     setTotalFees(0);
     setBrokerMode(null);
     setLastUpdate(null);
-  };
+  }, []);
 
   // Fetch global (stats, closed, momentum)
-  const fetchAll = async () => {
+  const fetchAll = useCallback(async () => {
     setRefreshing(true);
     try {
       const [
-        statsData,
-        opsData,
+        chartDataResponse,
+        closedPage,
         openData,
         momentumData,
         configData,
         capitalUsdt,
         commissionData,
       ] = await Promise.all([
-        getStats(),
-        getOperations(),
+        getChartData(timeZone),
+        getClosedTradesPage(closedTradesPageRef.current + 1),
         getOpenTrades(),
         getMomentumPairs(),
         getConfig(),
         getCapital(),
         getCommissionRate(),
       ]);
-      setStats(statsData || null);
-      setClosedTrades(opsData?.closed || []);
+      setChartData(chartDataResponse || null);
+      setStats(chartDataResponse?.stats || null);
+      setClosedTrades(closedPage?.trades || []);
+      setClosedTradesTotal(closedPage?.total || 0);
       setOpenTrades(openData?.open_trades || []);
       setMomentumPairs(momentumData?.momentum_pairs || []);
       setDbTradeCount(configData?.database?.total || null);
@@ -131,13 +146,8 @@ export default function Dashboard({ interactiveSection }) {
       setTotalCapital(capitalUsdt ?? null);
       setBrokerMode(commissionData?.broker_mode || null);
 
-      if (opsData) {
-        const fees = (opsData.closed || []).reduce((total, trade) => {
-          const openFees = parseFloat(trade.open_fees) || 0;
-          const closeFees = parseFloat(trade.close_fees) || 0;
-          return total + openFees + closeFees;
-        }, 0);
-        setTotalFees(fees);
+      if (chartDataResponse) {
+        setTotalFees(chartDataResponse.total_fees || 0);
       } else {
         setTotalFees(0);
       }
@@ -146,8 +156,8 @@ export default function Dashboard({ interactiveSection }) {
       setCapitalCurrency(selectedCurrency);
       setLastUpdate(new Date());
       setApiUnavailable(
-        !statsData ||
-          !opsData ||
+        !chartDataResponse ||
+          !closedPage ||
           !openData ||
           !momentumData ||
           !configData ||
@@ -161,13 +171,13 @@ export default function Dashboard({ interactiveSection }) {
     } finally {
       setRefreshing(false);
     }
-  };
+  }, [clearDashboardData, setCapitalCurrency, timeZone]);
 
   // Primer fetch global al montar
   useEffect(() => {
     setLoading(true);
     fetchAll().finally(() => setLoading(false));
-  }, []);
+  }, [fetchAll]);
 
   // Listener para cambios en la moneda del capital
   useEffect(() => {
@@ -191,7 +201,7 @@ export default function Dashboard({ interactiveSection }) {
       window.removeEventListener("storage", handleStorageChange);
       window.removeEventListener("currencyChange", handleCurrencyChange);
     };
-  }, []);
+  }, [setCapitalCurrency]);
 
   // Auto-refresh de open trades cada 10s
   useEffect(() => {
@@ -239,7 +249,7 @@ export default function Dashboard({ interactiveSection }) {
       isMounted = false;
       clearInterval(id);
     };
-  }, []);
+  }, [clearDashboardData]);
 
   // Reintenta pronto si stats/closed trades no están disponibles; reduce tráfico cuando todo carga.
   useEffect(() => {
@@ -249,38 +259,40 @@ export default function Dashboard({ interactiveSection }) {
     const fetchClosedTrades = async () => {
       let nextRefreshDelay = 5000;
       try {
-        const [statsData, opsData, commissionData] = await Promise.all([
-          getStats(),
-          getOperations(),
+        const [chartDataResponse, closedPage, commissionData] = await Promise.all([
+          getChartData(timeZone),
+          getClosedTradesPage(closedTradesPage + 1),
           getCommissionRate(),
         ]);
         if (!isMounted) return;
 
-        const refreshComplete = Boolean(statsData && opsData && commissionData);
+        const refreshComplete = Boolean(
+          chartDataResponse && closedPage && commissionData,
+        );
         if (refreshComplete) nextRefreshDelay = 60000;
 
-        const apiOffline = !statsData && !opsData && !commissionData;
+        const apiOffline =
+          !chartDataResponse && !closedPage && !commissionData;
         if (apiOffline) {
           clearDashboardData();
         } else {
-          setStats(statsData || null);
-          setClosedTrades(opsData?.closed || []);
+          setChartData(chartDataResponse || null);
+          setStats(chartDataResponse?.stats || null);
+          setClosedTrades(closedPage?.trades || []);
+          setClosedTradesTotal(closedPage?.total || 0);
           setBrokerMode(commissionData?.broker_mode || null);
         }
 
-        if (opsData) {
-          const fees = (opsData.closed || []).reduce((total, trade) => {
-            const openFees = parseFloat(trade.open_fees) || 0;
-            const closeFees = parseFloat(trade.close_fees) || 0;
-            return total + openFees + closeFees;
-          }, 0);
-          setTotalFees(fees);
+        if (chartDataResponse) {
+          setTotalFees(chartDataResponse.total_fees || 0);
         } else if (!apiOffline) {
           setTotalFees(0);
         }
 
         if (!apiOffline) setLastUpdate(new Date());
-        setApiUnavailable(!statsData || !opsData || !commissionData);
+        setApiUnavailable(
+          !chartDataResponse || !closedPage || !commissionData,
+        );
       } catch (error) {
         console.error("Closed trade refresh failed:", error);
         if (isMounted) {
@@ -299,7 +311,24 @@ export default function Dashboard({ interactiveSection }) {
       isMounted = false;
       clearTimeout(refreshTimer);
     };
-  }, []);
+  }, [clearDashboardData, closedTradesPage, timeZone]);
+
+  const handleClosedTradesPageChange = async (_event, newPage) => {
+    const previousPage = closedTradesPageRef.current;
+    closedTradesPageRef.current = newPage;
+    setClosedTradesPage(newPage);
+    const requestId = ++closedTradesRequestRef.current;
+    const response = await getClosedTradesPage(newPage + 1);
+    if (requestId !== closedTradesRequestRef.current) return;
+    if (!response) {
+      closedTradesPageRef.current = previousPage;
+      setClosedTradesPage(previousPage);
+      setApiUnavailable(true);
+      return;
+    }
+    setClosedTrades(response.trades || []);
+    setClosedTradesTotal(response.total || 0);
+  };
 
   return (
     <Box className="dashboard-page" py={{ xs: 2, sm: 3, md: 4 }}>
@@ -386,7 +415,7 @@ export default function Dashboard({ interactiveSection }) {
         <Grid container spacing={2}>
           <Grid size={{ xs: 12, md: 8 }} sx={{ minWidth: 0 }}>
             <EquityChart
-              operations={closedTrades}
+              seriesData={chartData?.equity}
               loading={loading}
               showDrawdown={false}
               timeZone={timeZone}
@@ -396,7 +425,7 @@ export default function Dashboard({ interactiveSection }) {
           </Grid>
           <Grid size={{ xs: 12, md: 4 }} sx={{ minWidth: 0 }}>
             <TradePerformanceTable
-              operations={closedTrades}
+              performanceSummary={chartData?.performance}
               winrates={stats?.winrates}
               stats={stats}
               currency={capitalCurrency}
@@ -566,6 +595,16 @@ export default function Dashboard({ interactiveSection }) {
               timeZone={timeZone}
               dataLoading={loading}
             />
+            {closedTradesTotal > 0 && (
+              <TablePagination
+                component="div"
+                count={closedTradesTotal}
+                page={closedTradesPage}
+                rowsPerPage={50}
+                rowsPerPageOptions={[50]}
+                onPageChange={handleClosedTradesPageChange}
+              />
+            )}
           </AccordionDetails>
         </Accordion>
         <MomentumPairsTable
