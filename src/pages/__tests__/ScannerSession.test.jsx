@@ -21,10 +21,15 @@ describe("CurrentSessionTracker", () => {
     expect(screen.getByText("* WEEKEND")).toBeInTheDocument();
   });
 
-  it("does not label weekday sessions as weekend", () => {
+  it("does not label the official Sunday-to-Monday Asia session as weekend", () => {
     render(
       <CurrentSessionTracker
-        currentSession={{ ...session, is_weekend: false }}
+        currentSession={{
+          ...session,
+          opens_at: "2026-10-25T21:00:00.000Z",
+          closes_at: "2026-10-26T08:00:00.000Z",
+          is_weekend: false,
+        }}
         nextSession={null}
       />,
     );

@@ -9,6 +9,7 @@ const ADMIN_EXPERIMENT_PALETTES = [
 ];
 
 export const APP_PALETTES = [
+  { id: "cipher", color: "#63d4a4", darkOnly: true },
   { id: "classic", color: "#71d6ae" },
   { id: "ocean", color: "#58c7d3" },
   { id: "violet", color: "#b6a2ff" },
@@ -129,6 +130,30 @@ export function getAdminExperimentCssVariables(mode, paletteId) {
 }
 
 const palettes = {
+  cipher: {
+    light: {
+      ink: "#e5f0e9",
+      muted: "#91aaa0",
+      line: "#29433a",
+      paper: "#071210",
+      surface: "#0d1b18",
+      green: "#63d4a4",
+      greenSoft: "#18382c",
+      amber: "#dfaa68",
+      red: "#ef8b7f",
+    },
+    dark: {
+      ink: "#e5f0e9",
+      muted: "#91aaa0",
+      line: "#29433a",
+      paper: "#071210",
+      surface: "#0d1b18",
+      green: "#63d4a4",
+      greenSoft: "#18382c",
+      amber: "#dfaa68",
+      red: "#ef8b7f",
+    },
+  },
   classic: {
     light: {
       ink: "#17201d",
@@ -284,6 +309,7 @@ for (const palette of ADMIN_EXPERIMENT_PALETTES) {
 export default function createAppTheme(mode = "dark", paletteId = "classic") {
   const selectedPalette = palettes[paletteId] || palettes.classic;
   const palette = selectedPalette[mode] || selectedPalette.light;
+  const surfaceRadius = paletteId === "cipher" ? 7 : 2;
 
   return createTheme({
     palette: {
@@ -312,7 +338,7 @@ export default function createAppTheme(mode = "dark", paletteId = "classic") {
       caption: { color: palette.muted },
       button: { fontWeight: 700, textTransform: "none" },
     },
-    shape: { borderRadius: 2 },
+    shape: { borderRadius: surfaceRadius },
     components: {
       MuiCssBaseline: {
         styleOverrides: {
@@ -327,7 +353,7 @@ export default function createAppTheme(mode = "dark", paletteId = "classic") {
             background: palette.surface,
             border: `1px solid ${palette.line}`,
             boxShadow: "none",
-            borderRadius: 2,
+            borderRadius: surfaceRadius,
           },
         },
       },
@@ -335,7 +361,7 @@ export default function createAppTheme(mode = "dark", paletteId = "classic") {
         styleOverrides: {
           root: {
             background: palette.surface,
-            borderRadius: 2,
+            borderRadius: surfaceRadius,
             boxShadow: "none",
           },
         },

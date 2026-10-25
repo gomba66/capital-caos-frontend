@@ -27,6 +27,11 @@ import {
 export default function NotificationSoundSettings() {
   const { t } = useTranslation();
   const { user, updateNotificationSoundPreferences } = useAuth();
+  const canViewTrades =
+    user?.role === "admin" || user?.features?.includes("bot_trades") === true;
+  const soundTypes = canViewTrades
+    ? NOTIFICATION_SOUND_TYPES
+    : NOTIFICATION_SOUND_TYPES.filter((type) => type.startsWith("kairos_"));
   const [notificationSounds, setNotificationSounds] = useState(
     DEFAULT_NOTIFICATION_SOUNDS,
   );
@@ -94,7 +99,7 @@ export default function NotificationSoundSettings() {
         </Typography>
       </Box>
       <Box display="flex" flexDirection="column" gap={2}>
-        {NOTIFICATION_SOUND_TYPES.map((type) => {
+        {soundTypes.map((type) => {
           const labelId = `notification-sound-${type}-label`;
           return (
             <Box

@@ -223,7 +223,7 @@ export default function EquityChart({
     () => data.slice(visibleRange.start, visibleRange.end + 1),
     [data, visibleRange],
   );
-  const [selectedButton, setSelectedButton] = useState("1d");
+  const [selectedButton, setSelectedButton] = useState("3d");
   const previousDataRef = useRef(data);
   const hoveredIndexRef = useRef(data.length - 1);
   const panStartRef = useRef(null);
@@ -308,14 +308,18 @@ export default function EquityChart({
       return;
     }
 
-    const preferredOrder = ["7d", "3d", "1d", "all"];
+    if (loading) {
+      return;
+    }
+
+    const preferredOrder = ["3d", "1d", "all"];
     const fallbackSelection =
       preferredOrder.find((id) =>
         availableRangeOptions.some((option) => option.id === id)
       ) || "all";
 
     setSelectedButton(fallbackSelection);
-  }, [availableRangeOptions, selectedButton]);
+  }, [availableRangeOptions, loading, selectedButton]);
 
   // Aplicar el rango seleccionado cuando cambia la selección o llegan nuevos datos.
   useLayoutEffect(() => {

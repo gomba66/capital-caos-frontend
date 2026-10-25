@@ -695,6 +695,10 @@ describe("EquityChart", () => {
     renderWithTheme(<EquityChart operations={operationsWithFourDays} />);
 
     expect(screen.getByRole("button", { name: "3d" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "3d" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
     expect(screen.getByRole("button", { name: "1d" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "All" })).toBeInTheDocument();
   });
@@ -710,7 +714,33 @@ describe("EquityChart", () => {
     expect(screen.getByRole("button", { name: "All" })).toBeInTheDocument();
   });
 
-  test("selects the 1d range by default", () => {
+  test("selects the 3d range by default when available", () => {
+    const operationsWithThreeDays = [
+      {
+        closed_at: "2024-01-01T10:00:00Z",
+        pnl: 10,
+        symbol: "BTCUSDT",
+      },
+      {
+        closed_at: "2024-01-05T10:00:00Z",
+        pnl: 20,
+        symbol: "ETHUSDT",
+      },
+    ];
+
+    renderWithTheme(<EquityChart operations={operationsWithThreeDays} />);
+
+    expect(screen.getByRole("button", { name: "3d" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "1d" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+  });
+
+  test("falls back to 1d when 3d is not available", () => {
     renderWithTheme(<EquityChart operations={mockOperations} />);
 
     expect(screen.getByRole("button", { name: "1d" })).toHaveAttribute(
@@ -720,6 +750,29 @@ describe("EquityChart", () => {
     expect(screen.getByRole("button", { name: "All" })).toHaveAttribute(
       "aria-pressed",
       "false",
+    );
+  });
+
+  test("waits for chart data before falling back from 3d", () => {
+    const { rerender } = renderWithTheme(
+      <EquityChart operations={[]} loading />,
+    );
+
+    rerender(
+      <ThemeProvider theme={theme}>
+        <EquityChart
+          operations={[
+            ...mockOperations,
+            { closed_at: "2024-01-05T10:00:00Z", pnl: 20, symbol: "ETHUSDT" },
+          ]}
+          loading={false}
+        />
+      </ThemeProvider>,
+    );
+
+    expect(screen.getByRole("button", { name: "3d" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
     );
   });
 

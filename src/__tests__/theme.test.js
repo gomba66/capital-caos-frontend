@@ -24,6 +24,7 @@ describe("Cipher Desk application theme", () => {
   });
 
   test.each([
+    ["cipher", "#63d4a4", "#071210"],
     ["ocean", "#58c7d3", "#101b20"],
     ["violet", "#b6a2ff", "#191724"],
   ])("creates the %s palette in dark mode", (palette, accent, background) => {
@@ -100,5 +101,13 @@ describe("Cipher Desk application theme", () => {
         "&.Mui-checked"
       ]["& + .MuiSwitch-track"].backgroundColor,
     ).toBe(theme.palette.success.main);
+  });
+
+  test("uses rounded dashboard surfaces for the Cipher palette", () => {
+    const theme = createAppTheme("dark", "cipher");
+
+    expect(theme.shape.borderRadius).toBe(7);
+    expect(theme.components.MuiCard.styleOverrides.root.borderRadius).toBe(7);
+    expect(theme.components.MuiPaper.styleOverrides.root.borderRadius).toBe(7);
   });
 });

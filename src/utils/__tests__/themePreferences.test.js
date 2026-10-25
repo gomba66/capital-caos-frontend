@@ -21,6 +21,7 @@ function createStorage(values = {}) {
 describe("theme preferences", () => {
   test("registers only the requested themes", () => {
     expect(APP_PALETTES.map(({ id }) => id)).toEqual([
+      "cipher",
       "classic",
       "ocean",
       "violet",
@@ -51,7 +52,7 @@ describe("theme preferences", () => {
     ).toBe("#a8328f");
   });
 
-  test.each(["admin-monochrome", "admin-lime", "admin-arctic"])(
+  test.each(["cipher", "admin-monochrome", "admin-lime", "admin-arctic"])(
     "only permits dark mode for %s",
     (palette) => {
       expect(normalizePaletteMode("light", palette)).toBe("dark");

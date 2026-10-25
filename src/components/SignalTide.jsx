@@ -1,9 +1,11 @@
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Activity, Cog, Orbit } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { getSignalTideReading } from "../utils/signalTide";
 
 const TIMELINE_WINDOW_MS = 24 * 60 * 60 * 1000;
 const CURRENT_EVENT_WINDOW_MS = 5 * 60 * 1000;
+const PREVIEW_SCORE_TRANSITION_MS = 2200;
 
 function gaugePoint(progress, radius = 91) {
   const angle = Math.PI * (1 - progress);
@@ -48,12 +50,90 @@ function timelinePath(points) {
     .join(" ");
 }
 
-export default function SignalTide({ activeCount, history }) {
+export default function SignalTide({
+  activeCount,
+  history,
+  preview = false,
+  now = Date.now(),
+}) {
   const { t } = useTranslation();
-  const reading = getSignalTideReading(activeCount, history);
+  const reading = useMemo(
+    () => getSignalTideReading(activeCount, history, now),
+    [activeCount, history, now],
+  );
+  const targetScore = reading?.score;
+  const [previewScore, setPreviewScore] = useState(() => reading?.score ?? 0);
+  const previewScoreRef = useRef(previewScore);
+  const widgetRef = useRef(null);
+
+  useEffect(() => {
+    if (targetScore == null) return undefined;
+    if (!preview) {
+      previewScoreRef.current = targetScore;
+      setPreviewScore(targetScore);
+      return undefined;
+    }
+
+    const startScore = previewScoreRef.current;
+    const scoreDelta = targetScore - startScore;
+    if (scoreDelta === 0) return undefined;
+
+    let startTime;
+    let frameId;
+    const animateScore = (timestamp) => {
+      startTime ??= timestamp;
+      const progress = Math.min(
+        (timestamp - startTime) / PREVIEW_SCORE_TRANSITION_MS,
+        1,
+      );
+      const easedProgress =
+        progress < 0.5
+          ? 4 * progress ** 3
+          : 1 - (-2 * progress + 2) ** 3 / 2;
+      const nextScore = Math.round(startScore + scoreDelta * easedProgress);
+      previewScoreRef.current = nextScore;
+      setPreviewScore(nextScore);
+
+      if (progress < 1) frameId = window.requestAnimationFrame(animateScore);
+    };
+
+    frameId = window.requestAnimationFrame(animateScore);
+    return () => window.cancelAnimationFrame(frameId);
+  }, [preview, targetScore]);
+
+  useEffect(() => {
+    if (preview || reading?.state !== "surge") return undefined;
+
+    const updateGlowOrigin = () => {
+      const bounds = widgetRef.current?.getBoundingClientRect();
+      if (!bounds) return;
+
+      document.body.style.setProperty(
+        "--signal-tide-glow-x",
+        `${bounds.left + bounds.width / 2}px`,
+      );
+      document.body.style.setProperty(
+        "--signal-tide-glow-y",
+        `${bounds.top + bounds.height / 2}px`,
+      );
+    };
+
+    updateGlowOrigin();
+    window.addEventListener("resize", updateGlowOrigin);
+    window.addEventListener("scroll", updateGlowOrigin, true);
+
+    return () => {
+      window.removeEventListener("resize", updateGlowOrigin);
+      window.removeEventListener("scroll", updateGlowOrigin, true);
+      document.body.style.removeProperty("--signal-tide-glow-x");
+      document.body.style.removeProperty("--signal-tide-glow-y");
+    };
+  }, [preview, reading?.state]);
+
   if (!reading) return null;
 
-  const needleRotation = (reading.score / 100) * 180 - 90;
+  const displayedScore = preview ? previewScore : reading.score;
+  const needleRotation = (displayedScore / 100) * 180 - 90;
   const timeline = reading.indexTimeline;
   const timelineLine = timelinePath(timeline);
   const latestReading = timeline.at(-1);
@@ -71,7 +151,8 @@ export default function SignalTide({ activeCount, history }) {
 
   return (
     <section
-      className={`signal-tide signal-tide--${reading.state}`}
+      ref={widgetRef}
+      className={`signal-tide signal-tide--${reading.state}${preview ? " signal-tide--preview" : ""}`}
       aria-label={t("signalTide.title")}
     >
       <div className="signal-tide-main">
@@ -82,10 +163,12 @@ export default function SignalTide({ activeCount, history }) {
           <div>
             <h2>{t("signalTide.title")}</h2>
           </div>
-          <span className="signal-tide-live">
-            <i />
-            {t("signalTide.live")}
-          </span>
+          {!preview && (
+            <span className="signal-tide-live">
+              <i />
+              {t("signalTide.live")}
+            </span>
+          )}
         </header>
 
         <div
@@ -113,10 +196,15 @@ export default function SignalTide({ activeCount, history }) {
               </linearGradient>
             </defs>
             <path className="signal-tide-gauge-track" d={gaugeArc(100)} />
-            <path className="signal-tide-gauge-value" d={gaugeArc(reading.score)} />
+            <path
+              className="signal-tide-gauge-value"
+              d={gaugeArc(100)}
+              pathLength="100"
+              strokeDasharray={`${displayedScore} 100`}
+            />
             <g
-              className={`signal-tide-needle${reading.state === "warming" ? " signal-tide-needle--calibrating" : ""}`}
-              transform={`rotate(${needleRotation} 124 112)`}
+              className={`signal-tide-needle${reading.state === "warming" || preview ? " signal-tide-needle--calibrating" : ""}`}
+              style={{ transform: `rotate(${needleRotation}deg)` }}
             >
               <g className="signal-tide-needle-wobble">
                 <line x1="124" y1="112" x2="124" y2="44" />
@@ -124,7 +212,7 @@ export default function SignalTide({ activeCount, history }) {
             </g>
             <circle className="signal-tide-hub" cx="124" cy="112" r="5" />
             <text className="signal-tide-score" x="124" y="91">
-              {reading.score}
+              {displayedScore}
             </text>
             <text className="signal-tide-score-unit" x="124" y="105">
               {t("signalTide.index")}
@@ -150,13 +238,6 @@ export default function SignalTide({ activeCount, history }) {
       </div>
 
       <div className="signal-tide-context">
-        <div className="signal-tide-current">
-          <span>{t("signalTide.activePairs")}</span>
-          <strong key={reading.activeCount} className="signal-tide-count">
-            {reading.activeCount}
-          </strong>
-        </div>
-
         <div className="signal-tide-comparisons">
           <div className="signal-tide-comparison">
             <span>{t("signalTide.window1h")}</span>

@@ -27,8 +27,17 @@ import { NOTIFICATION_HISTORY_LIMIT } from "../contexts/NotificationProvider";
 import SignalTide from "../components/SignalTide";
 import { formatUtcOffset } from "../utils/timeZones";
 import { getOpenTrades } from "../api/openTrades";
-import { detectTradeLifecycleEvents } from "../utils/tradeLifecycleNotifications";
+import { getTradeNotificationState } from "../api/tradeNotifications";
+import { getMomentumPairs } from "../api/momentumPairs";
+import {
+  detectNewTradeNotificationTokens,
+  detectTradeLifecycleEvents,
+} from "../utils/tradeLifecycleNotifications";
 import { detectKairosEvents } from "../utils/kairosNotifications";
+import {
+  getTradeAtr14,
+  getStopMarginScore,
+} from "../utils/tradeSignalMetrics";
 import { useAuth } from "../contexts/authState";
 import {
   normalizeNotificationSoundPreferences,
@@ -40,18 +49,40 @@ import {
   getUpcomingParentSessionOpening,
   getSessionCountdownClass,
   getSessionPresentation,
+  getClosedMarketPeriodKey,
   isParentSessionOpening,
   SESSION_CRITICAL_WINDOW_MS,
   SESSION_URGENT_WINDOW_MS,
 } from "../utils/sessionPresentation";
 import { SIGNAL_TIDE_MIN_ACTIVE } from "../utils/signalTide";
 import TradingViewChartDialog from "../components/TradingViewChartDialog";
+import MomentumPairsTable from "../components/MomentumPairsTable";
 
 const POLL_MS = 5000;
 const TRADE_POLL_MS = 10000;
 const SESSION_HANDOFF_WINDOW_MS = 15 * 60 * 1000;
 const ACTIVE_SIGNAL_DENSITY_THRESHOLD = 20;
 const PRIORITY_SIGNAL_CONFIDENCE = 80;
+
+function formatTradePrice(value) {
+  return new Intl.NumberFormat(undefined, {
+    maximumSignificantDigits: 8,
+  }).format(value);
+}
+
+async function addStopMarginScore(event) {
+  if (event.type !== "opened") return event;
+  const entry = Number(event.entry_price);
+  const stop = Number(event.initial_stop);
+  if (![entry, stop].every(Number.isFinite) || entry <= 0 || stop <= 0) {
+    return { ...event, stopMargin: null };
+  }
+
+  return {
+    ...event,
+    stopMargin: getStopMarginScore(entry, stop, await getTradeAtr14(event.symbol)),
+  };
+}
 
 function prioritySignalSides(row) {
   const sides = [];
@@ -138,8 +169,25 @@ function showBackgroundEventNotification(event, t) {
     return;
   }
   showBrowserNotification({
-    title: t(`tradeToast.${event.type}Title`),
-    body: t("tradeToast.details", { side: event.side }),
+    title:
+      event.type === "opened"
+        ? `${event.symbol.replace(":USDT", "")} · ${t("tradeToast.openedTitle")}`
+        : t(`tradeToast.${event.type}Title`),
+    body:
+      event.type === "opened"
+        ? t("tradeToast.openedSummary", {
+            side: event.side,
+            target: event.projection?.targetPrice
+              ? formatTradePrice(event.projection.targetPrice)
+              : t("tradeToast.unavailable"),
+            move: event.projection?.movePercent
+              ? `${event.projection.movePercent.toFixed(2)}%`
+              : t("tradeToast.unavailable"),
+            score: event.stopMargin
+              ? `${event.stopMargin.score}/100`
+              : t("tradeToast.unavailable"),
+          })
+        : t("tradeToast.details", { side: event.side }),
     tag: event.id,
   });
 }
@@ -168,6 +216,9 @@ function TradeToast({ event, onDismiss, soundPreferences }) {
     return () => window.clearTimeout(timer);
   }, [event.id]);
 
+  const projection = event.projection;
+  const stopMargin = event.stopMargin;
+
   return (
     <div
       className={`trade-toast trade-toast--${event.type} trade-toast--${event.side.toLowerCase()}`}
@@ -175,12 +226,60 @@ function TradeToast({ event, onDismiss, soundPreferences }) {
       aria-live="polite"
     >
       <span className="trade-toast-mark">
-        <Activity size={15} />
+        {event.type === "opened" ? (
+          <ArrowUpRight size={16} />
+        ) : (
+          <Activity size={15} />
+        )}
       </span>
       <div className="trade-toast-copy">
         <strong>{t(`tradeToast.${event.type}Title`)}</strong>
         <span>{event.symbol.replace(":USDT", "")}</span>
         <small>{t("tradeToast.details", { side: event.side })}</small>
+        {event.type === "opened" && (
+          <div className="trade-toast-signal">
+            <div className="trade-toast-projection">
+              <span>{t("tradeToast.projection")}</span>
+              {projection?.targetPrice ? (
+                <strong>
+                  {t("tradeToast.targetAt", {
+                    price: formatTradePrice(projection.targetPrice),
+                  })}
+                  {projection.movePercent !== null &&
+                    ` · +${projection.movePercent.toFixed(2)}%`}
+                  {projection.rewardRiskRatio !== null &&
+                    ` · ${projection.rewardRiskRatio.toFixed(1)}R`}
+                </strong>
+              ) : (
+                <strong>{t("tradeToast.unavailable")}</strong>
+              )}
+            </div>
+            <div
+              className={`trade-toast-margin${stopMargin ? ` trade-toast-margin--${stopMargin.band}` : " trade-toast-margin--unavailable"}`}
+              title={t("tradeToast.marginExplanation")}
+            >
+              <span>{t("tradeToast.slMargin")}</span>
+              {stopMargin ? (
+                <>
+                  <strong>{stopMargin.score}/100</strong>
+                  <div
+                    className="trade-toast-margin-meter"
+                    role="meter"
+                    aria-label={t("tradeToast.slMargin")}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={stopMargin.score}
+                  >
+                    <i style={{ width: `${stopMargin.score}%` }} />
+                  </div>
+                  <small>{t(`tradeToast.marginBands.${stopMargin.band}`)}</small>
+                </>
+              ) : (
+                <small>{t("tradeToast.marginUnavailable")}</small>
+              )}
+            </div>
+          </div>
+        )}
       </div>
       <button
         className="trade-toast-dismiss"
@@ -721,9 +820,17 @@ function PriceSparkline({ values = [], symbol, loading = false }) {
 export default function ScannerDashboard() {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
+  const canViewKairos =
+    isAdmin || user?.features?.includes("kairos") === true;
+  const canViewTradeNotifications =
+    isAdmin || user?.features?.includes("trade_notifications") === true;
+  const canViewTrades =
+    isAdmin || user?.features?.includes("bot_trades") === true;
   const { timeZone } = useContext(TimeZoneContext);
   const { setNotificationHistory } = useContext(NotificationContext);
   const [dashboard, setDashboard] = useState(null);
+  const [momentumPairs, setMomentumPairs] = useState([]);
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
@@ -733,10 +840,11 @@ export default function ScannerDashboard() {
   const [showSessionDisclaimer, setShowSessionDisclaimer] = useState(false);
   const [tradeToasts, setTradeToasts] = useState([]);
   const [kairosToasts, setKairosToasts] = useState([]);
-  const [sessionDisclaimerResolved, setSessionDisclaimerResolved] =
-    useState(false);
   const sessionDisclaimerRef = useRef(null);
+  const handledSessionDisclaimerPeriodRef = useRef(null);
+  const sessionDisclaimerPeriodRef = useRef(null);
   const previousOpenTradesRef = useRef(null);
+  const previousTradeNotificationTokensRef = useRef(null);
   const previousKairosSnapshotRef = useRef(null);
   const [activityExpanded, setActivityExpanded] = useState(false);
   const language = i18n.resolvedLanguage === "es" ? "es" : "en";
@@ -744,6 +852,24 @@ export default function ScannerDashboard() {
     () => normalizeNotificationSoundPreferences(user?.notification_sounds),
     [user?.notification_sounds],
   );
+
+  useEffect(() => {
+    let alive = true;
+    let timer;
+    const pollMomentumPairs = async () => {
+      const payload = await getMomentumPairs();
+      if (!alive) return;
+      if (payload && Array.isArray(payload.momentum_pairs)) {
+        setMomentumPairs(payload.momentum_pairs);
+      }
+      timer = window.setTimeout(pollMomentumPairs, 60000);
+    };
+    pollMomentumPairs();
+    return () => {
+      alive = false;
+      window.clearTimeout(timer);
+    };
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -783,12 +909,14 @@ export default function ScannerDashboard() {
           : (lastScan?.top || []).filter(
               (row) => row.signal_long_light || row.signal_short_light,
             );
-        const { events: kairosEvents, snapshot } = detectKairosEvents(
-          previousKairosSnapshotRef.current,
-          signalRows.length,
-          next.signal_tide?.history || [],
-        );
-        previousKairosSnapshotRef.current = snapshot;
+        const { events: kairosEvents, snapshot } = canViewKairos
+          ? detectKairosEvents(
+              previousKairosSnapshotRef.current,
+              signalRows.length,
+              next.signal_tide?.history || [],
+            )
+          : { events: [], snapshot: null };
+        previousKairosSnapshotRef.current = canViewKairos ? snapshot : null;
         if (kairosEvents.length > 0) {
           if (document.visibilityState === "visible") {
             setKairosToasts((current) => {
@@ -849,9 +977,10 @@ export default function ScannerDashboard() {
       window.clearTimeout(timer);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [setNotificationHistory, soundPreferences, t]);
+  }, [canViewKairos, setNotificationHistory, soundPreferences, t]);
 
   useEffect(() => {
+    if (!canViewTrades) return undefined;
     let alive = true;
     let timer;
     let polling = false;
@@ -864,11 +993,15 @@ export default function ScannerDashboard() {
         if (!alive || !Array.isArray(payload?.open_trades)) return;
 
         const currentTrades = payload.open_trades;
-        const events = detectTradeLifecycleEvents(
+        const detectedEvents = detectTradeLifecycleEvents(
           previousOpenTradesRef.current,
           currentTrades,
         );
         previousOpenTradesRef.current = currentTrades;
+        const events = await Promise.all(
+          detectedEvents.map(addStopMarginScore),
+        );
+        if (!alive) return;
 
         if (events.length > 0) {
           if (document.visibilityState === "visible") {
@@ -905,14 +1038,83 @@ export default function ScannerDashboard() {
       window.clearTimeout(timer);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [setNotificationHistory, soundPreferences, t]);
+  }, [canViewTrades, setNotificationHistory, soundPreferences, t]);
 
   useEffect(() => {
-    if (sessionDisclaimerResolved || !Array.isArray(dashboard?.valid_sessions))
+    if (!canViewTradeNotifications || canViewTrades) return undefined;
+    let alive = true;
+    let timer;
+    let polling = false;
+
+    const pollTradeNotifications = async () => {
+      if (polling) return;
+      polling = true;
+      try {
+        const payload = await getTradeNotificationState();
+        if (!alive || !Array.isArray(payload?.trade_tokens)) return;
+
+        const currentTokens = payload.trade_tokens;
+        const newTokens = detectNewTradeNotificationTokens(
+          previousTradeNotificationTokensRef.current,
+          currentTokens,
+        );
+        previousTradeNotificationTokensRef.current = currentTokens;
+        newTokens.forEach((token) => {
+          showBrowserNotification({
+            title: t("tradeToast.openedTitle"),
+            body: t("tradeToast.genericOpened"),
+            tag: `trade-opened:${token}`,
+          });
+        });
+      } finally {
+        polling = false;
+        if (alive) timer = window.setTimeout(pollTradeNotifications, TRADE_POLL_MS);
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      window.clearTimeout(timer);
+      if (document.visibilityState === "visible") pollTradeNotifications();
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    if (document.visibilityState === "visible") pollTradeNotifications();
+    return () => {
+      alive = false;
+      window.clearTimeout(timer);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      previousTradeNotificationTokensRef.current = null;
+    };
+  }, [canViewTradeNotifications, canViewTrades, t]);
+
+  useEffect(() => {
+    if (!canViewKairos || !Array.isArray(dashboard?.valid_sessions)) return;
+    if (dashboard.valid_sessions.length > 0) {
+      handledSessionDisclaimerPeriodRef.current = null;
+      sessionDisclaimerPeriodRef.current = null;
       return;
-    setSessionDisclaimerResolved(true);
-    if (dashboard.valid_sessions.length === 0) setShowSessionDisclaimer(true);
-  }, [dashboard, sessionDisclaimerResolved]);
+    }
+
+    const periodKey = getClosedMarketPeriodKey(dashboard.next_session);
+    const handledPeriodKey = periodKey || "unidentified-closed-period";
+    sessionDisclaimerPeriodRef.current = periodKey;
+    if (handledSessionDisclaimerPeriodRef.current === handledPeriodKey) return;
+    handledSessionDisclaimerPeriodRef.current = handledPeriodKey;
+
+    const acknowledgedPeriodKey = localStorage.getItem(
+      `session-disclaimer-ack:${user?.id}`,
+    );
+    if (periodKey && acknowledgedPeriodKey === periodKey) return;
+    setShowSessionDisclaimer(true);
+  }, [canViewKairos, dashboard, user?.id]);
+
+  const acknowledgeSessionDisclaimer = () => {
+    const periodKey = sessionDisclaimerPeriodRef.current;
+    if (periodKey) {
+      localStorage.setItem(`session-disclaimer-ack:${user?.id}`, periodKey);
+    }
+    setShowSessionDisclaimer(false);
+  };
 
   useEffect(() => {
     const dialog = sessionDisclaimerRef.current;
@@ -1202,9 +1404,13 @@ export default function ScannerDashboard() {
           </span>
           <strong
             className={
-              lastScan && activeCount < minimumActiveSignalsForTrading
+              canViewKairos &&
+              lastScan &&
+              activeCount < minimumActiveSignalsForTrading
                 ? "stat-accent-amber"
-                : lastScan && activeCount >= minimumActiveSignalsForTrading
+                : canViewKairos &&
+                    lastScan &&
+                    activeCount >= minimumActiveSignalsForTrading
                   ? "stat-accent-green"
                   : ""
             }
@@ -1214,7 +1420,7 @@ export default function ScannerDashboard() {
             ) : lastScan ? activeCount : "—"}
           </strong>
           <small>
-            {lastScan
+            {lastScan && canViewKairos
               ? t("activeSignals.entryThreshold", {
                   threshold: minimumActiveSignalsForTrading,
                 })
@@ -1247,38 +1453,40 @@ export default function ScannerDashboard() {
         </div>
       </section>
 
-      {lastScan && (
+      {canViewKairos && lastScan && (
         <SignalTide
           activeCount={activeCount}
           history={dashboard?.signal_tide?.history || []}
         />
       )}
 
-      {lastScan && activeCount < minimumActiveSignalsForTrading && (
-        <div
-          className="signal-availability-notice signal-availability-notice--low"
-          role="status"
-          aria-live="polite"
-        >
-          <AlertTriangle size={16} aria-hidden="true" />
-          <div>
-            <strong>
-              {t("activeSignals.lowSignalsTitle", {
-                count: activeCount,
-                threshold: minimumActiveSignalsForTrading,
-              })}
-            </strong>
-            <p>
-              {t("activeSignals.lowSignalsMessage", {
-                count: activeCount,
-                threshold: minimumActiveSignalsForTrading,
-              })}
-            </p>
+      {canViewKairos &&
+        lastScan &&
+        activeCount < minimumActiveSignalsForTrading && (
+          <div
+            className="signal-availability-notice signal-availability-notice--low"
+            role="status"
+            aria-live="polite"
+          >
+            <AlertTriangle size={16} aria-hidden="true" />
+            <div>
+              <strong>
+                {t("activeSignals.lowSignalsTitle", {
+                  count: activeCount,
+                  threshold: minimumActiveSignalsForTrading,
+                })}
+              </strong>
+              <p>
+                {t("activeSignals.lowSignalsMessage", {
+                  count: activeCount,
+                  threshold: minimumActiveSignalsForTrading,
+                })}
+              </p>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {signalCrowded && (
+      {canViewKairos && signalCrowded && (
         <div
           className="signal-availability-notice signal-availability-notice--high"
           role="status"
@@ -1296,7 +1504,8 @@ export default function ScannerDashboard() {
         </div>
       )}
 
-      {lastScan &&
+      {canViewKairos &&
+        lastScan &&
         activeCount === 0 &&
         dashboard?.valid_sessions?.length === 0 && (
           <div className="session-notice" role="status" aria-live="polite">
@@ -1321,12 +1530,13 @@ export default function ScannerDashboard() {
             />
           </div>
         )}
-      {dashboard?.current_session ? (
+      {canViewKairos && dashboard?.current_session ? (
         <CurrentSessionTracker
           currentSession={dashboard.current_session}
           nextSession={dashboard.next_session}
         />
       ) : (
+        canViewKairos &&
         !(
           lastScan &&
           activeCount === 0 &&
@@ -1648,6 +1858,12 @@ export default function ScannerDashboard() {
         </section>
       </div>
 
+      <MomentumPairsTable
+        pairs={momentumPairs}
+        title={t("dashboard.momentumPairs")}
+        timeZone={timeZone}
+      />
+
       <footer className="footer-bar">
         <span>
           <span
@@ -1705,7 +1921,7 @@ export default function ScannerDashboard() {
           <button
             className="session-disclaimer-confirm"
             type="button"
-            onClick={() => setShowSessionDisclaimer(false)}
+            onClick={acknowledgeSessionDisclaimer}
           >
             {t("sessionNotice.disclaimerConfirm")}
           </button>

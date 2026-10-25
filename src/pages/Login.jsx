@@ -1,24 +1,12 @@
 import { useState } from "react";
-import {
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
-  FormControl,
-  Link,
-  InputLabel,
-  MenuItem,
-  Paper,
-  Select,
-  TextField,
-  Typography,
-} from "@mui/material";
+import { Activity, ArrowLeft } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { Link as RouterLink } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuth } from "../contexts/authState";
 import { translateAuthError } from "../utils/authErrors";
+import "../landing.css";
 
-export default function Login({ serviceError }) {
+export default function Login({ serviceError, sessionExpired = false }) {
   const { t, i18n } = useTranslation();
   const { login } = useAuth();
   const [email, setEmail] = useState("");
@@ -40,92 +28,96 @@ export default function Login({ serviceError }) {
   };
 
   return (
-    <Box
-      component="main"
-      sx={{
-        minHeight: "100vh",
-        display: "grid",
-        placeItems: "center",
-        p: 2,
-        bgcolor: "background.default",
-      }}
-    >
-      <Paper
-        component="form"
-        onSubmit={submit}
-        elevation={4}
-        sx={{ width: "100%", maxWidth: 420, p: { xs: 3, sm: 4 } }}
-      >
-        <Box
-          display="flex"
-          alignItems="center"
-          justifyContent="space-between"
-          gap={2}
-          mb={2}
-        >
-          <Typography variant="overline" color="primary">
-            Capital Caos
-          </Typography>
-          <FormControl size="small" sx={{ minWidth: 130 }}>
-            <InputLabel id="login-language-label">{t("language.label")}</InputLabel>
-            <Select
-              labelId="login-language-label"
+    <main className="landing-page landing-auth-page">
+      <div className="landing-noise" aria-hidden="true" />
+      <header className="landing-header landing-auth-header">
+        <Link className="landing-brand" to="/" aria-label={t("brand.home")}>
+          <span className="landing-brand-mark" aria-hidden="true">
+            <Activity size={19} strokeWidth={2.4} />
+          </span>
+          <span className="landing-brand-copy">
+            <strong>CIPHER DESK</strong>
+            <small>BY SIGLO CAPITAL</small>
+          </span>
+        </Link>
+        <div className="landing-header-actions">
+          <label className="landing-auth-language">
+            <span>{t("language.label")}</span>
+            <select
+              aria-label={t("language.label")}
               value={i18n.resolvedLanguage === "es" ? "es" : "en"}
-              label={t("language.label")}
-              onChange={(event) => i18n.changeLanguage(event.target.value)}
+              onChange={(event) =>
+                i18n.changeLanguage(event.target.value).catch((languageError) => {
+                  console.error("Could not change login language:", languageError);
+                })
+              }
             >
-              <MenuItem value="en">{t("language.english")}</MenuItem>
-              <MenuItem value="es">{t("language.spanish")}</MenuItem>
-            </Select>
-          </FormControl>
-        </Box>
-        <Typography variant="h4" component="h1" gutterBottom>
-          {t("auth.title")}
-        </Typography>
-        <Typography color="text.secondary" sx={{ mb: 3 }}>
-          {t("auth.description")}
-        </Typography>
-        {(error || serviceError) && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {translateAuthError(error || serviceError, t)}
-          </Alert>
-        )}
-        <TextField
-          fullWidth
-          required
-          autoFocus
-          type="email"
-          label={t("auth.email")}
-          autoComplete="username"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          sx={{ mb: 2 }}
-        />
-        <TextField
-          fullWidth
-          required
-          type="password"
-          label={t("auth.password")}
-          autoComplete="current-password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          sx={{ mb: 3 }}
-        />
-        <Button
-          fullWidth
-          type="submit"
-          variant="contained"
-          disabled={submitting}
-          startIcon={submitting ? <CircularProgress size={18} /> : null}
-        >
-          {submitting ? t("auth.signingIn") : t("auth.signIn")}
-        </Button>
-        <Box sx={{ mt: 2, textAlign: "center" }}>
-          <Link component={RouterLink} to="/status" variant="body2">
+              <option value="en">{t("language.english")}</option>
+              <option value="es">{t("language.spanish")}</option>
+            </select>
+          </label>
+          <Link className="landing-login-link landing-auth-back" to="/">
+            <ArrowLeft size={15} aria-hidden="true" />
+            {t("auth.backToLanding")}
+          </Link>
+        </div>
+      </header>
+
+      <div className="landing-auth-content">
+        <section className="landing-auth-card" aria-labelledby="login-title">
+          <p className="landing-eyebrow">
+            <span />
+            CIPHER DESK
+          </p>
+          <h1 id="login-title">{t("auth.title")}</h1>
+          <p className="landing-auth-description">{t("auth.description")}</p>
+
+          {(error || serviceError || sessionExpired) && (
+            <p className="landing-auth-alert" role="alert">
+              {error
+                ? translateAuthError(error, t)
+                : sessionExpired
+                  ? t("auth.sessionExpired")
+                  : translateAuthError(serviceError, t)}
+            </p>
+          )}
+
+          <form className="landing-auth-form" onSubmit={submit}>
+            <label>
+              <span>{t("auth.email")}</span>
+              <input
+                required
+                autoFocus
+                type="email"
+                autoComplete="username"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+              />
+            </label>
+            <label>
+              <span>{t("auth.password")}</span>
+              <input
+                required
+                type="password"
+                autoComplete="current-password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+              />
+            </label>
+            <button
+              className="landing-button landing-button--primary"
+              type="submit"
+              disabled={submitting}
+            >
+              {submitting ? t("auth.signingIn") : t("auth.signIn")}
+            </button>
+          </form>
+
+          <Link className="landing-auth-status" to="/status">
             {t("systemStatusPage.publicLink")}
           </Link>
-        </Box>
-      </Paper>
-    </Box>
+        </section>
+      </div>
+    </main>
   );
 }

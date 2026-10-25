@@ -1,7 +1,17 @@
+import { getTradeProjection } from "./tradeSignalMetrics";
+
 function tradeKey(trade) {
   const symbol = typeof trade?.symbol === "string" ? trade.symbol : "";
   const side = String(trade?.side || trade?.positionSide || "").toUpperCase();
   return symbol && side ? `${symbol}:${side}` : null;
+}
+
+export function detectNewTradeNotificationTokens(previousTokens, currentTokens) {
+  if (!Array.isArray(previousTokens) || !Array.isArray(currentTokens)) return [];
+  const previous = new Set(previousTokens);
+  return [...new Set(currentTokens)].filter(
+    (token) => typeof token === "string" && token && !previous.has(token),
+  );
 }
 
 export function detectTradeLifecycleEvents(previousTrades, currentTrades) {
@@ -27,6 +37,9 @@ export function detectTradeLifecycleEvents(previousTrades, currentTrades) {
         type: "opened",
         symbol: trade.symbol,
         side: trade.side || trade.positionSide,
+        entry_price: trade.entry_price ?? trade.entryPrice,
+        initial_stop: trade.initial_stop ?? trade.stop_loss,
+        projection: getTradeProjection(trade),
         timestamp_ms: timestamp,
       });
     }

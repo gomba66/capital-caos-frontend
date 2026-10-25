@@ -5,9 +5,11 @@ const resources = {
   en: {
     translation: {
       language: { label: 'Language', english: 'English', spanish: 'Español', saveError: 'Could not save language preference.' },
-      navigation: { dashboard: 'Dashboard', charts: 'Charts', evaluations: 'Evaluations', scanner: 'Live Scanner', systemStatus: 'System status', settings: 'Settings', users: 'Users', account: 'My account', accountSettings: 'Account & settings', logout: 'Sign out', open: 'Open navigation', expand: 'Expand navigation', collapse: 'Collapse navigation' },
+      navigation: { dashboard: 'Dashboard', botDashboard: 'Bot Dashboard', charts: 'Charts', evaluations: 'Evaluations', scanner: 'Live Scanner', systemStatus: 'System status', settings: 'Settings', users: 'Users', account: 'My account', accountSettings: 'Account & settings', logout: 'Sign out', open: 'Open navigation', expand: 'Expand navigation', collapse: 'Collapse navigation' },
       auth: {
         title: 'Sign in', description: 'Sign in with the account provided by your administrator.',
+        sessionExpired: 'Your session has expired. Please sign in again.',
+        backToLanding: 'Back to overview',
         email: 'Email address', password: 'Password', signIn: 'Sign in', signingIn: 'Signing in…',
         errors: {
           invalidCredentials: 'Invalid email or password.', tooManyAttempts: 'Too many failed attempts. Try again later.',
@@ -22,7 +24,7 @@ const resources = {
         },
       },
       accountPage: {
-        title: 'Account & settings', personalTab: 'My account', systemTab: 'System', tabsLabel: 'Account settings', preferences: 'Account preferences', currentPlan: 'Current plan: {{plan}}', changePassword: 'Change password',
+        title: 'Account & settings', personalTab: 'My account', systemTab: 'System', tabsLabel: 'Account settings', preferences: 'Account preferences', currentPlanLabel: 'Current plan', changePassword: 'Change password',
         adminMode: 'ADMIN',
         showDetails: 'Show account details', hideDetails: 'Hide account details',
         passwordHelp: 'Use at least 12 characters. Changing your password will sign out your other sessions.',
@@ -35,8 +37,8 @@ const resources = {
         title: 'User management', description: 'Create accounts and manually assign plan capabilities.',
         createUser: 'Create user', account: 'Account', role: 'Role', plan: 'Plan', active: 'Active',
         created: 'Created', actions: 'Actions', admin: 'Administrator', member: 'User',
-        noUsers: 'No users found.', signalsPlan: 'Signals', whatsappPlan: 'Signals + WhatsApp',
-        no_accessPlan: 'No access', completePlan: 'Complete', createAccount: 'Create account', email: 'Email address',
+        noUsers: 'No users found.', signalsPlan: 'Scope', whatsappPlan: 'Kairos',
+        no_accessPlan: 'No access', completePlan: 'Cosmos', createAccount: 'Create account', email: 'Email address',
         displayName: 'Name (optional)', initialPassword: 'Initial password (at least 12 characters)',
         cancel: 'Cancel', creating: 'Creating…', create: 'Create user',
         resetPassword: 'Reset password', resetPasswordHelp: 'The user will need this password at their next sign-in.',
@@ -47,6 +49,11 @@ const resources = {
         accountActive: 'Account active: {{email}}',
         showMemberEmails: 'Show user emails', hideMemberEmails: 'Hide user emails',
         showAdminDetails: 'Show details for {{email}}', hideAdminDetails: 'Hide admin details',
+      },
+      planChange: {
+        upgradeTitle: 'Your plan just leveled up',
+        downgradeTitle: 'Your plan has been updated',
+        message: 'Your access changed from <from></from> to <to></to>. The dashboard now reflects your available features.',
       },
       accessPending: {
         eyebrow: 'ACCOUNT CREATED',
@@ -170,8 +177,8 @@ const resources = {
         loading: 'Loading open positions…',
         loadError: 'Could not refresh the position preview.',
         tooltipTitle: 'Trade details are protected',
-        tooltipMessage: 'Upgrade to the Complete plan to reveal all open trade data.',
-        upgradeAction: 'Explore Complete',
+        tooltipMessage: 'Upgrade to the Cosmos plan to reveal all open trade data.',
+        upgradeAction: 'Explore Cosmos',
       },
       protectedClosedTrades: {
         loadError: 'Could not load the recent closed trades.',
@@ -181,8 +188,8 @@ const resources = {
       },
       upgradePage: {
         eyebrow: 'PLAN UPGRADE',
-        title: 'Upgrade to Complete',
-        description: 'Complete unlocks full open trade details and the complete trading workspace.',
+        title: 'Upgrade to Cosmos',
+        description: 'Cosmos unlocks full open trade details and the complete trading workspace.',
         paymentsUnavailable: 'Online payments are not available yet. Contact your administrator to request a plan change.',
         backToDashboard: 'Back to dashboard',
       },
@@ -299,6 +306,50 @@ const resources = {
         loading: 'Loading…', unknown: 'Unknown', chartDisplayMode: 'Chart display mode',
         exchange: 'Exchange', database: 'Database', long: 'Long', short: 'Short',
       },
+      landing: {
+        nav: { label: 'Main navigation', platform: 'Platform', approach: 'How it works', principles: 'Principles', pricing: 'Pricing', signIn: 'Sign in' },
+        hero: { eyebrow: 'Market context · disciplined execution', title: 'A clearer read on the markets.', description: 'Bring live market signals, momentum context and trade visibility into one focused workspace. Review the conditions. Make your own call.', primary: 'Explore the platform', secondary: 'Sign in to Cipher Desk', footnote: 'Built for analysis and process—not promises.', scroll: 'Scroll to explore' },
+        preview: { alt: 'PnL trend preview', label: 'PERFORMANCE OVERVIEW', mode: 'MARKET MOMENTUM', chartLabel: 'PERFORMANCE TREND', chartWindow: 'RECENT ACTIVITY', chartStart: 'START', chartEnd: 'NOW', disclaimer: 'Demo view · chart data does not represent live market or account activity', kairos: 'CIPHER KAIROS', context: 'Read the context' },
+        kairos: { nav: 'Cipher Kairos', eyebrow: 'MARKET ACTIVITY CONTEXT', title: 'What is Cipher Kairos?', description: 'Cipher Kairos summarizes recent market activity, how momentum changes, and whether notable movements persist over time. It adds context for reviewing market conditions; it is not an entry signal or a prediction.', disclaimer: 'Demo values and position events · no live market data or real orders', toast: { region: 'Position activity', title: 'POSITION OPENED', long: 'LONG', short: 'SHORT', detail: 'Market momentum threshold reached' }, points: { index: { title: 'A single activity index', description: 'A 0–100 reading that summarizes recent market activity and its momentum.' }, momentum: { title: 'Momentum over time', description: 'Short- and longer-window comparisons help show whether activity is building or fading.' }, timeline: { title: 'A trend you can inspect', description: 'The history shows how market conditions have changed, with notable activity shifts marked along the way.' } } },
+        platform: { eyebrow: 'ONE CONNECTED WORKSPACE', title: 'See more than a single signal.', description: 'Move from market activity to trade context without losing sight of the bigger picture.', cardLabel: 'CORE TOOL', learnMore: 'Explore how the platform works', cards: { scanner: { title: 'Live market scanner', description: 'Review active candidates and recent signal history in one place, with tools to compare activity across scans.' }, kairos: { title: 'Cipher Kairos', description: 'Follow market momentum over time and review notable changes in activity.' }, workspace: { title: 'Trade visibility', description: 'Keep open positions, historical performance and market context close together as you review your process.' } } },
+        approach: { eyebrow: 'A MORE DELIBERATE WORKFLOW', title: 'Context before action.', description: 'Tools should help make a process visible—not make the decision for you.', steps: { observe: { title: 'Observe the market', description: 'Review market conditions and how activity is changing over time.' }, interpret: { title: 'Read the context', description: 'Use momentum, Kairos and session information to understand the conditions around a setup.' }, decide: { title: 'Choose your next step', description: 'Review trade details and risk in your workspace. You stay responsible for every decision.' } } },
+        principles: { eyebrow: 'DESIGNED AROUND THE PROCESS', title: 'Clarity over noise.', description: 'A focused workspace for people who want to examine the market with intention.', items: { context: { title: 'Context, not isolated alerts', description: 'Read signals alongside activity history and market sessions.' }, process: { title: 'A view of your process', description: 'Bring trade monitoring and performance review into the same workflow.' }, risk: { title: 'Risk stays in the picture', description: 'Signals are information—not certainty, guarantees or a substitute for judgment.' } }, disclaimer: 'Trading digital assets involves substantial risk and may not be suitable for everyone. Cipher Desk provides market-monitoring and trading tools; it does not provide personalized financial advice or guarantee results.' },
+        pricing: {
+          eyebrow: 'A STARTING POINT',
+          title: 'Plans that can grow with you.',
+          description: 'A first-pass pricing idea mapped to the plan types already in Cipher Desk. Prices are monthly USD estimates, not current offers.',
+          recommended: 'MOST COMPLETE',
+          perMonth: '/ month',
+          notAvailable: 'Payments not available yet',
+          futureLabel: 'ROADMAP · NOT CURRENTLY AVAILABLE',
+          futureName: 'Future integrations',
+          futureDescription: 'Configurable notifications through social channels and the option to connect your own exchange account under strict sizing and risk rules are ideas for the future, not current features.',
+          futurePrice: 'Roadmap',
+          note: 'These are discussion prices only—not published rates or purchasable plans. Actual features, pricing, taxes and billing terms would need to be confirmed before launch.',
+          plans: {
+            signals: {
+              name: 'Scope',
+              summary: 'A clear view of tracked pairs and the market activity behind them.',
+              price: '$19',
+              features: ['Watchlist of tracked pairs and internal signals', 'Market overview components', 'Momentum and signal activity at a glance'],
+            },
+            whatsapp: {
+              name: 'Kairos',
+              summary: 'Add market context and stay informed about bot activity without exposing its trades.',
+              price: '$29',
+              features: ['Everything in Scope', 'Cipher Kairos and market-session context', 'Browser notifications when the bot opens a trade'],
+            },
+            complete: {
+              name: 'Cosmos',
+              summary: 'The full workspace for reviewing the bot and its performance.',
+              price: '$59',
+              features: ['Everything in Kairos plus real bot trades and performance charts', 'Bot equity and complete trade visibility', 'Access to two TradingView indicators'],
+            },
+          },
+        },
+        access: { eyebrow: 'CIPHER DESK', title: 'Take a closer look.', description: 'Already have an account? Sign in to your workspace. Public access requests are not open yet while the product takes shape.', signIn: 'Sign in', soon: 'Access requests opening soon' },
+        footer: { disclaimer: 'Market tools for analysis and trade visibility. No outcome is guaranteed.', platform: 'Platform', status: 'System status' },
+      },
       brand: { home: 'Cipher Desk by Siglo Capital home' },
       theme: {
         switchToDark: 'Switch to dark mode',
@@ -306,6 +357,7 @@ const resources = {
         darkModeOnly: 'This theme is available in dark mode only',
         choosePalette: 'Color theme',
         palettes: {
+          cipher: 'Cipher',
           classic: 'Classic Green',
           ocean: 'Ocean',
           violet: 'Violet',
@@ -320,7 +372,9 @@ const resources = {
       },
       sessionNotice: { title: 'No valid signals right now', message: 'New signals are unavailable until the next <asia>Asia</asia> or <newYork>New York</newYork> session opens.', disclaimerLabel: 'SESSION NOTICE', disclaimerTitle: 'Trading outside market sessions is not recommended', disclaimerMessage: 'Outside the Asia and New York sessions, liquidity may be lower and price movements less regular. Consider waiting for a session to open.', disclaimerConfirm: 'I understand, continue', currentSession: 'CURRENT SESSION', outsideSession: 'OUT OF SESSION', weekendMarker: '* WEEKEND', elapsed: 'ELAPSED', endsIn: 'ENDS IN', nextSession: 'NEXT SESSION', opensIn: 'Opens in {{time}}', opensInSession: '{{session}} opens in {{time}}', withinSession: 'Within {{session}}', sessions: { asia: 'Asia', new_york: 'New York', europe: 'Europe', us: 'US', eu_brinks: 'EU Brinks', us_brinks: 'US Brinks' }, countdown: '{{days}}d {{hours}}h {{minutes}}m {{seconds}}s', opensAt: 'Opens at {{time}} · {{timezone}}' },
       activeSignals: { title: 'Active signals', subtitle: '{{count}} live', liveOnly: 'LIVE SIGNALS ONLY', count: '{{count}} SHOWN', priority: 'PRIORITY', priorityForSide: 'Priority signal: {{sides}}', activePool: 'ACTIVE POOL', crowdedPairTitle: 'Part of a broad active signal pool; signals may be correlated.', entryThreshold: 'Trade entry threshold: {{threshold}}', lowSignalsTitle: 'Low signal activity: {{count}} / {{threshold}}', lowSignalsMessage: 'New trades are paused until at least {{threshold}} active signals are available.', highSignalsTitle: 'Broad signal availability: {{count}} active pairs', highSignalsMessage: 'Signals may be correlated, so manage total exposure. Priority signals aligned with the 21 EMA on the 3m timeframe are shown first; all active signals remain visible.' },
-      signalTide: { title: 'Cipher Kairos', live: 'LIVE', index: 'KAIROS INDEX', activePairs: 'ACTIVE PAIRS', window1h: '1H MOMENTUM', window6h: '6H MOMENTUM', repeatedRisesLabel: 'RISES · 1H', repeatedRisesValue: '{{rises}} / {{scans}}', historyLabel: 'KAIROS TIMELINE', window24h: 'LAST 24H', timelineStart: '24H AGO', timelineNow: 'NOW', indexTimelineLabel: 'Kairos index timeline over the last 24 hours, with waves marking high-activity disturbances', warmingUp: 'Waiting for the first scan snapshots.', buildingHistory: 'Comparisons strengthen as more scan history accumulates.', collecting: 'Collecting...', noChange: '±0', credo: 'The edge is not in chasing every signal, but in waiting for the tide to prove it has turned.', gaugeLabel: 'Cipher Kairos index {{score}} out of 100, {{status}}', states: { quiet: 'QUIET ORBIT', warming: 'CALIBRATING', cooling: 'SIGNAL EBB', steady: 'STEADY ORBIT', rising: 'RISING ALIGNMENT', surge: 'SIGNAL CONVERGENCE' }, guidance: { quiet: 'The signal field is quiet. Wait for activity to build before reviewing setups.', warming: 'Kairos is calibrating. Let more scans accumulate before reading the pattern.', cooling: 'The active pool is contracting. Wait for the decline to stabilize before reviewing setups.', steady: 'The pool is established but not expanding consistently. Stay selective and let the next scans confirm.', rising: 'Signals are increasing across repeated scans. This is a good moment to review shortlisted setups, not a trigger to enter.', surge: 'Repeated signal growth is confirmed across recent scans. This is the strongest moment to review the market deliberately; confirm each setup and manage correlation.' } },
+      signalTide: { title: 'Cipher Kairos', live: 'LIVE', index: 'KAIROS INDEX', window1h: '1H MOMENTUM', window6h: '6H MOMENTUM', repeatedRisesLabel: 'RISING READINGS · 1H', repeatedRisesValue: '{{rises}} / {{scans}}', historyLabel: 'KAIROS TIMELINE', window24h: 'LAST 24H', timelineStart: '24H AGO', timelineNow: 'NOW', indexTimelineLabel: 'Kairos index timeline over the last 24 hours, with markers highlighting notable shifts in activity', warmingUp: 'Waiting for initial market readings.', buildingHistory: 'Comparisons strengthen as more historical readings accumulate.', collecting: 'Collecting...', noChange: '±0', credo: 'The edge is not in reacting to every shift, but in waiting for momentum to confirm a change.', gaugeLabel: 'Cipher Kairos index {{score}} out of 100, {{status}}', states: { quiet: 'QUIET ORBIT', warming: 'CALIBRATING', cooling: 'MOMENTUM EBB', steady: 'STEADY ORBIT', rising: 'RISING MOMENTUM', surge: 'MOMENTUM CONVERGENCE' }, guidance: { quiet: 'Market activity is subdued. Wait for conditions to develop before reviewing setups.', warming: 'Kairos is calibrating. Let more readings accumulate before interpreting the pattern.', cooling: 'Momentum is easing. Wait for activity to stabilize before reviewing setups.', steady: 'Conditions are established but not building consistently. Stay selective and let further readings confirm.', rising: 'Activity is strengthening across recent readings. Review shortlisted setups, but do not treat this as a trigger to enter.', surge: 'Sustained momentum is confirmed across recent readings. Review the market deliberately, confirm each setup and manage risk.' } },
+      tradeSharePnl: { label: 'BOT PNL', include: 'Include bot PnL in image' },
+      closedTradeChart: { actions: 'Chart / share', open: 'View and share {{symbol}} closed trade', shareTitle: 'Share {{symbol}} closed trade', title: 'Closed trade', entry: 'ENTRY', exit: 'EXIT', realizedPnl: 'REALIZED PNL', includePnl: 'Include realized PnL in image', shareDisclaimer: 'Historical market data and realized bot result for reference; not a promise of future results.', loading: 'Loading candles around this trade…', loadError: 'Could not load historical candles for this trade.', exportError: 'Could not export or share this image.', chartLabel: '{{symbol}} closed trade chart with {{interval}} candles', windowDescription: '{{before}} candles before entry and {{after}} candles after exit · {{interval}}', download: 'Download image', share: 'Share image' },
       market: { venue: 'BINANCE USD-M', products: 'USDT PERPETUALS' },
       connection: { scanning: 'Scanning', connected: 'Connected', offline: 'Offline' },
       intro: {
@@ -353,7 +407,8 @@ const resources = {
         recentSide: '{{side}} RECENT', lastSeen: 'LAST · {{signal}}', lastSeenTitle: 'Last signal seen; not active in the latest scan',
       },
       signalToast: { region: 'New signal notifications', activeTitle: 'New signal detected', recentTitle: 'Recent signal detected', dismiss: 'Dismiss notification' },
-      tradeToast: { region: 'Trade notifications', openedTitle: 'Trade opened', closedTitle: 'Trade closed', details: '{{side}} position', dismiss: 'Dismiss notification' },
+      tradeToast: { region: 'Trade notifications', openedTitle: 'Trade opened', closedTitle: 'Trade closed', genericOpened: 'The bot has opened a trade.', details: '{{side}} position', projection: 'TP projection', targetAt: 'Target {{price}}', slMargin: 'SL buffer', marginExplanation: 'Heuristic score from entry-to-stop distance versus 14-period ATR on 3-minute candles. It is not a probability of profit; a wider stop also means more distance to the stop.', marginDisclaimer: 'This margin score is not a probability of profit.', marginUnavailable: 'Unavailable', marginBands: { tight: 'Tight · under 1 ATR', buffered: 'Moderate · 1–2 ATR', wide: 'Wide · 2+ ATR' }, openedSummary: '{{side}} · target {{target}} ({{move}}) · SL buffer {{score}}', unavailable: 'n/a', dismiss: 'Dismiss notification' },
+      tradeSignals: { eyebrow: 'LIVE BOT POSITIONS', title: 'Open trade signals', description: 'Live positions · minimum SL buffer {{threshold}} ATR. The score is not a probability of profit.', count: '{{count}} open trade signals', countLabel: 'ACTIVE', projectedMove: 'Projected move', empty: 'There are no open bot positions right now.', loading: 'Loading open positions…', checkingThreshold: 'Checking stop-loss distance against ATR…', noEligible: 'No open trades meet the minimum SL buffer of {{threshold}} ATR.', atrUnavailable: 'Could not evaluate some positions because ATR market data is unavailable.', chartUnavailable: 'Live candle data unavailable', candlestickChart: '{{symbol}} real {{interval}} candlestick chart with entry, stop-loss and target levels', chartInterval: 'REAL {{interval}} CANDLES', chartTitle: '{{symbol}} · {{interval}} candles and trade levels', expandChart: 'Expand chart', brandBy: 'by SIGLO CAPITAL', levels: { entry: 'ENTRY', stop: 'SL', target: 'TP' }, share: 'Share', shareTitle: 'Share {{symbol}} trade setup', stylesLabel: 'Image background styles', styles: { cipher: 'Cipher terminal', moonshot: 'Moon mission', garden: 'Zen garden', chaos: 'Chaos goblin' }, shareText: '{{symbol}} {{side}} setup · Capital Caos', shareDisclaimer: 'Illustrative live setup, not a promise of results. The SL margin is not a probability of profit.', shareError: 'Could not create or share the image. Try downloading it.', downloadImage: 'Download image', closeShare: 'Close' },
       notificationSounds: { title: 'Notification sounds', description: 'Choose and preview the sound for each notification type. These preferences are saved to your account.', browserPermission: { default: 'Enable desktop notifications', granted: 'Desktop notifications enabled', denied: 'Notifications blocked in browser settings', unsupported: 'Desktop notifications unavailable', help: 'Allow desktop notifications to receive alerts while Cipher Desk is in another tab. Browser and system settings may still restrict background alerts.', error: 'Could not request notification permission. Check your browser settings.' }, types: { trade_opened: 'Trade opened', trade_closed: 'Trade closed', kairos_peak: 'Kairos index peak', kairos_surge: 'Kairos convergence' }, muted: 'No sound', retro: 'Retro', chime: 'Chime', double: 'Double tone', bell: 'Bell', soft: 'Soft', ascending: 'Ascending', descending: 'Descending', alert: 'Alert', sonar: 'Sonar', pop: 'Pop', preview: 'Preview', save: 'Save sounds', saving: 'Saving...', saved: 'Notification sounds saved to your account.', saveError: 'Could not save notification sounds: {{message}}' },
       kairosToast: { peakTitle: 'Kairos index peak', surgeTitle: 'Signal convergence confirmed', name: 'Cipher Kairos', peakDetails: 'Index reached {{score}} or rose sharply above 60.', surgeDetails: 'Kairos entered Signal Convergence at index {{score}}.', dismiss: 'Dismiss notification' },
       notifications: { open: 'Open notification history', unread: '{{count}} unread notifications', title: 'Notifications', clear: 'Clear all', empty: 'No notifications yet.' },
@@ -370,9 +425,11 @@ const resources = {
   es: {
     translation: {
       language: { label: 'Idioma', english: 'English', spanish: 'Español', saveError: 'No se pudo guardar la preferencia de idioma.' },
-      navigation: { dashboard: 'Panel', charts: 'Gráficos', evaluations: 'Evaluaciones', scanner: 'Scanner en vivo', systemStatus: 'Estado del sistema', settings: 'Configuración', users: 'Usuarios', account: 'Mi cuenta', accountSettings: 'Cuenta y ajustes', logout: 'Cerrar sesión', open: 'Abrir navegación', expand: 'Expandir navegación', collapse: 'Contraer navegación' },
+      navigation: { dashboard: 'Panel', botDashboard: 'Panel del bot', charts: 'Gráficos', evaluations: 'Evaluaciones', scanner: 'Scanner en vivo', systemStatus: 'Estado del sistema', settings: 'Configuración', users: 'Usuarios', account: 'Mi cuenta', accountSettings: 'Cuenta y ajustes', logout: 'Cerrar sesión', open: 'Abrir navegación', expand: 'Expandir navegación', collapse: 'Contraer navegación' },
       auth: {
         title: 'Iniciar sesión', description: 'Accede con la cuenta que te proporcionó el administrador.',
+        sessionExpired: 'Tu sesión expiró. Inicia sesión nuevamente.',
+        backToLanding: 'Volver a la página principal',
         email: 'Correo electrónico', password: 'Contraseña', signIn: 'Entrar', signingIn: 'Iniciando sesión…',
         errors: {
           invalidCredentials: 'Correo electrónico o contraseña incorrectos.', tooManyAttempts: 'Demasiados intentos fallidos. Inténtalo más tarde.',
@@ -387,7 +444,7 @@ const resources = {
         },
       },
       accountPage: {
-        title: 'Cuenta y ajustes', personalTab: 'Mi cuenta', systemTab: 'Sistema', tabsLabel: 'Ajustes de la cuenta', preferences: 'Preferencias de la cuenta', currentPlan: 'Plan actual: {{plan}}', changePassword: 'Cambiar contraseña',
+        title: 'Cuenta y ajustes', personalTab: 'Mi cuenta', systemTab: 'Sistema', tabsLabel: 'Ajustes de la cuenta', preferences: 'Preferencias de la cuenta', currentPlanLabel: 'Plan actual', changePassword: 'Cambiar contraseña',
         adminMode: 'ADMIN',
         showDetails: 'Mostrar datos de la cuenta', hideDetails: 'Ocultar datos de la cuenta',
         passwordHelp: 'Usa al menos 12 caracteres. Al cambiarla se cerrarán tus otras sesiones.',
@@ -400,8 +457,8 @@ const resources = {
         title: 'Gestión de usuarios', description: 'Crea cuentas y asigna manualmente las capacidades de cada plan.',
         createUser: 'Crear usuario', account: 'Cuenta', role: 'Rol', plan: 'Plan', active: 'Activo',
         created: 'Creado', actions: 'Acciones', admin: 'Administrador', member: 'Usuario',
-        noUsers: 'No se encontraron usuarios.', signalsPlan: 'Signals', whatsappPlan: 'Signals + WhatsApp',
-        no_accessPlan: 'Sin acceso', completePlan: 'Completo', createAccount: 'Crear cuenta', email: 'Correo electrónico',
+        noUsers: 'No se encontraron usuarios.', signalsPlan: 'Scope', whatsappPlan: 'Kairos',
+        no_accessPlan: 'Sin acceso', completePlan: 'Cosmos', createAccount: 'Crear cuenta', email: 'Correo electrónico',
         displayName: 'Nombre (opcional)', initialPassword: 'Contraseña inicial (mínimo 12 caracteres)',
         cancel: 'Cancelar', creating: 'Creando…', create: 'Crear usuario',
         resetPassword: 'Restablecer contraseña', resetPasswordHelp: 'El usuario deberá usar esta contraseña en su próximo inicio de sesión.',
@@ -412,6 +469,11 @@ const resources = {
         accountActive: 'Cuenta activa: {{email}}',
         showMemberEmails: 'Mostrar correos de usuarios', hideMemberEmails: 'Ocultar correos de usuarios',
         showAdminDetails: 'Mostrar datos de {{email}}', hideAdminDetails: 'Ocultar datos del administrador',
+      },
+      planChange: {
+        upgradeTitle: 'Tu plan subió de nivel',
+        downgradeTitle: 'Tu plan se actualizó',
+        message: 'Tu acceso cambió de <from></from> a <to></to>. El panel ya refleja las funciones disponibles.',
       },
       accessPending: {
         eyebrow: 'CUENTA CREADA',
@@ -535,8 +597,8 @@ const resources = {
         loading: 'Cargando posiciones abiertas…',
         loadError: 'No se pudo actualizar la vista previa de posiciones.',
         tooltipTitle: 'Los datos de las operaciones están protegidos',
-        tooltipMessage: 'Actualiza al plan Complete para revelar todos los datos de las operaciones abiertas.',
-        upgradeAction: 'Conocer Complete',
+        tooltipMessage: 'Actualiza al plan Cosmos para revelar todos los datos de las operaciones abiertas.',
+        upgradeAction: 'Conocer Cosmos',
       },
       protectedClosedTrades: {
         loadError: 'No se pudieron cargar las operaciones cerradas recientes.',
@@ -546,8 +608,8 @@ const resources = {
       },
       upgradePage: {
         eyebrow: 'CAMBIO DE PLAN',
-        title: 'Actualiza a Complete',
-        description: 'Complete desbloquea todos los datos de las operaciones abiertas y el espacio completo de trading.',
+        title: 'Actualiza a Cosmos',
+        description: 'Cosmos desbloquea todos los datos de las operaciones abiertas y el espacio completo de trading.',
         paymentsUnavailable: 'Los pagos en línea aún no están disponibles. Contacta al administrador para solicitar un cambio de plan.',
         backToDashboard: 'Volver al panel',
       },
@@ -660,6 +722,50 @@ const resources = {
         loading: 'Cargando…', unknown: 'Desconocido', chartDisplayMode: 'Modo de visualización del gráfico',
         exchange: 'Exchange', database: 'Base de datos', long: 'Long', short: 'Short',
       },
+      landing: {
+        nav: { label: 'Navegación principal', platform: 'Plataforma', approach: 'Cómo funciona', principles: 'Principios', pricing: 'Precios', signIn: 'Iniciar sesión' },
+        hero: { eyebrow: 'Contexto de mercado · ejecución disciplinada', title: 'Una lectura más clara del mercado.', description: 'Reúne señales en vivo, contexto de momentum y visibilidad de operaciones en un solo espacio. Revisa las condiciones y toma tu propia decisión.', primary: 'Explorar la plataforma', secondary: 'Entrar a Cipher Desk', footnote: 'Diseñado para analizar y seguir un proceso, no para prometer resultados.', scroll: 'Desliza para explorar' },
+        preview: { alt: 'Vista previa de tendencia de PnL', label: 'RESUMEN DE RENDIMIENTO', mode: 'MOMENTUM DEL MERCADO', chartLabel: 'TENDENCIA DE RENDIMIENTO', chartWindow: 'ACTIVIDAD RECIENTE', chartStart: 'INICIO', chartEnd: 'AHORA', disclaimer: 'Vista de demostración · no representa actividad real del mercado ni de una cuenta', kairos: 'CIPHER KAIROS', context: 'Lee el contexto' },
+        kairos: { nav: 'Cipher Kairos', eyebrow: 'CONTEXTO DE ACTIVIDAD DEL MERCADO', title: '¿Qué es Cipher Kairos?', description: 'Cipher Kairos resume la actividad reciente del mercado, sus cambios de momentum y si los movimientos relevantes se mantienen a lo largo del tiempo. Aporta contexto para revisar las condiciones del mercado; no es una señal de entrada ni una predicción.', disclaimer: 'Valores y eventos de posiciones de demostración · sin datos en vivo ni órdenes reales', toast: { region: 'Actividad de posiciones', title: 'POSICIÓN ABIERTA', long: 'LARGO', short: 'CORTO', detail: 'Se alcanzó el umbral de momentum del mercado' }, points: { index: { title: 'Un índice de actividad', description: 'Una lectura de 0 a 100 que resume la actividad reciente del mercado y su momentum.' }, momentum: { title: 'Momentum a lo largo del tiempo', description: 'Las comparaciones de corto y largo plazo ayudan a ver si la actividad crece o pierde fuerza.' }, timeline: { title: 'Una tendencia que puedes revisar', description: 'El historial muestra cómo han cambiado las condiciones del mercado y marca los cambios relevantes de actividad.' } } },
+        platform: { eyebrow: 'UN ESPACIO DE TRABAJO CONECTADO', title: 'Mira más que una señal aislada.', description: 'Pasa de la actividad del mercado al contexto de tus operaciones sin perder la perspectiva general.', cardLabel: 'HERRAMIENTA', learnMore: 'Explorar cómo funciona la plataforma', cards: { scanner: { title: 'Scanner de mercado en vivo', description: 'Revisa candidatos activos e historial reciente de señales en un solo lugar y compara su actividad entre escaneos.' }, kairos: { title: 'Cipher Kairos', description: 'Sigue el momentum del mercado a lo largo del tiempo y revisa cambios relevantes en la actividad.' }, workspace: { title: 'Visibilidad de operaciones', description: 'Mantén posiciones abiertas, rendimiento histórico y contexto del mercado cerca mientras revisas tu proceso.' } } },
+        approach: { eyebrow: 'UN FLUJO MÁS DELIBERADO', title: 'Contexto antes de actuar.', description: 'Las herramientas deben hacer visible un proceso, no tomar la decisión por ti.', steps: { observe: { title: 'Observa el mercado', description: 'Revisa las condiciones del mercado y cómo cambia la actividad a lo largo del tiempo.' }, interpret: { title: 'Lee el contexto', description: 'Usa momentum, Kairos e información de sesiones para entender las condiciones de una posible operación.' }, decide: { title: 'Elige tu siguiente paso', description: 'Revisa detalles y riesgos en tu espacio de trabajo. Cada decisión sigue siendo tu responsabilidad.' } } },
+        principles: { eyebrow: 'DISEÑADO ALREDEDOR DEL PROCESO', title: 'Claridad sobre el ruido.', description: 'Un espacio enfocado para quienes quieren examinar el mercado con intención.', items: { context: { title: 'Contexto, no alertas aisladas', description: 'Lee las señales junto al historial de actividad y las sesiones de mercado.' }, process: { title: 'Una vista de tu proceso', description: 'Integra el seguimiento de operaciones y la revisión de rendimiento en el mismo flujo.' }, risk: { title: 'El riesgo siempre presente', description: 'Las señales son información, no certeza, garantía ni sustituto del criterio propio.' } }, disclaimer: 'Operar activos digitales implica un riesgo considerable y puede no ser adecuado para todas las personas. Cipher Desk ofrece herramientas de monitoreo y operación; no brinda asesoría financiera personalizada ni garantiza resultados.' },
+        pricing: {
+          eyebrow: 'UN PUNTO DE PARTIDA',
+          title: 'Planes que pueden crecer contigo.',
+          description: 'Una primera propuesta de precios basada en los tipos de plan que ya existen en Cipher Desk. Precios mensuales estimados en USD; no son ofertas vigentes.',
+          recommended: 'MÁS COMPLETO',
+          perMonth: '/ mes',
+          notAvailable: 'Pagos aún no disponibles',
+          futureLabel: 'HOJA DE RUTA · NO DISPONIBLE ACTUALMENTE',
+          futureName: 'Integraciones futuras',
+          futureDescription: 'Las notificaciones configurables por redes sociales y conectar una cuenta de exchange propia con reglas estrictas de tamaño y riesgo son ideas futuras, no funciones disponibles hoy.',
+          futurePrice: 'Hoja de ruta',
+          note: 'Estos precios son solo para conversar: no son tarifas publicadas ni planes que se puedan comprar. Antes de lanzar habría que confirmar funciones, precios, impuestos y condiciones de facturación.',
+          plans: {
+            signals: {
+              name: 'Scope',
+              summary: 'Una vista clara de los pares seguidos y la actividad del mercado.',
+              price: '$19',
+              features: ['Watchlist de pares seguidos y señales internas', 'Componentes de resumen del mercado', 'Momentum y actividad de señales de un vistazo'],
+            },
+            whatsapp: {
+              name: 'Kairos',
+              summary: 'Añade contexto de mercado y recibe avisos de actividad del bot sin exponer sus operaciones.',
+              price: '$29',
+              features: ['Todo lo incluido en Scope', 'Cipher Kairos y contexto de sesiones de mercado', 'Notificaciones del navegador cuando el bot abre una operación'],
+            },
+            complete: {
+              name: 'Cosmos',
+              summary: 'El espacio completo para revisar el bot y su rendimiento.',
+              price: '$59',
+              features: ['Todo lo incluido en Kairos, más operaciones reales y gráficas de rendimiento', 'Equity del bot y visibilidad completa de operaciones', 'Acceso a dos indicadores de TradingView'],
+            },
+          },
+        },
+        access: { eyebrow: 'CIPHER DESK', title: 'Conoce el espacio de trabajo.', description: '¿Ya tienes una cuenta? Entra a tu espacio de trabajo. Las solicitudes de acceso público aún no están abiertas mientras el producto evoluciona.', signIn: 'Iniciar sesión', soon: 'Solicitudes de acceso próximamente' },
+        footer: { disclaimer: 'Herramientas de análisis y visibilidad de operaciones. Sin resultados garantizados.', platform: 'Plataforma', status: 'Estado del sistema' },
+      },
       brand: { home: 'Inicio de Cipher Desk by Siglo Capital' },
       theme: {
         switchToDark: 'Activar modo oscuro',
@@ -667,6 +773,7 @@ const resources = {
         darkModeOnly: 'Este tema solo está disponible en modo oscuro',
         choosePalette: 'Tema de color',
         palettes: {
+          cipher: 'Cipher',
           classic: 'Verde clásico',
           ocean: 'Océano',
           violet: 'Violeta',
@@ -681,7 +788,9 @@ const resources = {
       },
       sessionNotice: { title: 'No hay señales válidas ahora', message: 'No habrá nuevas señales hasta la próxima apertura de <asia>Asia</asia> o <newYork>Nueva York</newYork>.', disclaimerLabel: 'AVISO DE SESIÓN', disclaimerTitle: 'No es recomendable operar fuera de las sesiones', disclaimerMessage: 'Fuera de las sesiones de Asia y Nueva York puede haber menor liquidez y movimientos de precio menos regulares. Considera esperar a que abra una sesión.', disclaimerConfirm: 'Entiendo, continuar', currentSession: 'SESIÓN ACTUAL', outsideSession: 'FUERA DE SESIÓN', weekendMarker: '* WEEKEND', elapsed: 'TRANSCURRIDO', endsIn: 'TERMINA EN', nextSession: 'PRÓXIMA SESIÓN', opensIn: 'Abre en {{time}}', opensInSession: '{{session}} abre en {{time}}', withinSession: 'Dentro de {{session}}', sessions: { asia: 'Asia', new_york: 'Nueva York', europe: 'Europa', us: 'EE. UU.', eu_brinks: 'EU Brinks', us_brinks: 'US Brinks' }, countdown: '{{days}} d {{hours}} h {{minutes}} min {{seconds}} s', opensAt: 'Abre a las {{time}} · {{timezone}}' },
       activeSignals: { title: 'Señales activas', subtitle: '{{count}} activas', liveOnly: 'SOLO SEÑALES ACTIVAS', count: '{{count}} MOSTRADAS', priority: 'PRIORIDAD', priorityForSide: 'Señal prioritaria: {{sides}}', activePool: 'POOL ACTIVO', crowdedPairTitle: 'Parte de un conjunto amplio de señales activas; algunas podrían estar correlacionadas.', entryThreshold: 'Umbral para abrir trades: {{threshold}}', lowSignalsTitle: 'Poca actividad de señales: {{count}} / {{threshold}}', lowSignalsMessage: 'Las nuevas operaciones se pausan hasta que haya al menos {{threshold}} señales activas.', highSignalsTitle: 'Amplia disponibilidad de señales: {{count}} pares activos', highSignalsMessage: 'Las señales podrían estar correlacionadas; controla la exposición total. Las prioritarias alineadas con la EMA 21 en temporalidad de 3m se muestran primero; todas las señales activas siguen visibles.' },
-      signalTide: { title: 'Cipher Kairos', live: 'EN VIVO', index: 'ÍNDICE KAIROS', activePairs: 'PARES ACTIVOS', window1h: 'IMPULSO 1H', window6h: 'IMPULSO 6H', repeatedRisesLabel: 'ALZAS · 1H', repeatedRisesValue: '{{rises}} / {{scans}}', historyLabel: 'LÍNEA KAIROS', window24h: 'ÚLTIMAS 24H', timelineStart: 'HACE 24H', timelineNow: 'AHORA', indexTimelineLabel: 'Línea del índice Kairos durante las últimas 24 horas; las ondas marcan perturbaciones de alta actividad', warmingUp: 'Esperando los primeros snapshots del scanner.', buildingHistory: 'Las comparaciones ganan solidez al acumular más scans.', collecting: 'Recopilando...', noChange: '±0', credo: 'La ventaja no está en perseguir cada señal, sino en esperar a que la marea confirme que ha cambiado.', gaugeLabel: 'Índice Cipher Kairos {{score}} de 100, {{status}}', states: { quiet: 'ÓRBITA QUIETA', warming: 'CALIBRANDO', cooling: 'REPLIEGUE DE SEÑALES', steady: 'ÓRBITA ESTABLE', rising: 'ALINEACIÓN CRECIENTE', surge: 'CONVERGENCIA DE SEÑALES' }, guidance: { quiet: 'El campo de señales está quieto. Espera a que la actividad crezca antes de revisar setups.', warming: 'Kairos está calibrando. Deja que se acumulen más scans antes de interpretar el patrón.', cooling: 'El pool activo se está contrayendo. Espera a que el descenso se estabilice antes de revisar setups.', steady: 'El pool está formado, pero no crece de manera consistente. Sé selectivo y deja que los siguientes scans confirmen.', rising: 'Las señales aumentan en scans sucesivos. Es un buen momento para revisar setups, no una orden de entrada.', surge: 'El crecimiento repetido de señales se confirma en scans recientes. Este es el mejor momento para revisar el mercado con calma; valida cada setup y considera la correlación.' } },
+      signalTide: { title: 'Cipher Kairos', live: 'EN VIVO', index: 'ÍNDICE KAIROS', window1h: 'IMPULSO 1H', window6h: 'IMPULSO 6H', repeatedRisesLabel: 'LECTURAS AL ALZA · 1H', repeatedRisesValue: '{{rises}} / {{scans}}', historyLabel: 'LÍNEA KAIROS', window24h: 'ÚLTIMAS 24H', timelineStart: 'HACE 24H', timelineNow: 'AHORA', indexTimelineLabel: 'Índice Kairos durante las últimas 24 horas; los marcadores destacan cambios relevantes de actividad', warmingUp: 'Esperando las primeras lecturas del mercado.', buildingHistory: 'Las comparaciones ganan solidez al acumular más lecturas históricas.', collecting: 'Recopilando...', noChange: '±0', credo: 'La ventaja no está en reaccionar a cada cambio, sino en esperar a que el momentum confirme una tendencia.', gaugeLabel: 'Índice Cipher Kairos {{score}} de 100, {{status}}', states: { quiet: 'ÓRBITA QUIETA', warming: 'CALIBRANDO', cooling: 'PÉRDIDA DE MOMENTUM', steady: 'ÓRBITA ESTABLE', rising: 'MOMENTUM CRECIENTE', surge: 'CONVERGENCIA DE MOMENTUM' }, guidance: { quiet: 'La actividad del mercado está baja. Espera a que las condiciones evolucionen antes de revisar setups.', warming: 'Kairos está calibrando. Deja que se acumulen más lecturas antes de interpretar el patrón.', cooling: 'El momentum está cediendo. Espera a que la actividad se estabilice antes de revisar setups.', steady: 'Las condiciones están establecidas, pero no crecen de forma consistente. Sé selectivo y espera más lecturas para confirmar.', rising: 'La actividad se fortalece en lecturas recientes. Revisa los setups, pero no lo tomes como una señal de entrada.', surge: 'El momentum sostenido se confirma en lecturas recientes. Revisa el mercado con calma, valida cada setup y gestiona el riesgo.' } },
+      tradeSharePnl: { label: 'PNL DEL BOT', include: 'Incluir PnL del bot en la imagen' },
+      closedTradeChart: { actions: 'Gráfica / compartir', open: 'Ver y compartir la operación cerrada de {{symbol}}', shareTitle: 'Compartir operación cerrada de {{symbol}}', title: 'Operación cerrada', entry: 'ENTRADA', exit: 'SALIDA', realizedPnl: 'PNL REALIZADO', includePnl: 'Incluir PnL realizado en la imagen', shareDisclaimer: 'Datos históricos del mercado y resultado realizado del bot como referencia; no garantizan resultados futuros.', loading: 'Cargando velas alrededor de esta operación…', loadError: 'No se pudieron cargar las velas históricas de esta operación.', exportError: 'No se pudo exportar o compartir esta imagen.', chartLabel: 'Gráfica de {{symbol}} cerrada con velas de {{interval}}', windowDescription: '{{before}} velas antes de la entrada y {{after}} después de la salida · {{interval}}', download: 'Descargar imagen', share: 'Compartir imagen' },
       market: { venue: 'BINANCE USD-M', products: 'PERPETUOS USDT' },
       connection: { scanning: 'Escaneando', connected: 'Conectado', offline: 'Sin conexión' },
       intro: {
@@ -714,7 +823,8 @@ const resources = {
         recentSide: '{{side}} reciente', lastSeen: 'ÚLTIMA · {{signal}}', lastSeenTitle: 'Última señal observada; no está activa en el último scan',
       },
       signalToast: { region: 'Notificaciones de señales nuevas', activeTitle: 'Nueva señal detectada', recentTitle: 'Señal reciente detectada', dismiss: 'Descartar notificación' },
-      tradeToast: { region: 'Notificaciones de operaciones', openedTitle: 'Operación abierta', closedTitle: 'Operación cerrada', details: 'Posición {{side}}', dismiss: 'Descartar notificación' },
+      tradeToast: { region: 'Notificaciones de operaciones', openedTitle: 'Operación abierta', closedTitle: 'Operación cerrada', genericOpened: 'El bot abrió una operación.', details: 'Posición {{side}}', projection: 'Proyección al TP', targetAt: 'Objetivo {{price}}', slMargin: 'Margen SL', marginExplanation: 'Puntaje heurístico según la distancia entre entrada y stop comparada con ATR(14) de velas de 3 minutos. No es una probabilidad de ganancia; un stop más amplio también implica más distancia hasta el stop.', marginDisclaimer: 'El puntaje de margen no es una probabilidad de ganancia.', marginUnavailable: 'No disponible', marginBands: { tight: 'Ajustado · menos de 1 ATR', buffered: 'Moderado · 1–2 ATR', wide: 'Amplio · 2+ ATR' }, openedSummary: '{{side}} · objetivo {{target}} ({{move}}) · margen SL {{score}}', unavailable: 'n/d', dismiss: 'Descartar notificación' },
+      tradeSignals: { eyebrow: 'OPERACIONES ACTIVAS DEL BOT', title: 'Señales de operaciones abiertas', description: 'Posiciones activas · margen SL mínimo {{threshold}} ATR. El puntaje no es una probabilidad de ganancia.', count: '{{count}} operaciones abiertas', countLabel: 'ACTIVAS', projectedMove: 'Movimiento proyectado', empty: 'No hay operaciones abiertas del bot en este momento.', loading: 'Cargando operaciones abiertas…', checkingThreshold: 'Comprobando la distancia del stop-loss respecto al ATR…', noEligible: 'Ninguna operación abierta cumple el margen mínimo de {{threshold}} ATR.', atrUnavailable: 'No se pudieron evaluar algunas posiciones porque faltan datos de mercado para calcular el ATR.', chartUnavailable: 'Datos de velas no disponibles', candlestickChart: 'Gráfica de velas reales de {{interval}} de {{symbol}} con niveles de entrada, stop-loss y objetivo', chartInterval: 'VELAS REALES · {{interval}}', chartTitle: '{{symbol}} · Velas de {{interval}} y niveles de operación', expandChart: 'Ampliar gráfica', brandBy: 'by SIGLO CAPITAL', levels: { entry: 'ENTRADA', stop: 'SL', target: 'TP' }, share: 'Compartir', shareTitle: 'Compartir configuración de {{symbol}}', stylesLabel: 'Estilos de fondo para la imagen', styles: { cipher: 'Terminal Cipher', moonshot: 'Misión lunar', garden: 'Jardín zen', chaos: 'Duende del caos' }, shareText: 'Setup {{side}} de {{symbol}} · Capital Caos', shareDisclaimer: 'Configuración activa ilustrativa, no garantiza resultados. El margen SL no es una probabilidad de ganancia.', shareError: 'No se pudo crear o compartir la imagen. Intenta descargarla.', downloadImage: 'Descargar imagen', closeShare: 'Cerrar' },
       notificationSounds: { title: 'Sonidos de notificación', description: 'Elige y escucha el sonido para cada tipo de notificación. Estas preferencias se guardan en tu cuenta.', browserPermission: { default: 'Activar notificaciones de escritorio', granted: 'Notificaciones de escritorio activadas', denied: 'Notificaciones bloqueadas en el navegador', unsupported: 'Notificaciones de escritorio no disponibles', help: 'Permite las notificaciones de escritorio para recibir avisos mientras Cipher Desk está en otra pestaña. El navegador o el sistema aún podrían limitar los avisos en segundo plano.', error: 'No se pudo solicitar permiso. Revisa los ajustes de tu navegador.' }, types: { trade_opened: 'Operación abierta', trade_closed: 'Operación cerrada', kairos_peak: 'Pico del índice Kairos', kairos_surge: 'Convergencia Kairos' }, muted: 'Sin sonido', retro: 'Retro', chime: 'Campanilla', double: 'Tono doble', bell: 'Campana', soft: 'Suave', ascending: 'Ascendente', descending: 'Descendente', alert: 'Alerta', sonar: 'Sonar', pop: 'Pop', preview: 'Escuchar', save: 'Guardar sonidos', saving: 'Guardando...', saved: 'Los sonidos de notificación se guardaron en tu cuenta.', saveError: 'No se pudieron guardar los sonidos: {{message}}' },
       kairosToast: { peakTitle: 'Pico en el índice Kairos', surgeTitle: 'Convergencia de señales confirmada', name: 'Cipher Kairos', peakDetails: 'El índice llegó a {{score}} o subió con fuerza por encima de 60.', surgeDetails: 'Kairos entró en Convergencia de señales con índice {{score}}.', dismiss: 'Descartar notificación' },
       notifications: { open: 'Abrir historial de notificaciones', unread: '{{count}} notificaciones sin leer', title: 'Notificaciones', clear: 'Borrar todas', empty: 'Aún no hay notificaciones.' },
@@ -740,6 +850,27 @@ i18n.use(initReactI18next).init({
   interpolation: { escapeValue: false },
   initImmediate: false,
 });
+
+i18n.addResourceBundle('en', 'translation', {
+  tradeChartMode: {
+    title: 'Trade chart source',
+    custom: 'Our chart',
+    tradingview: 'TradingView',
+    tradingViewChart: 'TradingView chart for {{symbol}}',
+    tradeLevels: 'Trade levels',
+    chartCaptureUnavailable: 'The selected chart is not ready to export yet. Try again in a moment.',
+  },
+}, true);
+i18n.addResourceBundle('es', 'translation', {
+  tradeChartMode: {
+    title: 'Fuente del gráfico',
+    custom: 'Gráfico propio',
+    tradingview: 'TradingView',
+    tradingViewChart: 'Gráfico de TradingView de {{symbol}}',
+    tradeLevels: 'Niveles de la operación',
+    chartCaptureUnavailable: 'El gráfico seleccionado aún no está listo para exportar. Inténtalo de nuevo en un momento.',
+  },
+}, true);
 
 i18n.on('languageChanged', (language) => {
   window.localStorage.setItem('market-watch-language', language);

@@ -25,7 +25,11 @@ describe("localized account pages", () => {
     ["es", "Iniciar sesión", "Correo electrónico", "Accede con la cuenta que te proporcionó el administrador."],
   ])("renders the login page in %s", async (language, title, email, description) => {
     await i18n.changeLanguage(language);
-    render(<Login />);
+    render(
+      <BrowserRouter>
+        <Login />
+      </BrowserRouter>,
+    );
 
     expect(screen.getByRole("heading", { name: title })).toBeInTheDocument();
     expect(
@@ -34,12 +38,31 @@ describe("localized account pages", () => {
     expect(screen.getByText(description)).toBeInTheDocument();
   });
 
+  test.each([
+    ["en", "Your session has expired. Please sign in again."],
+    ["es", "Tu sesión expiró. Inicia sesión nuevamente."],
+  ])("explains an expired session in %s", async (language, message) => {
+    await i18n.changeLanguage(language);
+    render(
+      <BrowserRouter>
+        <Login sessionExpired />
+      </BrowserRouter>,
+    );
+
+    expect(screen.getByRole("alert")).toHaveTextContent(message);
+  });
+
   test("allows changing language before signing in", async () => {
     await i18n.changeLanguage("en");
-    render(<Login />);
+    render(
+      <BrowserRouter>
+        <Login />
+      </BrowserRouter>,
+    );
 
-    fireEvent.mouseDown(screen.getByRole("combobox", { name: "Language" }));
-    fireEvent.click(await screen.findByRole("option", { name: "Español" }));
+    fireEvent.change(screen.getByRole("combobox", { name: "Language" }), {
+      target: { value: "es" },
+    });
 
     expect(
       screen.getByRole("heading", { name: "Iniciar sesión" }),
@@ -50,9 +73,9 @@ describe("localized account pages", () => {
   });
 
   test.each([
-    ["en", "Account & settings", "Current plan: Complete", "Change password"],
-    ["es", "Cuenta y ajustes", "Plan actual: Completo", "Cambiar contraseña"],
-  ])("renders account details in %s", async (language, title, plan, passwordLabel) => {
+    ["en", "Account & settings", "Current plan", "Change password"],
+    ["es", "Cuenta y ajustes", "Plan actual", "Cambiar contraseña"],
+  ])("renders account details in %s", async (language, title, planLabel, passwordLabel) => {
     await i18n.changeLanguage(language);
     render(
       <BrowserRouter>
@@ -75,7 +98,13 @@ describe("localized account pages", () => {
     );
 
     expect(screen.getByRole("heading", { name: title })).toBeInTheDocument();
-    expect(screen.getByText(plan)).toBeInTheDocument();
+    expect(screen.getByText(planLabel)).toBeInTheDocument();
+    expect(
+      screen.getByTestId("account-plan-badge").querySelector(".plan-identity-name"),
+    ).toHaveTextContent("Cosmos");
+    expect(screen.getByTestId("account-plan-badge")).toHaveClass(
+      "plan-identity-badge--cosmos",
+    );
     expect(screen.getByRole("heading", { name: passwordLabel })).toBeInTheDocument();
     expect(
       screen.getByRole("tab", {
@@ -88,6 +117,50 @@ describe("localized account pages", () => {
       }),
     ).toBeInTheDocument();
   });
+
+  test.each([
+    ["signals", ["signals"], false],
+    ["whatsapp", ["signals", "kairos", "trade_notifications"], true],
+  ])(
+    "shows notification settings for plan %s only when included",
+    async (planCode, features, canConfigureNotifications) => {
+      await i18n.changeLanguage("en");
+      render(
+        <BrowserRouter>
+          <AuthContext.Provider
+            value={{
+              user: {
+                id: 2,
+                role: "member",
+                email: "member@example.com",
+                plan_code: planCode,
+                features,
+              },
+              updateNotificationSoundPreferences: vi.fn(),
+            }}
+          >
+            <Account />
+          </AuthContext.Provider>
+        </BrowserRouter>,
+      );
+
+      if (canConfigureNotifications) {
+        expect(
+          screen.getByRole("heading", { name: "Notification sounds" }),
+        ).toBeInTheDocument();
+        expect(
+          screen.getByRole("combobox", { name: "Kairos index peak" }),
+        ).toBeInTheDocument();
+        expect(
+          screen.queryByRole("combobox", { name: "Trade opened" }),
+        ).not.toBeInTheDocument();
+      } else {
+        expect(
+          screen.queryByRole("heading", { name: "Notification sounds" }),
+        ).not.toBeInTheDocument();
+      }
+    },
+  );
 
   test("opens system settings in the admin account tab", async () => {
     await i18n.changeLanguage("en");

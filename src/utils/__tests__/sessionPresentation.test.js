@@ -1,9 +1,25 @@
 import {
+  getClosedMarketPeriodKey,
   getUpcomingParentSessionOpening,
   getSessionCountdownClass,
   getSessionPresentation,
   isParentSessionOpening,
 } from "../sessionPresentation";
+
+describe("getClosedMarketPeriodKey", () => {
+  test("uses the next market opening as the closed-market period key", () => {
+    expect(
+      getClosedMarketPeriodKey({
+        opens_at: "2026-10-26T13:30:00-04:00",
+      }),
+    ).toBe("2026-10-26T17:30:00.000Z");
+  });
+
+  test("returns null when the next opening is unavailable or invalid", () => {
+    expect(getClosedMarketPeriodKey(null)).toBeNull();
+    expect(getClosedMarketPeriodKey({ opens_at: "invalid" })).toBeNull();
+  });
+});
 
 describe("getSessionPresentation", () => {
   test.each([
