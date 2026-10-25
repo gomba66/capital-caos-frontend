@@ -13,7 +13,7 @@ test("explains that billing is not available and links back to the dashboard", (
   );
 
   expect(
-    screen.getByRole("heading", { name: "Upgrade to Complete" }),
+    screen.getByRole("heading", { name: "Upgrade to Cosmos" }),
   ).toBeInTheDocument();
   expect(
     screen.getByText(

@@ -19,6 +19,13 @@ export function getSessionPresentation(name) {
   };
 }
 
+export function getClosedMarketPeriodKey(nextSession) {
+  const openingTime = Date.parse(nextSession?.opens_at);
+  return Number.isFinite(openingTime)
+    ? new Date(openingTime).toISOString()
+    : null;
+}
+
 export function isParentSessionOpening(currentSessionName, nextSessionName) {
   const parent = getSessionPresentation(currentSessionName).parent;
   return parent !== null && getSessionPresentation(nextSessionName).name === parent;

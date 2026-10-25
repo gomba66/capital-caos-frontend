@@ -1,5 +1,6 @@
 import React from "react";
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -23,7 +24,8 @@ import i18n from "../../i18n";
 const renderHeader = ({
   user = {
     role: "member",
-    features: ["signals", "bot_trades"],
+    plan_code: "complete",
+    features: ["signals", "kairos", "trade_notifications", "bot_trades"],
   },
   updateLanguagePreference = vi.fn(),
   mode = "dark",
@@ -63,6 +65,7 @@ describe("PlatformHeader", () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.unstubAllGlobals();
   });
 
@@ -70,6 +73,13 @@ describe("PlatformHeader", () => {
     renderHeader();
 
     expect(screen.getByText("CIPHER DESK")).toBeInTheDocument();
+    expect(
+      screen.getByTestId("header-plan-badge").querySelector(".plan-identity-name"),
+    ).toHaveTextContent("Cosmos");
+    expect(screen.getByTestId("header-plan-badge")).not.toHaveTextContent("PLAN");
+    expect(screen.getByTestId("header-plan-badge")).toHaveClass(
+      "plan-identity-badge--cosmos",
+    );
     expect(screen.queryByText("ADMIN")).not.toBeInTheDocument();
     expect(
       screen.getByRole("combobox", { name: "Time zone" }),
@@ -91,10 +101,36 @@ describe("PlatformHeader", () => {
   });
 
   test("shows a concise ADMIN badge only for administrators", () => {
-    renderHeader({ user: { role: "admin", features: [] } });
+    renderHeader({
+      user: { role: "admin", plan_code: "complete", features: [] },
+    });
 
     expect(screen.getByText("ADMIN")).toBeInTheDocument();
     expect(screen.queryByText("ADMIN MODE")).not.toBeInTheDocument();
+    expect(
+      screen.getByTestId("header-plan-badge").querySelector(".plan-identity-name"),
+    ).toHaveTextContent("Cosmos");
+  });
+
+  test.each([
+    ["signals", "Scope", "scope"],
+    ["whatsapp", "Kairos", "kairos"],
+    ["complete", "Cosmos", "cosmos"],
+  ])("identifies the %s plan in the header", (planCode, label, tone) => {
+    renderHeader({
+      user: {
+        role: "member",
+        plan_code: planCode,
+        features: ["signals"],
+      },
+    });
+
+    const badge = screen.getByTestId("header-plan-badge");
+    expect(badge).toHaveAttribute("aria-label", label);
+    expect(badge.querySelector(".plan-identity-name")).toHaveTextContent(label);
+    expect(badge).not.toHaveTextContent("PLAN");
+    expect(badge).toHaveClass(`plan-identity-badge--${tone}`);
+    expect(badge.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
   });
 
   test("hides platform data and sections for a no-access account", () => {
@@ -179,6 +215,20 @@ describe("PlatformHeader", () => {
     expect(
       screen.getByRole("button", { name: "Color theme: Classic Green" }),
     ).toHaveAttribute("aria-expanded", "false");
+  });
+
+  test("offers Cipher as a dark-only palette to members", () => {
+    const setPalette = vi.fn();
+    const setMode = vi.fn();
+    renderHeader({ mode: "light", setMode, setPalette });
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Color theme: Classic Green" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Cipher" }));
+
+    expect(setPalette).toHaveBeenCalledWith("cipher");
+    expect(setMode).toHaveBeenCalledWith("dark");
   });
 
   test("shows all admin palettes only to administrators", () => {
@@ -270,6 +320,90 @@ describe("PlatformHeader", () => {
       "activity-wave-icon--live",
     );
     expect(screen.queryByText("7 ACTIVE")).not.toBeInTheDocument();
+    expect(
+      await screen.findByRole("link", {
+        name: /Cipher Kairos index \d+ out of 100, QUIET ORBIT/,
+      }),
+    ).toHaveAttribute("href", "/scanner");
+    expect(document.documentElement).not.toHaveClass("kairos-global-event");
+  });
+
+  test("animates the page only when a new Kairos peak or surge is detected", async () => {
+    vi.useFakeTimers();
+    const now = Date.now();
+    const firstHistory = [
+      {
+        timestamp: new Date(now - 90 * 60 * 1000).toISOString(),
+        active_count: 0,
+      },
+    ];
+    const risingHistory = [
+      [-90, 0],
+      [-50, 0],
+      [-40, 6],
+      [-30, 12],
+      [-20, 18],
+      [-10, 20],
+      [-1, 21],
+    ].map(([minutesAgo, activeCount]) => ({
+      timestamp: new Date(now + minutesAgo * 60 * 1000).toISOString(),
+      active_count: activeCount,
+    }));
+    const fetchMock = vi.fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            last_scan: { active_signals: [] },
+            signal_tide: { history: firstHistory },
+          }),
+        })
+        .mockResolvedValue({
+          ok: true,
+          json: async () => ({
+            last_scan: {
+              active_signals: Array.from({ length: 21 }, (_, index) => ({
+                symbol: `PAIR${index}/USDT:USDT`,
+              })),
+            },
+            signal_tide: { history: risingHistory },
+          }),
+        });
+    vi.stubGlobal("fetch", fetchMock);
+    const { unmount } = renderHeader();
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(document.documentElement).not.toHaveClass("kairos-global-event");
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5000);
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(document.querySelector(".header-kairos")?.textContent).toContain(
+      "MOMENTUM CONVERGENCE",
+    );
+    expect(document.querySelector(".header-kairos")).toHaveAttribute(
+      "title",
+      "Cipher Kairos",
+    );
+    expect(document.documentElement).toHaveAttribute(
+      "data-kairos-event",
+      "surge",
+    );
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1);
+    });
+    expect(document.documentElement).toHaveClass("kairos-global-event");
+    expect(document.documentElement).toHaveAttribute(
+      "data-kairos-event",
+      "surge",
+    );
+    unmount();
+    expect(document.documentElement).not.toHaveClass("kairos-global-event");
+    expect(document.documentElement).not.toHaveAttribute("data-kairos-event");
   });
 
   test("shows the active market session and time until it ends", async () => {
@@ -472,6 +606,46 @@ describe("PlatformHeader", () => {
       );
       expect(history.every((event) => event.read)).toBe(true);
     });
+  });
+
+  test("Kairos notification history hides persisted bot-trade details", () => {
+    window.localStorage.setItem(
+      NOTIFICATION_HISTORY_STORAGE_KEY,
+      JSON.stringify([
+        {
+          id: "kairos-peak:1000",
+          category: "kairos",
+          type: "peak",
+          symbol: "Cipher Kairos",
+          score: 78,
+          timestamp_ms: 1000,
+          read: false,
+        },
+        {
+          id: "trade-opened:2000",
+          type: "opened",
+          symbol: "BTCUSDT",
+          side: "LONG",
+          timestamp_ms: 2000,
+          read: false,
+        },
+      ]),
+    );
+    renderHeader({
+      user: {
+        role: "member",
+        plan_code: "whatsapp",
+        features: ["signals", "kairos", "trade_notifications"],
+      },
+    });
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "1 unread notifications" }),
+    );
+
+    expect(screen.getByText("Cipher Kairos")).toBeInTheDocument();
+    expect(screen.queryByText("BTCUSDT")).not.toBeInTheDocument();
+    expect(screen.queryByText("LONG position")).not.toBeInTheDocument();
   });
 
   test("opens a TradingView chart from a notification", () => {

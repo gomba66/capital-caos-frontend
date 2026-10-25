@@ -10,8 +10,10 @@ import {
   Route,
   Navigate,
   Link,
+  useNavigate,
 } from "react-router-dom";
 import Home from "./pages/Home";
+import Dashboard from "./pages/Dashboard";
 import Charts from "./pages/Charts";
 import Evaluations from "./pages/Evaluations";
 import Account from "./pages/Account";
@@ -19,15 +21,17 @@ import AdminUsers from "./pages/AdminUsers";
 import SystemStatus from "./pages/SystemStatus";
 import Upgrade from "./pages/Upgrade";
 import Login from "./pages/Login";
-import ScannerDashboard from "./pages/Scanner";
-import OperationsTable from "./components/OperationsTable";
+import Landing from "./pages/Landing";
 import Sidebar from "./components/Sidebar";
 import PlatformHeader from "./components/PlatformHeader";
 import {
   Box,
   Button,
   CircularProgress,
+  Alert,
+  AlertTitle,
   Paper,
+  Snackbar,
   Typography,
   useTheme,
   useMediaQuery,
@@ -41,7 +45,7 @@ import {
 } from "./contexts/AppContexts";
 import { AuthProvider } from "./contexts/AuthContext";
 import { useAuth } from "./contexts/authState";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import { getBackendVersion } from "./api/version";
 import { initializeExchangeRates } from "./utils/currencyConverter";
 import AppErrorBoundary from "./components/AppErrorBoundary";
@@ -50,24 +54,19 @@ import {
   readThemePreferences,
   saveThemePreferences,
 } from "./utils/themePreferences";
+import { PLAN_IDENTITIES } from "./utils/planIdentity";
 
-function SignalsHome() {
+const PLAN_ORDER = ["no_access", "signals", "whatsapp", "complete"];
+
+function PlanChangeIdentity({ plan, tone }) {
+  const PlanIcon = plan.icon;
   const { t } = useTranslation();
+
   return (
-    <>
-      <Box
-        className="dashboard-section dashboard-open-positions dashboard-open-positions--protected"
-      >
-        <OperationsTable
-          operations={[]}
-          title={t("dashboard.protectedTradesTitle")}
-          isOpenTrades
-          protectedMode
-          includeProtectedClosedPreview
-        />
-      </Box>
-      <ScannerDashboard />
-    </>
+    <span className={`plan-change-plan plan-change-plan--${tone}`}>
+      <PlanIcon size={13} strokeWidth={2.2} aria-hidden="true" />
+      <strong>{t(plan.labelKey)}</strong>
+    </span>
   );
 }
 
@@ -104,9 +103,13 @@ function AppContent() {
     user,
     loading,
     error: authError,
+    sessionExpired,
+    planChange,
+    dismissPlanChange,
     updateThemePreferences,
   } = useAuth();
-  const { i18n } = useTranslation();
+  const navigate = useNavigate();
+  const { i18n, t } = useTranslation();
   const { mode, setMode, palette, setPalette } =
     useContext(PlatformThemeContext);
   const themeRole = user?.role || "guest";
@@ -141,6 +144,19 @@ function AppContent() {
     isAdmin || user?.features?.includes("signals") === true;
   const canViewTrades =
     isAdmin || user?.features?.includes("bot_trades") === true;
+  const planChangeFrom = planChange
+    ? PLAN_IDENTITIES[planChange.from]
+    : null;
+  const planChangeTo = planChange ? PLAN_IDENTITIES[planChange.to] : null;
+  const planChangeDirection =
+    planChange &&
+    PLAN_ORDER.indexOf(planChange.to) > PLAN_ORDER.indexOf(planChange.from)
+      ? "upgrade"
+      : "downgrade";
+
+  useEffect(() => {
+    if (sessionExpired) navigate("/login", { replace: true });
+  }, [navigate, sessionExpired]);
 
   useEffect(() => {
     if (loading || !user?.language_preference) return;
@@ -256,10 +272,22 @@ function AppContent() {
 
   if (!user) {
     return (
-      <Routes>
+      <Routes key={`${user.id}:${user.role}:${user.plan_code}`}>
+        <Route path="/" element={<Landing />} />
+        <Route
+          path="/login"
+          element={
+            <Login serviceError={authError} sessionExpired={sessionExpired} />
+          }
+        />
         <Route path="/status" element={<SystemStatus publicView />} />
         <Route path="/upgrade" element={<Upgrade />} />
-        <Route path="*" element={<Login serviceError={authError} />} />
+        <Route
+          path="*"
+          element={
+            <Login serviceError={authError} sessionExpired={sessionExpired} />
+          }
+        />
       </Routes>
     );
   }
@@ -272,7 +300,8 @@ function AppContent() {
             display="flex"
             minHeight="100vh"
             sx={{
-              backgroundColor: "background.default",
+              backgroundColor:
+                palette === "cipher" ? "transparent" : "background.default",
             }}
           >
             <Sidebar />
@@ -287,24 +316,46 @@ function AppContent() {
                 minWidth: 0,
                 width: isMobile ? 0 : "auto",
                 flex: isMobile ? "1 1 0%" : "none",
-                backgroundColor: "background.default",
+                backgroundColor:
+                  palette === "cipher" ? "transparent" : "background.default",
                 transition: "left 0.3s ease-in-out",
               }}
             >
               <PlatformHeader />
               <AppErrorBoundary>
                 <Routes>
+                  <Route path="/login" element={<Navigate to="/" replace />} />
                   <Route path="/status" element={<SystemStatus publicView />} />
                   <Route path="/upgrade" element={<Upgrade />} />
                   <Route
                     path="/"
                     element={
-                      canViewTrades ? (
-                        <Home />
-                      ) : canViewSignals ? (
-                        <SignalsHome />
+                      canViewSignals ? (
+                        <Navigate to="/scanner" replace />
+                      ) : canViewTrades ? (
+                        <Navigate to="/dashboard" replace />
                       ) : (
                         <AccessPending />
+                      )
+                    }
+                  />
+                  <Route
+                    path="/dashboard"
+                    element={
+                      canViewTrades ? (
+                        <Dashboard />
+                      ) : (
+                        <Navigate to="/" replace />
+                      )
+                    }
+                  />
+                  <Route
+                    path="/scanner"
+                    element={
+                      canViewSignals ? (
+                        <Home />
+                      ) : (
+                        <Navigate to="/" replace />
                       )
                     }
                   />
@@ -337,14 +388,49 @@ function AppContent() {
                     }
                   />
                   <Route path="/account" element={<Account />} />
-                  <Route
-                    path="/scanner"
-                    element={<Navigate to="/#scanner" replace />}
-                  />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </AppErrorBoundary>
             </Box>
+            {planChange && planChangeFrom && planChangeTo && (
+              <Snackbar
+                key={planChange.id}
+                open
+                autoHideDuration={null}
+                anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+                onClose={dismissPlanChange}
+              >
+                <Alert
+                  className={`plan-change-alert plan-change-alert--${planChangeDirection}`}
+                  severity="info"
+                  variant="filled"
+                  onClose={dismissPlanChange}
+                >
+                  <AlertTitle>
+                    {planChangeDirection === "upgrade"
+                      ? t("planChange.upgradeTitle")
+                      : t("planChange.downgradeTitle")}
+                  </AlertTitle>
+                  <Trans
+                    i18nKey="planChange.message"
+                    components={{
+                      from: (
+                        <PlanChangeIdentity
+                          plan={planChangeFrom}
+                          tone={planChangeFrom.tone}
+                        />
+                      ),
+                      to: (
+                        <PlanChangeIdentity
+                          plan={planChangeTo}
+                          tone={planChangeTo.tone}
+                        />
+                      ),
+                    }}
+                  />
+                </Alert>
+              </Snackbar>
+            )}
           </Box>
         </SidebarContext.Provider>
       </TimeZoneContext.Provider>

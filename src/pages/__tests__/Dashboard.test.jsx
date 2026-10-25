@@ -44,6 +44,10 @@ vi.mock("../../api/paperBroker", () => ({
   getCommissionRate: vi.fn(),
 }));
 
+vi.mock("../../api/priceHistory", () => ({
+  getPriceHistory: vi.fn().mockResolvedValue({ data: [] }),
+}));
+
 const theme = createTheme();
 
 const renderWithProviders = (component) => {
@@ -290,9 +294,7 @@ describe("Dashboard", () => {
     getMomentumPairs.mockResolvedValue({ momentum_pairs: [] });
 
     act(() => {
-      renderWithProviders(
-        <Dashboard interactiveSection={<div>Interactive scanner</div>} />,
-      );
+      renderWithProviders(<Dashboard />);
     });
 
     // Esperar a que se carguen los datos
@@ -302,7 +304,6 @@ describe("Dashboard", () => {
 
     // Verificar que se muestra el mensaje de error cuando stats es null
     expect(screen.getByText("Failed to load stats.")).toBeInTheDocument();
-    expect(screen.getByText("Interactive scanner")).toBeInTheDocument();
   });
 
   test("handles null data", async () => {

@@ -7,7 +7,6 @@ import React, {
 } from "react";
 import { getChartData, getClosedTradesPage } from "../api/chartData";
 import { getOpenTrades } from "../api/openTrades";
-import { getMomentumPairs } from "../api/momentumPairs";
 import { getConfig } from "../api/config";
 import { getCapital } from "../api/capital";
 import { getCommissionRate } from "../api/paperBroker";
@@ -29,8 +28,8 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import InfoIcon from "@mui/icons-material/Info";
 import { RefreshCw, WifiOff } from "lucide-react";
 import OperationsTable from "../components/OperationsTable";
+import OpenTradeSignalCards from "../components/OpenTradeSignalCards";
 import StickyTradeSummary from "../components/StickyTradeSummary";
-import MomentumPairsTable from "../components/MomentumPairsTable";
 import DashboardMetrics from "../components/DashboardMetrics";
 import EquityChart from "../components/charts/EquityChart";
 import TradePerformanceTable from "../components/charts/TradePerformanceTable";
@@ -38,7 +37,7 @@ import { TimeZoneContext, CurrencyContext } from "../contexts/AppContexts";
 import { useTranslation } from "react-i18next";
 import { convertFromUSDT, formatCurrency } from "../utils/currencyConverter";
 
-export default function Dashboard({ interactiveSection }) {
+export default function Dashboard() {
   const { t, i18n } = useTranslation();
   const [stats, setStats] = useState(null);
   const [chartData, setChartData] = useState(null);
@@ -46,7 +45,6 @@ export default function Dashboard({ interactiveSection }) {
   const [closedTrades, setClosedTrades] = useState([]);
   const [closedTradesPage, setClosedTradesPage] = useState(0);
   const [closedTradesTotal, setClosedTradesTotal] = useState(0);
-  const [momentumPairs, setMomentumPairs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -105,7 +103,6 @@ export default function Dashboard({ interactiveSection }) {
     setOpenTrades([]);
     setClosedTrades([]);
     setClosedTradesTotal(0);
-    setMomentumPairs([]);
     setDbTradeCount(null);
     setConfig(null);
     setTotalCapital(null);
@@ -114,7 +111,7 @@ export default function Dashboard({ interactiveSection }) {
     setLastUpdate(null);
   }, []);
 
-  // Fetch global (stats, closed, momentum)
+  // Fetch global bot dashboard data
   const fetchAll = useCallback(async () => {
     setRefreshing(true);
     try {
@@ -122,7 +119,6 @@ export default function Dashboard({ interactiveSection }) {
         chartDataResponse,
         closedPage,
         openData,
-        momentumData,
         configData,
         capitalUsdt,
         commissionData,
@@ -130,7 +126,6 @@ export default function Dashboard({ interactiveSection }) {
         getChartData(timeZone),
         getClosedTradesPage(closedTradesPageRef.current + 1),
         getOpenTrades(),
-        getMomentumPairs(),
         getConfig(),
         getCapital(),
         getCommissionRate(),
@@ -140,7 +135,6 @@ export default function Dashboard({ interactiveSection }) {
       setClosedTrades(closedPage?.trades || []);
       setClosedTradesTotal(closedPage?.total || 0);
       setOpenTrades(openData?.open_trades || []);
-      setMomentumPairs(momentumData?.momentum_pairs || []);
       setDbTradeCount(configData?.database?.total || null);
       setConfig(configData || null);
       setTotalCapital(capitalUsdt ?? null);
@@ -159,7 +153,6 @@ export default function Dashboard({ interactiveSection }) {
         !chartDataResponse ||
           !closedPage ||
           !openData ||
-          !momentumData ||
           !configData ||
           capitalUsdt == null ||
           !commissionData,
@@ -581,7 +574,14 @@ export default function Dashboard({ interactiveSection }) {
         </StickyTradeSummary>
       </Box>
 
-      {interactiveSection}
+      <Accordion className="dashboard-section dashboard-open-signals" sx={{ mb: 2 }}>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Typography>{t("tradeSignals.title")}</Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          <OpenTradeSignalCards trades={openTrades} loading={loading} />
+        </AccordionDetails>
+      </Accordion>
 
       <Box className="dashboard-section dashboard-history">
         <Accordion sx={{ mb: 2 }}>
@@ -607,12 +607,6 @@ export default function Dashboard({ interactiveSection }) {
             )}
           </AccordionDetails>
         </Accordion>
-        <MomentumPairsTable
-          pairs={momentumPairs}
-          title={t("dashboard.momentumPairs")}
-          openTrades={openTrades}
-          timeZone={timeZone}
-        />
       </Box>
     </Box>
   );

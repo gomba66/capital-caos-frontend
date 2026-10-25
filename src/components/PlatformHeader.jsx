@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import "../i18n";
@@ -16,6 +16,7 @@ import {
   Signal,
   Sun,
   Trash2,
+  Waves,
 } from "lucide-react";
 import {
   CurrencyContext,
@@ -31,14 +32,18 @@ import {
 } from "../utils/timeZones";
 import { APP_PALETTES } from "../theme";
 import { useAuth } from "../contexts/authState";
+import { PLAN_IDENTITIES } from "../utils/planIdentity";
 import {
   getSessionPresentation,
   getUpcomingParentSessionOpening,
   getSessionCountdownClass,
 } from "../utils/sessionPresentation";
 import TradingViewChartDialog from "./TradingViewChartDialog";
+import { detectKairosEvents } from "../utils/kairosNotifications";
+import { getSignalTideReading } from "../utils/signalTide";
 
-const STATUS_POLL_MS = 10000;
+const STATUS_POLL_MS = 5000;
+const KAIROS_GLOBAL_EVENT_MS = 2400;
 
 function readScannerStatus(payload) {
   const scannerStatus =
@@ -77,10 +82,14 @@ function formatSessionCountdown(milliseconds, language) {
 
 export default function PlatformHeader() {
   const { t, i18n } = useTranslation();
-  const { user, updateLanguagePreference } = useAuth();
+  const { user, planChange, updateLanguagePreference } = useAuth();
   const isAdmin = user?.role === "admin";
+  const planIdentity = PLAN_IDENTITIES[user?.plan_code];
+  const PlanIcon = planIdentity?.icon;
   const canViewSignals =
     isAdmin || user?.features?.includes("signals") === true;
+  const canViewKairos =
+    isAdmin || user?.features?.includes("kairos") === true;
   const canViewTrades =
     isAdmin || user?.features?.includes("bot_trades") === true;
   const availablePalettes = isAdmin
@@ -104,9 +113,16 @@ export default function PlatformHeader() {
     scanner: "unknown",
   });
   const [marketSession, setMarketSession] = useState(null);
+  const [kairosReading, setKairosReading] = useState(null);
   const [now, setNow] = useState(Date.now());
+  const previousKairosSnapshotRef = useRef(null);
+  const kairosAnimationTimerRef = useRef(null);
+  const kairosAnimationStartTimerRef = useRef(null);
   const language = i18n.resolvedLanguage === "es" ? "es" : "en";
-  const unreadNotificationCount = notificationHistory.filter(
+  const visibleNotificationHistory = canViewTrades
+    ? notificationHistory
+    : notificationHistory.filter((event) => event.category === "kairos");
+  const unreadNotificationCount = visibleNotificationHistory.filter(
     (event) => !event.read,
   ).length;
   const marketSessionPresentation = marketSession
@@ -133,6 +149,8 @@ export default function PlatformHeader() {
     if (!canViewSignals) {
       setSystemStatus({ connection: "connected", scanner: "unknown" });
       setMarketSession(null);
+      setKairosReading(null);
+      previousKairosSnapshotRef.current = null;
       return undefined;
     }
     let alive = true;
@@ -164,8 +182,51 @@ export default function PlatformHeader() {
           connection: "connected",
           scanner: scannerStatus,
         });
-        const currentSession = payload.current_session;
-        const nextSession = payload.next_session;
+        const activeRows = Array.isArray(payload.last_scan?.active_signals)
+          ? payload.last_scan.active_signals
+          : Array.isArray(payload.momentum_pairs)
+            ? payload.momentum_pairs.filter(
+                (row) => row.signal_long_light || row.signal_short_light,
+              )
+            : Array.isArray(payload.last_scan?.top)
+              ? payload.last_scan.top.filter(
+                  (row) => row.signal_long_light || row.signal_short_light,
+                )
+              : null;
+        const history = canViewKairos ? payload.signal_tide?.history || [] : [];
+        const reading =
+          canViewKairos && activeRows
+            ? getSignalTideReading(activeRows.length, history)
+            : null;
+        setKairosReading(reading);
+        const { events, snapshot } =
+          canViewKairos && activeRows
+            ? detectKairosEvents(
+                previousKairosSnapshotRef.current,
+                activeRows.length,
+                history,
+              )
+            : { events: [], snapshot: null };
+        previousKairosSnapshotRef.current = canViewKairos ? snapshot : null;
+        if (events.length > 0 && document.visibilityState === "visible") {
+          const eventType = events.some((event) => event.type === "surge")
+            ? "surge"
+            : "peak";
+          const root = document.documentElement;
+          window.clearTimeout(kairosAnimationTimerRef.current);
+          window.clearTimeout(kairosAnimationStartTimerRef.current);
+          root.classList.remove("kairos-global-event");
+          root.dataset.kairosEvent = eventType;
+          kairosAnimationStartTimerRef.current = window.setTimeout(() => {
+            root.classList.add("kairos-global-event");
+          }, 0);
+          kairosAnimationTimerRef.current = window.setTimeout(() => {
+            root.classList.remove("kairos-global-event");
+            delete root.dataset.kairosEvent;
+          }, KAIROS_GLOBAL_EVENT_MS);
+        }
+        const currentSession = canViewKairos ? payload.current_session : null;
+        const nextSession = canViewKairos ? payload.next_session : null;
         if (currentSession?.name) {
           setMarketSession({
             type: "active",
@@ -190,6 +251,8 @@ export default function PlatformHeader() {
           connection: "offline",
           scanner: "offline",
         });
+        setKairosReading(null);
+        previousKairosSnapshotRef.current = null;
         setMarketSession(null);
       } finally {
         polling = false;
@@ -207,9 +270,14 @@ export default function PlatformHeader() {
     return () => {
       alive = false;
       window.clearTimeout(timer);
+      window.clearTimeout(kairosAnimationTimerRef.current);
+      window.clearTimeout(kairosAnimationStartTimerRef.current);
+      document.documentElement.classList.remove("kairos-global-event");
+      delete document.documentElement.dataset.kairosEvent;
+      previousKairosSnapshotRef.current = null;
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [canViewSignals, t]);
+  }, [canViewKairos, canViewSignals, t]);
 
   const updateTimeZone = (event) => {
     const nextTimeZone = event.target.value;
@@ -237,7 +305,11 @@ export default function PlatformHeader() {
     setNotificationsOpen(opening);
     if (opening) {
       setNotificationHistory((current) =>
-        current.map((event) => ({ ...event, read: true })),
+        current.map((event) =>
+          canViewTrades || event.category === "kairos"
+            ? { ...event, read: true }
+            : event,
+        ),
       );
     }
   };
@@ -266,11 +338,26 @@ export default function PlatformHeader() {
             by <b>SIGLO CAPITAL</b>
           </small>
         </span>
-        {isAdmin && (
-          <span className="admin-mode-badge">
-            {t("accountPage.adminMode")}
-          </span>
-        )}
+        <span className="brand-account-badges">
+          {planIdentity && PlanIcon && (
+            <span
+              className={`plan-identity-badge plan-identity-badge--${planIdentity.tone}${planChange ? " plan-identity-badge--changed" : ""}`}
+              aria-label={t(planIdentity.labelKey)}
+              title={t(planIdentity.labelKey)}
+              data-testid="header-plan-badge"
+            >
+              <PlanIcon size={12} strokeWidth={2.2} aria-hidden="true" />
+              <span className="plan-identity-name">
+                {t(planIdentity.labelKey)}
+              </span>
+            </span>
+          )}
+          {isAdmin && (
+            <span className="admin-mode-badge">
+              {t("accountPage.adminMode")}
+            </span>
+          )}
+        </span>
       </Link>
       <button
         className="platform-nav-trigger"
@@ -303,6 +390,32 @@ export default function PlatformHeader() {
           <i aria-hidden="true" />
           {t(`headerStatus.scanner.${systemStatus.scanner}`)}
         </span>
+        {kairosReading && (
+          <Link
+            className={`header-status-item header-kairos header-kairos--${kairosReading.state}`}
+            to="/scanner"
+            aria-label={t("signalTide.gaugeLabel", {
+              score: kairosReading.score,
+              status: t(`signalTide.states.${kairosReading.state}`),
+            })}
+            title={t("signalTide.title")}
+          >
+            <Waves size={13} aria-hidden="true" />
+            <svg viewBox="0 0 44 27" aria-hidden="true">
+              <path className="header-kairos-track" d="M3 24 A19 19 0 0 1 41 24" />
+              <path
+                className="header-kairos-value"
+                d="M3 24 A19 19 0 0 1 41 24"
+                pathLength="100"
+                strokeDasharray={`${kairosReading.score} 100`}
+              />
+            </svg>
+            <span className="header-kairos-copy">
+              <strong>{kairosReading.score}</strong>
+              <small>{t(`signalTide.states.${kairosReading.state}`)}</small>
+            </span>
+          </Link>
+        )}
         {marketSession && (
           <span
             className={`header-status-item header-market-session header-market-session--${marketSession.type}`}
@@ -530,7 +643,7 @@ export default function PlatformHeader() {
         >
           {mode === "dark" ? <Sun size={15} /> : <Moon size={15} />}
         </button>
-        {canViewSignals && (
+        {canViewKairos && (
           <div className="notification-menu">
           <button
             className="notification-trigger"
@@ -570,7 +683,7 @@ export default function PlatformHeader() {
           >
             <div className="notification-panel-heading">
               <strong>{t("notifications.title")}</strong>
-              {notificationHistory.length > 0 && (
+              {visibleNotificationHistory.length > 0 && (
                 <button
                   className="notification-clear"
                   type="button"
@@ -581,11 +694,11 @@ export default function PlatformHeader() {
                 </button>
               )}
             </div>
-            {notificationHistory.length === 0 ? (
+            {visibleNotificationHistory.length === 0 ? (
               <p className="notification-empty">{t("notifications.empty")}</p>
             ) : (
               <ol className="notification-list">
-                {notificationHistory.map((event) => {
+                {visibleNotificationHistory.map((event) => {
                   const isRecent = event.recent_age_bars != null;
                   const isKairosEvent = event.category === "kairos";
                   const isTradeEvent =

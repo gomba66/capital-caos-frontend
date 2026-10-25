@@ -72,7 +72,10 @@ describe("Sidebar", () => {
   test("renders navigation without duplicating the shared header", () => {
     renderSidebar();
 
-    expect(screen.getByText("Dashboard")).toBeInTheDocument();
+    expect(screen.getByText("Bot Dashboard")).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Bot Dashboard" }),
+    ).toHaveAttribute("href", "/dashboard");
     expect(screen.getByText("Charts")).toBeInTheDocument();
     expect(screen.queryByText("Trading Chart")).not.toBeInTheDocument();
     expect(screen.getByText("System status")).toBeInTheDocument();
@@ -82,7 +85,7 @@ describe("Sidebar", () => {
     expect(screen.queryByText("Settings")).not.toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: "Live Scanner" }),
-    ).toHaveAttribute("href", "/#scanner");
+    ).toHaveAttribute("href", "/scanner");
     expect(screen.queryByText("CAPITAL CAOS")).not.toBeInTheDocument();
     expect(screen.queryByText("UTC")).not.toBeInTheDocument();
     expect(
@@ -130,7 +133,8 @@ describe("Sidebar", () => {
       </BrowserRouter>,
     );
 
-    expect(screen.getByText("Dashboard")).toBeInTheDocument();
+    expect(screen.getByText("Live Scanner")).toBeInTheDocument();
+    expect(screen.queryByText("Bot Dashboard")).not.toBeInTheDocument();
     expect(screen.getByText("Account & settings")).toBeInTheDocument();
     expect(
       within(screen.getByText("Account & settings").closest("a")).queryByTestId(
@@ -180,7 +184,7 @@ describe("Sidebar", () => {
     );
 
     expect(screen.getByText("Account & settings")).toBeInTheDocument();
-    expect(screen.queryByText("Dashboard")).not.toBeInTheDocument();
+    expect(screen.queryByText("Bot Dashboard")).not.toBeInTheDocument();
     expect(screen.queryByText("Charts")).not.toBeInTheDocument();
     expect(screen.queryByText("System status")).not.toBeInTheDocument();
     expect(screen.queryByText("Live Scanner")).not.toBeInTheDocument();
@@ -193,7 +197,7 @@ describe("Sidebar", () => {
     const setMobileNavOpen = vi.fn();
     renderSidebar({ isMobile: true, mobileNavOpen: true, setMobileNavOpen });
 
-    fireEvent.click(screen.getByRole("link", { name: "Dashboard" }));
+    fireEvent.click(screen.getByRole("link", { name: "Bot Dashboard" }));
 
     expect(setMobileNavOpen).toHaveBeenCalledWith(false);
   });

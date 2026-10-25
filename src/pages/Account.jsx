@@ -18,13 +18,19 @@ import { useTranslation } from "react-i18next";
 import NotificationSoundSettings from "../components/NotificationSoundSettings";
 import { useAuth } from "../contexts/authState";
 import { translateAuthError } from "../utils/authErrors";
+import { PLAN_IDENTITIES } from "../utils/planIdentity";
 import Settings from "./Settings";
 
 export default function Account() {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const canConfigureNotifications =
+    user?.role === "admin" ||
+    user?.features?.includes("trade_notifications") === true;
   const [searchParams, setSearchParams] = useSearchParams();
   const isAdmin = user?.role === "admin";
+  const planIdentity = PLAN_IDENTITIES[user?.plan_code];
+  const PlanIcon = planIdentity?.icon;
   const selectedTab =
     isAdmin && searchParams.get("tab") === "system" ? "system" : "account";
   const [showProfileDetails, setShowProfileDetails] = useState(false);
@@ -158,11 +164,29 @@ export default function Account() {
               </IconButton>
             </Box>
             <Divider sx={{ my: 2 }} />
-            <Typography variant="body2">
-              {t("accountPage.currentPlan", {
-                plan: t(`usersPage.${user?.plan_code}Plan`),
-              })}
-            </Typography>
+            <Box
+              className="account-plan-row"
+              aria-label={`${t("accountPage.currentPlanLabel")}: ${planIdentity ? t(planIdentity.labelKey) : ""}`}
+            >
+              <Typography
+                className="account-plan-label"
+                component="span"
+                variant="body2"
+              >
+                {t("accountPage.currentPlanLabel")}
+              </Typography>
+              {planIdentity && PlanIcon && (
+                <span
+                  className={`plan-identity-badge plan-identity-badge--${planIdentity.tone}`}
+                  data-testid="account-plan-badge"
+                >
+                  <PlanIcon size={15} strokeWidth={2.1} aria-hidden="true" />
+                  <span className="plan-identity-name">
+                    {t(planIdentity.labelKey)}
+                  </span>
+                </span>
+              )}
+            </Box>
           </Paper>
           <Paper
             component="form"
@@ -216,9 +240,11 @@ export default function Account() {
               {saving ? t("accountPage.saving") : t("accountPage.savePassword")}
             </Button>
           </Paper>
-          <Box sx={{ mt: 3 }}>
-            <NotificationSoundSettings />
-          </Box>
+          {canConfigureNotifications && (
+            <Box sx={{ mt: 3 }}>
+              <NotificationSoundSettings />
+            </Box>
+          )}
         </Box>
       )}
     </Box>

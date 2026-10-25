@@ -198,7 +198,7 @@ describe("OperationsTable", () => {
       screen.getAllByLabelText("Trade details are protected")[0],
     );
     const upgradeLink = await screen.findByRole("link", {
-      name: "Explore Complete",
+      name: "Explore Cosmos",
     });
     expect(upgradeLink).toHaveAttribute("href", "/upgrade");
     const openTimeCells = container.querySelectorAll("tbody tr td:nth-child(5)");
@@ -312,7 +312,12 @@ describe("OperationsTable", () => {
       container.querySelector(
         ".operations-table--closed tbody tr",
       ).children,
-    ).toHaveLength(7);
+    ).toHaveLength(8);
+    expect(
+      screen.getByRole("button", {
+        name: "View and share CLOSED01USDT closed trade",
+      }),
+    ).toBeInTheDocument();
     expect(getClosedTradesPreview).toHaveBeenCalledOnce();
   });
 

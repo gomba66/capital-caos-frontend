@@ -9,7 +9,15 @@ describe("detectTradeLifecycleEvents", () => {
 
   test("notifies when trades open and close", () => {
     const previousTrades = [{ symbol: "BTCUSDT", side: "LONG" }];
-    const currentTrades = [{ symbol: "ETHUSDT", positionSide: "SHORT" }];
+    const currentTrades = [
+      {
+        symbol: "ETHUSDT",
+        positionSide: "SHORT",
+        entry_price: 3000,
+        initial_stop: 3100,
+        take_profit_target: { tp_price: 2700, ratio: 3 },
+      },
+    ];
 
     expect(detectTradeLifecycleEvents(previousTrades, currentTrades)).toEqual(
       expect.arrayContaining([
@@ -17,6 +25,13 @@ describe("detectTradeLifecycleEvents", () => {
           type: "opened",
           symbol: "ETHUSDT",
           side: "SHORT",
+          entry_price: 3000,
+          initial_stop: 3100,
+          projection: expect.objectContaining({
+            targetPrice: 2700,
+            movePercent: 10,
+            rewardRiskRatio: 3,
+          }),
         }),
         expect.objectContaining({
           type: "closed",

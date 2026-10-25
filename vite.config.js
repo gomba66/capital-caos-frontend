@@ -15,6 +15,7 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [react()],
     server: {
+      allowedHosts: ["yoyo-dimmed-engorge.ngrok-free.dev"],
       proxy: {
         "/api": {
           target: API_BASE_URL,

@@ -62,6 +62,28 @@ function LanguagePreferenceProbe() {
   );
 }
 
+function SessionProbe() {
+  const { user, sessionExpired } = useAuth();
+  return (
+    <>
+      <span>{user ? "signed in" : "signed out"}</span>
+      <span>{sessionExpired ? "session expired" : "session active"}</span>
+    </>
+  );
+}
+
+function PlanChangeProbe() {
+  const { user, planChange } = useAuth();
+  return (
+    <>
+      <span data-testid="current-plan">{user?.plan_code || "unset"}</span>
+      <span data-testid="plan-change">
+        {planChange ? `${planChange.from} -> ${planChange.to}` : "no plan change"}
+      </span>
+    </>
+  );
+}
+
 test("saves theme preferences to the signed-in account", async () => {
   const user = {
     id: 7,
@@ -171,4 +193,82 @@ test("saves language preference to the signed-in account", async () => {
       body: JSON.stringify({ language: "es" }),
     }),
   );
+});
+
+test("clears an expired session when the browser regains focus", async () => {
+  const user = { id: 31, role: "member" };
+  let sessionChecks = 0;
+  const fetchMock = vi.fn(async (url) => {
+    if (url === "/api/auth/me") {
+      sessionChecks += 1;
+      return sessionChecks === 1
+        ? { ok: true, status: 200, json: async () => user }
+        : { ok: false, status: 401 };
+    }
+    throw new Error(`Unexpected request: ${url}`);
+  });
+  vi.stubGlobal("fetch", fetchMock);
+
+  render(
+    <AuthProvider>
+      <SessionProbe />
+    </AuthProvider>,
+  );
+
+  await waitFor(() =>
+    expect(screen.getByText("signed in")).toBeInTheDocument(),
+  );
+  window.dispatchEvent(new Event("focus"));
+
+  await waitFor(() => {
+    expect(screen.getByText("signed out")).toBeInTheDocument();
+    expect(screen.getByText("session expired")).toBeInTheDocument();
+  });
+  expect(sessionChecks).toBe(2);
+});
+
+test("refreshes a downgraded plan when the browser regains focus", async () => {
+  const planResponses = [
+    {
+      id: 42,
+      role: "member",
+      plan_code: "complete",
+      features: ["signals", "bot_trades"],
+    },
+    {
+      id: 42,
+      role: "member",
+      plan_code: "signals",
+      features: ["signals"],
+    },
+  ];
+  let sessionChecks = 0;
+  const fetchMock = vi.fn(async (url) => {
+    if (url === "/api/auth/me") {
+      const responseUser = planResponses[Math.min(sessionChecks, 1)];
+      sessionChecks += 1;
+      return { ok: true, status: 200, json: async () => responseUser };
+    }
+    throw new Error(`Unexpected request: ${url}`);
+  });
+  vi.stubGlobal("fetch", fetchMock);
+
+  render(
+    <AuthProvider>
+      <PlanChangeProbe />
+    </AuthProvider>,
+  );
+
+  await waitFor(() =>
+    expect(screen.getByTestId("current-plan")).toHaveTextContent("complete"),
+  );
+  window.dispatchEvent(new Event("focus"));
+
+  await waitFor(() => {
+    expect(screen.getByTestId("current-plan")).toHaveTextContent("signals");
+    expect(screen.getByTestId("plan-change")).toHaveTextContent(
+      "complete -> signals",
+    );
+  });
+  expect(sessionChecks).toBe(2);
 });

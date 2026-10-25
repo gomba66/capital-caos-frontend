@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AuthContext } from "./authState";
 
+const SESSION_CHECK_INTERVAL_MS = 10 * 1000;
+
 async function readResponse(response) {
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
@@ -13,15 +15,22 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [sessionExpired, setSessionExpired] = useState(false);
+  const [planChange, setPlanChange] = useState(null);
+  const sessionCheckInFlight = useRef(false);
+  const planChangeSequence = useRef(0);
   const themePreferenceQueue = useRef(Promise.resolve());
   const notificationPreferenceQueue = useRef(Promise.resolve());
   const languagePreferenceQueue = useRef(Promise.resolve());
   const currentUserId = useRef(user?.id);
   currentUserId.current = user?.id;
+  const currentUser = useRef(user);
+  currentUser.current = user;
 
   const refresh = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setSessionExpired(false);
     try {
       const response = await fetch("/api/auth/me", {
         credentials: "same-origin",
@@ -43,9 +52,65 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  const checkSession = useCallback(async () => {
+    const userId = currentUserId.current;
+    if (!userId || sessionCheckInFlight.current) return;
+
+    sessionCheckInFlight.current = true;
+    try {
+      const response = await fetch("/api/auth/me", {
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+      if (currentUserId.current !== userId) return;
+      if (response.status === 401) {
+        setSessionExpired(true);
+        setUser(null);
+        return;
+      }
+      const refreshedUser = await readResponse(response);
+      const previousUser = currentUser.current;
+      if (previousUser?.id !== userId) return;
+      if (JSON.stringify(previousUser) === JSON.stringify(refreshedUser)) return;
+      if (previousUser.plan_code !== refreshedUser.plan_code) {
+        planChangeSequence.current += 1;
+        setPlanChange({
+          id: planChangeSequence.current,
+          from: previousUser.plan_code,
+          to: refreshedUser.plan_code,
+        });
+      }
+      currentUser.current = refreshedUser;
+      setUser(refreshedUser);
+    } catch (requestError) {
+      console.warn("Could not verify the current account session:", requestError);
+    } finally {
+      sessionCheckInFlight.current = false;
+    }
+  }, []);
+
   useEffect(() => {
     refresh();
   }, [refresh]);
+
+  useEffect(() => {
+    if (!user) return undefined;
+
+    const checkWhenVisible = () =>
+      document.visibilityState === "visible" ? checkSession() : undefined;
+    const interval = window.setInterval(
+      checkWhenVisible,
+      SESSION_CHECK_INTERVAL_MS,
+    );
+    window.addEventListener("focus", checkWhenVisible);
+    document.addEventListener("visibilitychange", checkWhenVisible);
+
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("focus", checkWhenVisible);
+      document.removeEventListener("visibilitychange", checkWhenVisible);
+    };
+  }, [checkSession, user]);
 
   const login = useCallback(async (credentials) => {
     const response = await fetch("/api/auth/login", {
@@ -56,6 +121,8 @@ export function AuthProvider({ children }) {
     });
     const loggedInUser = await readResponse(response);
     setError(null);
+    setSessionExpired(false);
+    setPlanChange(null);
     setUser(loggedInUser);
     return loggedInUser;
   }, []);
@@ -68,8 +135,12 @@ export function AuthProvider({ children }) {
     if (!response.ok && response.status !== 401) {
       await readResponse(response);
     }
+    setSessionExpired(false);
+    setPlanChange(null);
     setUser(null);
   }, []);
+
+  const dismissPlanChange = useCallback(() => setPlanChange(null), []);
 
   const updateThemePreferences = useCallback(
     ({ mode, palette }) => {
@@ -173,6 +244,9 @@ export function AuthProvider({ children }) {
       user,
       loading,
       error,
+      sessionExpired,
+      planChange,
+      dismissPlanChange,
       login,
       logout,
       refresh,
@@ -184,6 +258,9 @@ export function AuthProvider({ children }) {
       user,
       loading,
       error,
+      sessionExpired,
+      planChange,
+      dismissPlanChange,
       login,
       logout,
       refresh,

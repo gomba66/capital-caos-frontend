@@ -23,13 +23,14 @@ import { Link as RouterLink } from "react-router-dom";
 
 import ScannerInfo from "./ScannerInfo";
 import OpenTradeChartDialog from "./OpenTradeChartDialog";
+import ClosedTradeChartShare from "./ClosedTradeChartShare";
 import StickyTradeSummary from "./StickyTradeSummary";
 import { getClosedTradesPreview } from "../api/closedTradesPreview";
 import { getOpenTradesPreview } from "../api/openTradesPreview";
 import { convertFromUSDT, formatCurrency } from "../utils/currencyConverter";
 import { useSymbolStatistics } from "../hooks/useSymbolStatistics";
 import { useTranslation } from "react-i18next";
-import { CandlestickChart } from "lucide-react";
+import { CandlestickChart, Share2 } from "lucide-react";
 
 function formatReason(reason, t) {
   if (!reason) return "-";
@@ -248,6 +249,7 @@ export default function OperationsTable({
 }) {
   const { t } = useTranslation();
   const [chartTradeKey, setChartTradeKey] = useState(null);
+  const [closedChartTrade, setClosedChartTrade] = useState(null);
   const [protectedPreview, setProtectedPreview] = useState(null);
   const [protectedPreviewError, setProtectedPreviewError] = useState(false);
   const [protectedClosedTrades, setProtectedClosedTrades] = useState(null);
@@ -688,8 +690,8 @@ export default function OperationsTable({
       ? 6
       : 7
     : protectedClosedMode
-      ? 7
-      : 9;
+      ? 8
+      : 10;
   const SectionWrapper = protectedAccordionMode ? Accordion : React.Fragment;
   const SectionContent = protectedAccordionMode
     ? AccordionDetails
@@ -1119,6 +1121,9 @@ export default function OperationsTable({
                   {t("operations.scanner")}
                 </TableCell>
               )}
+              {!isOpenTrades && (
+                <TableCell>{t("closedTradeChart.actions")}</TableCell>
+              )}
               {isOpenTrades && <TableCell>{t("operations.chart")}</TableCell>}
             </TableRow>
           </TableHead>
@@ -1436,6 +1441,25 @@ export default function OperationsTable({
                         />
                       </TableCell>
                     )}
+                    {!isOpenTrades && (
+                      <TableCell className="operations-table__chart-cell">
+                        {!op.__protectedRow && op.symbol && (
+                          <button
+                            className="chart-button"
+                            type="button"
+                            onClick={() => setClosedChartTrade(op)}
+                            title={t("closedTradeChart.open", {
+                              symbol: op.symbol,
+                            })}
+                            aria-label={t("closedTradeChart.open", {
+                              symbol: op.symbol,
+                            })}
+                          >
+                            <Share2 size={15} />
+                          </button>
+                        )}
+                      </TableCell>
+                    )}
                     {isOpenTrades && (
                       <TableCell className="operations-table__chart-cell">
                         {op.__protectedRow ? null : (
@@ -1604,6 +1628,12 @@ export default function OperationsTable({
           )}
         </Table>
       </TableContainer>
+      {closedChartTrade && (
+        <ClosedTradeChartShare
+          trade={closedChartTrade}
+          onClose={() => setClosedChartTrade(null)}
+        />
+      )}
       {protectedMode && protectedPreviewError && protectedPreview && (
         <Typography
           color="error"

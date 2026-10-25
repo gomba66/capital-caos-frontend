@@ -80,8 +80,14 @@ export default function Sidebar() {
   const canViewTrades =
     user?.role === "admin" || user?.features?.includes("bot_trades") === true;
   const navItems = [
-    ...(canViewSignals || canViewTrades
-      ? [{ label: "navigation.dashboard", icon: <DashboardIcon />, path: "/" }]
+    ...(canViewTrades
+      ? [
+          {
+            label: "navigation.botDashboard",
+            icon: <DashboardIcon />,
+            path: "/dashboard",
+          },
+        ]
       : []),
     ...(canViewTrades
       ? [
@@ -103,7 +109,7 @@ export default function Sidebar() {
         ]
       : []),
     ...(canViewSignals
-      ? [{ label: "navigation.scanner", icon: <RadarIcon />, path: "/#scanner" }]
+      ? [{ label: "navigation.scanner", icon: <RadarIcon />, path: "/scanner" }]
       : []),
     ...(user?.role === "admin"
       ? [
@@ -180,12 +186,7 @@ export default function Sidebar() {
                   className="app-sidebar-link"
                   to={item.path}
                   onClick={() => isMobile && setMobileNavOpen(false)}
-                  selected={
-                    item.path === "/#scanner"
-                      ? location.pathname === "/" &&
-                        location.hash === "#scanner"
-                      : location.pathname === item.path
-                  }
+                  selected={location.pathname === item.path}
                   sx={{
                     mb: isCollapsed ? 0.5 : 1,
                     minHeight: 48,
