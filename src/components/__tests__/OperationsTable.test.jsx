@@ -134,6 +134,7 @@ describe("OperationsTable", () => {
         unrealized_pnl: 93.31,
         take_profit_target: { ratio: 3.38, value_usd: 154.94 },
         update_time: Date.now() - 60_000,
+        protected: true,
       },
     });
 
@@ -159,6 +160,10 @@ describe("OperationsTable", () => {
     expect(container.querySelector(".MuiAccordionDetails-root")).toBeInTheDocument();
 
     expect(await screen.findByText("MITOUSDT")).toBeInTheDocument();
+    const revealedTradeRow = screen.getByText("MITOUSDT").closest("tr");
+    expect(revealedTradeRow.querySelector('[title="Protected"]')).toHaveTextContent(
+      "🔒",
+    );
     expect(screen.queryByText("Win Rate")).not.toBeInTheDocument();
     expect(screen.getByText("LONG")).toBeInTheDocument();
     expect(screen.getAllByText("+$93.31").length).toBeGreaterThan(0);
@@ -170,6 +175,11 @@ describe("OperationsTable", () => {
     );
     expect(maskedSymbols[0]).toHaveAttribute("data-mask-size", "long");
     expect(maskedSymbols[1]).toHaveAttribute("data-mask-size", "medium");
+    container
+      .querySelectorAll(".operations-table__protected-hint")
+      .forEach((hint) => {
+        expect(hint).not.toHaveTextContent("🔒");
+      });
     const maskedSides = container.querySelectorAll(
       ".operations-table__protected-hint--side",
     );
@@ -531,9 +541,11 @@ describe("OperationsTable", () => {
     expect(screen.getByText("Chart")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "View BTCUSDT chart" }));
-    expect(
-      await screen.findByRole("dialog", { name: "BTCUSDT" }),
-    ).toBeInTheDocument();
+    const chartDialog = await screen.findByRole("dialog", { name: "BTCUSDT" });
+    expect(chartDialog).toBeInTheDocument();
+    expect(chartDialog.closest(".chart-backdrop").parentElement).toBe(
+      document.body,
+    );
     expect(screen.getByText("Entry:")).toBeInTheDocument();
     expect(screen.getByText("Floating PnL:")).toBeInTheDocument();
     await waitFor(() => {

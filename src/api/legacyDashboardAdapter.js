@@ -217,6 +217,15 @@ export function normalizeCapitalCaosPayload(payload) {
     const currentSession = currentSessions.length
         ? [...currentSessions].sort((left, right) => left.opening - right.opening).at(-1)
         : null;
+    const serverWeekendSession = payload?.current_session?.is_weekend
+        ? payload.current_session
+        : null;
+    const serverWeekendNextSession = payload?.next_session?.is_weekend
+        ? payload.next_session
+        : null;
+    if (serverWeekendSession && !validSessions.includes(serverWeekendSession.name)) {
+        validSessions.push(serverWeekendSession.name);
+    }
     const nextSession = nextSessionForMoment(now);
 
     const activity = [
@@ -238,15 +247,30 @@ export function normalizeCapitalCaosPayload(payload) {
 
     return {
         scanning: true,
+        trade_session_active: payload?.trade_session_active,
+        trade_signal_threshold: payload?.trade_signal_threshold,
         valid_sessions: validSessions,
-        current_session: currentSession
+        current_session: serverWeekendSession
+            ? {
+                name: serverWeekendSession.name,
+                opens_at: serverWeekendSession.opens_at,
+                closes_at: serverWeekendSession.closes_at,
+                is_weekend: true,
+            }
+            : currentSession
             ? {
                 name: currentSession.name,
                 opens_at: currentSession.opening.toISOString(),
                 closes_at: currentSession.closing.toISOString(),
             }
             : null,
-        next_session: nextSession
+        next_session: serverWeekendNextSession
+            ? {
+                name: serverWeekendNextSession.name,
+                opens_at: serverWeekendNextSession.opens_at,
+                is_weekend: true,
+            }
+            : nextSession
             ? {
                 name: nextSession.name,
                 opens_at: nextSession.opens_at,

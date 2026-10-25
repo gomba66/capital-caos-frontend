@@ -13,6 +13,8 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  FormControlLabel,
+  Switch,
 } from "@mui/material";
 import InfoIcon from "@mui/icons-material/Info";
 import { DateTime } from "luxon";
@@ -21,15 +23,18 @@ import {
   getFrontendVersion,
   getFrontendVersionDate,
 } from "../api/version";
-import { getConfig } from "../api/config";
+import { getConfig, setWeekendSessionsEnabled } from "../api/config";
 import {
   getCommissionRate,
   setCommissionRate,
 } from "../api/paperBroker";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "../contexts/authState";
 
-export default function Settings() {
+export default function Settings({ embedded = false }) {
   const { t, i18n } = useTranslation();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
   const [backendVersionInfo, setBackendVersionInfo] = useState(null);
   const [config, setConfig] = useState(null);
   const [commissionRate, setCommissionRateState] = useState(null);
@@ -39,7 +44,8 @@ export default function Settings() {
   const [commissionDialogOpen, setCommissionDialogOpen] = useState(false);
   const [recalculateChecked, setRecalculateChecked] = useState(true);
   const [brokerMode, setBrokerMode] = useState(null);
-
+  const [weekendSessionsLoading, setWeekendSessionsLoading] = useState(false);
+  const [weekendSessionsMessage, setWeekendSessionsMessage] = useState(null);
   const frontendVersion = getFrontendVersion();
   const frontendVersionDate = getFrontendVersionDate();
 
@@ -66,6 +72,30 @@ export default function Settings() {
     };
     fetchCommissionRate();
   }, []);
+
+  const handleWeekendSessionsChange = async (event) => {
+    const enabled = event.target.checked;
+    setWeekendSessionsLoading(true);
+    setWeekendSessionsMessage(null);
+    try {
+      const result = await setWeekendSessionsEnabled(enabled);
+      setConfig((current) => ({
+        ...current,
+        weekend_sessions_enabled: result.weekend_sessions_enabled,
+      }));
+      setWeekendSessionsMessage({
+        severity: "success",
+        text: t("settingsPage.weekendSessionsUpdated"),
+      });
+    } catch (error) {
+      setWeekendSessionsMessage({
+        severity: "error",
+        text: error.response?.data?.detail || error.message,
+      });
+    } finally {
+      setWeekendSessionsLoading(false);
+    }
+  };
 
   const handleUpdateCommission = async () => {
     const rateBps = parseFloat(newCommissionRate);
@@ -115,11 +145,15 @@ export default function Settings() {
   };
 
   return (
-    <Box p={{ xs: 2, sm: 3, md: 4 }}>
-      <Typography variant="h4" gutterBottom>
-        {t("settingsPage.title")}
-      </Typography>
-      <Divider sx={{ my: 4 }} />
+    <Box p={embedded ? 0 : { xs: 2, sm: 3, md: 4 }}>
+      {!embedded && (
+        <>
+          <Typography variant="h4" gutterBottom>
+            {t("settingsPage.title")}
+          </Typography>
+          <Divider sx={{ my: 4 }} />
+        </>
+      )}
 
       <Typography variant="h6" gutterBottom>
         {t("settingsPage.versions")}
@@ -364,6 +398,45 @@ export default function Settings() {
           )}
         </Paper>
       </Box>
+
+      {isAdmin && (
+        <>
+          <Divider sx={{ my: 4 }} />
+          <Typography variant="h6" gutterBottom>
+            {t("settingsPage.weekendSessions")}
+          </Typography>
+          <Paper
+            elevation={2}
+            sx={{
+              p: 2,
+              mt: 2,
+              maxWidth: 520,
+              backgroundColor: "background.paper",
+            }}
+          >
+            <Box display="flex" flexDirection="column" gap={1}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={config?.weekend_sessions_enabled ?? false}
+                    onChange={handleWeekendSessionsChange}
+                    disabled={!config || weekendSessionsLoading}
+                  />
+                }
+                label={t("settingsPage.weekendSessionsToggle")}
+              />
+              <Typography variant="body2" color="text.secondary">
+                {t("settingsPage.weekendSessionsDescription")}
+              </Typography>
+              {weekendSessionsMessage && (
+                <Alert severity={weekendSessionsMessage.severity}>
+                  {weekendSessionsMessage.text}
+                </Alert>
+              )}
+            </Box>
+          </Paper>
+        </>
+      )}
 
       <Divider sx={{ my: 4 }} />
 

@@ -15,3 +15,10 @@ export async function getConfig() {
     return null;
   }
 }
+
+export async function setWeekendSessionsEnabled(enabled) {
+  const response = await axios.put(`${API_URL}/weekend-sessions`, null, {
+    params: { enabled },
+  });
+  return response.data;
+}

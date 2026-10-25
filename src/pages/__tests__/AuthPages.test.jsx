@@ -6,6 +6,7 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
+import { BrowserRouter } from "react-router-dom";
 import i18n from "../../i18n";
 import { AuthContext } from "../../contexts/authState";
 import Login from "../Login";
@@ -49,45 +50,93 @@ describe("localized account pages", () => {
   });
 
   test.each([
-    ["en", "My account", "Current plan: Complete", "Change password"],
-    ["es", "Mi cuenta", "Plan actual: Completo", "Cambiar contraseña"],
+    ["en", "Account & settings", "Current plan: Complete", "Change password"],
+    ["es", "Cuenta y ajustes", "Plan actual: Completo", "Cambiar contraseña"],
   ])("renders account details in %s", async (language, title, plan, passwordLabel) => {
     await i18n.changeLanguage(language);
     render(
-      <AuthContext.Provider
-        value={{
-          user: {
-            email: "trader@example.com",
-            display_name: "Trader",
-            plan_code: "complete",
-          },
-        }}
-      >
-        <Account />
-      </AuthContext.Provider>,
+      <BrowserRouter>
+        <AuthContext.Provider
+          value={{
+            user: {
+              id: 1,
+              role: "admin",
+              email: "trader@example.com",
+              display_name: "Trader",
+              plan_code: "complete",
+              notification_sounds: null,
+            },
+            updateNotificationSoundPreferences: vi.fn(),
+          }}
+        >
+          <Account />
+        </AuthContext.Provider>
+      </BrowserRouter>,
     );
 
     expect(screen.getByRole("heading", { name: title })).toBeInTheDocument();
     expect(screen.getByText(plan)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: passwordLabel })).toBeInTheDocument();
+    expect(
+      screen.getByRole("tab", {
+        name: language === "es" ? "Sistema" : "System",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("combobox", {
+        name: language === "es" ? "Operación abierta" : "Trade opened",
+      }),
+    ).toBeInTheDocument();
+  });
+
+  test("opens system settings in the admin account tab", async () => {
+    await i18n.changeLanguage("en");
+    render(
+      <BrowserRouter>
+        <AuthContext.Provider
+          value={{
+            user: { id: 1, role: "admin", plan_code: "complete" },
+            updateNotificationSoundPreferences: vi.fn(),
+          }}
+        >
+          <Account />
+        </AuthContext.Provider>
+      </BrowserRouter>,
+    );
+
+    fireEvent.click(screen.getByRole("tab", { name: "System" }));
+
+    expect(
+      screen.getByRole("tab", { name: "System" }),
+    ).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByText("System configuration")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Change password" }),
+    ).not.toBeInTheDocument();
   });
 
   test("blurs account identity by default and reveals it on demand", async () => {
     await i18n.changeLanguage("en");
     render(
-      <AuthContext.Provider
-        value={{
-          user: {
-            email: "trader@example.com",
-            display_name: "Trader",
-            plan_code: "complete",
-          },
-        }}
-      >
-        <Account />
-      </AuthContext.Provider>,
+      <BrowserRouter>
+        <AuthContext.Provider
+          value={{
+            user: {
+              id: 1,
+              email: "trader@example.com",
+              display_name: "Trader",
+              plan_code: "complete",
+              notification_sounds: null,
+            },
+            updateNotificationSoundPreferences: vi.fn(),
+          }}
+        >
+          <Account />
+        </AuthContext.Provider>
+      </BrowserRouter>,
     );
 
+    expect(screen.queryByRole("tab", { name: "System" })).not.toBeInTheDocument();
     expect(screen.getByTestId("account-profile-details")).toHaveStyle({
       filter: "blur(5px)",
     });

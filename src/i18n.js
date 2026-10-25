@@ -4,8 +4,8 @@ import { initReactI18next } from 'react-i18next';
 const resources = {
   en: {
     translation: {
-      language: { label: 'Language', english: 'English', spanish: 'Español' },
-      navigation: { dashboard: 'Dashboard', charts: 'Charts', evaluations: 'Evaluations', scanner: 'Live Scanner', systemStatus: 'System status', settings: 'Settings', users: 'Users', account: 'My account', logout: 'Sign out', open: 'Open navigation', expand: 'Expand navigation', collapse: 'Collapse navigation' },
+      language: { label: 'Language', english: 'English', spanish: 'Español', saveError: 'Could not save language preference.' },
+      navigation: { dashboard: 'Dashboard', charts: 'Charts', evaluations: 'Evaluations', scanner: 'Live Scanner', systemStatus: 'System status', settings: 'Settings', users: 'Users', account: 'My account', accountSettings: 'Account & settings', logout: 'Sign out', open: 'Open navigation', expand: 'Expand navigation', collapse: 'Collapse navigation' },
       auth: {
         title: 'Sign in', description: 'Sign in with the account provided by your administrator.',
         email: 'Email address', password: 'Password', signIn: 'Sign in', signingIn: 'Signing in…',
@@ -22,7 +22,7 @@ const resources = {
         },
       },
       accountPage: {
-        title: 'My account', currentPlan: 'Current plan: {{plan}}', changePassword: 'Change password',
+        title: 'Account & settings', personalTab: 'My account', systemTab: 'System', tabsLabel: 'Account settings', preferences: 'Account preferences', currentPlan: 'Current plan: {{plan}}', changePassword: 'Change password',
         adminMode: 'ADMIN',
         showDetails: 'Show account details', hideDetails: 'Hide account details',
         passwordHelp: 'Use at least 12 characters. Changing your password will sign out your other sessions.',
@@ -237,7 +237,10 @@ const resources = {
         noDrawdown: 'No closed trades to display drawdown.',
         equity: 'Equity Curve', showEquity: 'Show Equity', showDrawdown: 'Show Drawdown',
         drawdown: 'Drawdown', drawdownPercent: 'Drawdown (%)', dateWithValue: 'Date: {{date}}',
-        equityLabel: 'Equity', rangeAll: 'All',
+        equityLabel: 'Equity', tradeSymbol: 'Symbol', tradePnl: 'Trade PnL',
+        zoomHint: 'Scroll over the chart to zoom around the cursor; drag the chart to pan.',
+        rangeAll: 'All',
+        rangeCustom: 'Custom',
         advanced: 'Advanced charts', noTrades: 'No closed trades to display {{chart}}.',
         longShortEmpty: 'long/short win/loss', weeklyPerformanceEmpty: 'weekly performance',
         monthlyPerformanceEmpty: 'monthly performance', weeklyMonthlyEmpty: 'weekly monthly performance',
@@ -286,6 +289,10 @@ const resources = {
         cancel: 'Cancel', save: 'Save', rateRangeError: 'Commission rate must be between 0 and 1000 bps',
         rateUpdated: 'Commission rate updated: {{oldRate}}bps → {{newRate}}bps',
         tradesRecalculated: '{{count}} trades recalculated', updateFailed: 'Failed to update commission rate',
+        weekendSessions: 'Weekend sessions',
+        weekendSessionsToggle: 'Enable Asia and New York sessions on weekends',
+        weekendSessionsDescription: 'Uses the existing Asia/New York hours and structural session stop. Brinks windows stay disabled; opening a weekend trade still requires 40 active signals.',
+        weekendSessionsUpdated: 'Weekend session setting saved.',
         error: 'Error: {{message}}',
       },
       uiCommon: {
@@ -311,7 +318,7 @@ const resources = {
           'admin-copper': 'Copper',
         },
       },
-      sessionNotice: { title: 'No valid signals right now', message: 'New signals are unavailable until the next <asia>Asia</asia> or <newYork>New York</newYork> session opens.', disclaimerLabel: 'SESSION NOTICE', disclaimerTitle: 'Trading outside market sessions is not recommended', disclaimerMessage: 'Outside the Asia and New York sessions, liquidity may be lower and price movements less regular. Consider waiting for a session to open.', disclaimerConfirm: 'I understand, continue', currentSession: 'CURRENT SESSION', elapsed: 'ELAPSED', endsIn: 'ENDS IN', nextSession: 'NEXT SESSION', opensIn: 'Opens in {{time}}', opensInSession: '{{session}} opens in {{time}}', withinSession: 'Within {{session}}', sessions: { asia: 'Asia', new_york: 'New York', europe: 'Europe', us: 'US', eu_brinks: 'EU Brinks', us_brinks: 'US Brinks' }, countdown: '{{days}}d {{hours}}h {{minutes}}m {{seconds}}s', opensAt: 'Opens at {{time}} · {{timezone}}' },
+      sessionNotice: { title: 'No valid signals right now', message: 'New signals are unavailable until the next <asia>Asia</asia> or <newYork>New York</newYork> session opens.', disclaimerLabel: 'SESSION NOTICE', disclaimerTitle: 'Trading outside market sessions is not recommended', disclaimerMessage: 'Outside the Asia and New York sessions, liquidity may be lower and price movements less regular. Consider waiting for a session to open.', disclaimerConfirm: 'I understand, continue', currentSession: 'CURRENT SESSION', outsideSession: 'OUT OF SESSION', weekendMarker: '* WEEKEND', elapsed: 'ELAPSED', endsIn: 'ENDS IN', nextSession: 'NEXT SESSION', opensIn: 'Opens in {{time}}', opensInSession: '{{session}} opens in {{time}}', withinSession: 'Within {{session}}', sessions: { asia: 'Asia', new_york: 'New York', europe: 'Europe', us: 'US', eu_brinks: 'EU Brinks', us_brinks: 'US Brinks' }, countdown: '{{days}}d {{hours}}h {{minutes}}m {{seconds}}s', opensAt: 'Opens at {{time}} · {{timezone}}' },
       activeSignals: { title: 'Active signals', subtitle: '{{count}} live', liveOnly: 'LIVE SIGNALS ONLY', count: '{{count}} SHOWN', priority: 'PRIORITY', priorityForSide: 'Priority signal: {{sides}}', activePool: 'ACTIVE POOL', crowdedPairTitle: 'Part of a broad active signal pool; signals may be correlated.', entryThreshold: 'Trade entry threshold: {{threshold}}', lowSignalsTitle: 'Low signal activity: {{count}} / {{threshold}}', lowSignalsMessage: 'New trades are paused until at least {{threshold}} active signals are available.', highSignalsTitle: 'Broad signal availability: {{count}} active pairs', highSignalsMessage: 'Signals may be correlated, so manage total exposure. Priority signals aligned with the 21 EMA on the 3m timeframe are shown first; all active signals remain visible.' },
       signalTide: { title: 'Cipher Kairos', live: 'LIVE', index: 'KAIROS INDEX', activePairs: 'ACTIVE PAIRS', window1h: '1H MOMENTUM', window6h: '6H MOMENTUM', repeatedRisesLabel: 'RISES · 1H', repeatedRisesValue: '{{rises}} / {{scans}}', historyLabel: 'KAIROS TIMELINE', window24h: 'LAST 24H', timelineStart: '24H AGO', timelineNow: 'NOW', indexTimelineLabel: 'Kairos index timeline over the last 24 hours, with waves marking high-activity disturbances', warmingUp: 'Waiting for the first scan snapshots.', buildingHistory: 'Comparisons strengthen as more scan history accumulates.', collecting: 'Collecting...', noChange: '±0', credo: 'The edge is not in chasing every signal, but in waiting for the tide to prove it has turned.', gaugeLabel: 'Cipher Kairos index {{score}} out of 100, {{status}}', states: { quiet: 'QUIET ORBIT', warming: 'CALIBRATING', cooling: 'SIGNAL EBB', steady: 'STEADY ORBIT', rising: 'RISING ALIGNMENT', surge: 'SIGNAL CONVERGENCE' }, guidance: { quiet: 'The signal field is quiet. Wait for activity to build before reviewing setups.', warming: 'Kairos is calibrating. Let more scans accumulate before reading the pattern.', cooling: 'The active pool is contracting. Wait for the decline to stabilize before reviewing setups.', steady: 'The pool is established but not expanding consistently. Stay selective and let the next scans confirm.', rising: 'Signals are increasing across repeated scans. This is a good moment to review shortlisted setups, not a trigger to enter.', surge: 'Repeated signal growth is confirmed across recent scans. This is the strongest moment to review the market deliberately; confirm each setup and manage correlation.' } },
       market: { venue: 'BINANCE USD-M', products: 'USDT PERPETUALS' },
@@ -346,6 +353,9 @@ const resources = {
         recentSide: '{{side}} RECENT', lastSeen: 'LAST · {{signal}}', lastSeenTitle: 'Last signal seen; not active in the latest scan',
       },
       signalToast: { region: 'New signal notifications', activeTitle: 'New signal detected', recentTitle: 'Recent signal detected', dismiss: 'Dismiss notification' },
+      tradeToast: { region: 'Trade notifications', openedTitle: 'Trade opened', closedTitle: 'Trade closed', details: '{{side}} position', dismiss: 'Dismiss notification' },
+      notificationSounds: { title: 'Notification sounds', description: 'Choose and preview the sound for each notification type. These preferences are saved to your account.', browserPermission: { default: 'Enable desktop notifications', granted: 'Desktop notifications enabled', denied: 'Notifications blocked in browser settings', unsupported: 'Desktop notifications unavailable', help: 'Allow desktop notifications to receive alerts while Cipher Desk is in another tab. Browser and system settings may still restrict background alerts.', error: 'Could not request notification permission. Check your browser settings.' }, types: { trade_opened: 'Trade opened', trade_closed: 'Trade closed', kairos_peak: 'Kairos index peak', kairos_surge: 'Kairos convergence' }, muted: 'No sound', retro: 'Retro', chime: 'Chime', double: 'Double tone', bell: 'Bell', soft: 'Soft', ascending: 'Ascending', descending: 'Descending', alert: 'Alert', sonar: 'Sonar', pop: 'Pop', preview: 'Preview', save: 'Save sounds', saving: 'Saving...', saved: 'Notification sounds saved to your account.', saveError: 'Could not save notification sounds: {{message}}' },
+      kairosToast: { peakTitle: 'Kairos index peak', surgeTitle: 'Signal convergence confirmed', name: 'Cipher Kairos', peakDetails: 'Index reached {{score}} or rose sharply above 60.', surgeDetails: 'Kairos entered Signal Convergence at index {{score}}.', dismiss: 'Dismiss notification' },
       notifications: { open: 'Open notification history', unread: '{{count}} unread notifications', title: 'Notifications', clear: 'Clear all', empty: 'No notifications yet.' },
       common: { perp: 'PERP', utc: 'UTC', oneMin: '1 MIN', threeMin: '3 MIN', oneM: '1M', heikinAshi: 'HEIKIN ASHI', binance: 'BINANCE' },
       charts: {
@@ -359,8 +369,8 @@ const resources = {
   },
   es: {
     translation: {
-      language: { label: 'Idioma', english: 'English', spanish: 'Español' },
-      navigation: { dashboard: 'Panel', charts: 'Gráficos', evaluations: 'Evaluaciones', scanner: 'Scanner en vivo', systemStatus: 'Estado del sistema', settings: 'Configuración', users: 'Usuarios', account: 'Mi cuenta', logout: 'Cerrar sesión', open: 'Abrir navegación', expand: 'Expandir navegación', collapse: 'Contraer navegación' },
+      language: { label: 'Idioma', english: 'English', spanish: 'Español', saveError: 'No se pudo guardar la preferencia de idioma.' },
+      navigation: { dashboard: 'Panel', charts: 'Gráficos', evaluations: 'Evaluaciones', scanner: 'Scanner en vivo', systemStatus: 'Estado del sistema', settings: 'Configuración', users: 'Usuarios', account: 'Mi cuenta', accountSettings: 'Cuenta y ajustes', logout: 'Cerrar sesión', open: 'Abrir navegación', expand: 'Expandir navegación', collapse: 'Contraer navegación' },
       auth: {
         title: 'Iniciar sesión', description: 'Accede con la cuenta que te proporcionó el administrador.',
         email: 'Correo electrónico', password: 'Contraseña', signIn: 'Entrar', signingIn: 'Iniciando sesión…',
@@ -377,7 +387,7 @@ const resources = {
         },
       },
       accountPage: {
-        title: 'Mi cuenta', currentPlan: 'Plan actual: {{plan}}', changePassword: 'Cambiar contraseña',
+        title: 'Cuenta y ajustes', personalTab: 'Mi cuenta', systemTab: 'Sistema', tabsLabel: 'Ajustes de la cuenta', preferences: 'Preferencias de la cuenta', currentPlan: 'Plan actual: {{plan}}', changePassword: 'Cambiar contraseña',
         adminMode: 'ADMIN',
         showDetails: 'Mostrar datos de la cuenta', hideDetails: 'Ocultar datos de la cuenta',
         passwordHelp: 'Usa al menos 12 caracteres. Al cambiarla se cerrarán tus otras sesiones.',
@@ -590,7 +600,9 @@ const resources = {
         noDrawdown: 'No hay operaciones cerradas para mostrar el drawdown.',
         equity: 'Curva de capital', showEquity: 'Mostrar capital', showDrawdown: 'Mostrar drawdown',
         drawdown: 'Drawdown', drawdownPercent: 'Drawdown (%)', dateWithValue: 'Fecha: {{date}}',
-        equityLabel: 'Capital', rangeAll: 'Todo', advanced: 'Gráficos avanzados',
+        equityLabel: 'Capital', tradeSymbol: 'Símbolo', tradePnl: 'PnL de la operación',
+        zoomHint: 'Desplázate sobre el gráfico para acercar o alejar alrededor del cursor; arrastra el gráfico para desplazarte.',
+        rangeAll: 'Todo', rangeCustom: 'Personalizado', advanced: 'Gráficos avanzados',
         noTrades: 'No hay operaciones cerradas para mostrar {{chart}}.',
         longShortEmpty: 'ganancias/pérdidas Long/Short', weeklyPerformanceEmpty: 'rendimiento semanal',
         monthlyPerformanceEmpty: 'rendimiento mensual', weeklyMonthlyEmpty: 'rendimiento semanal/mensual',
@@ -638,6 +650,10 @@ const resources = {
         cancel: 'Cancelar', save: 'Guardar', rateRangeError: 'La comisión debe estar entre 0 y 1000 bps',
         rateUpdated: 'Comisión actualizada: {{oldRate}}bps → {{newRate}}bps',
         tradesRecalculated: '{{count}} operaciones recalculadas', updateFailed: 'No se pudo actualizar la comisión',
+        weekendSessions: 'Sesiones de fin de semana',
+        weekendSessionsToggle: 'Habilitar sesiones de Asia y Nueva York los fines de semana',
+        weekendSessionsDescription: 'Usa los horarios habituales de Asia/Nueva York y el stop estructural de sesión. Brinks sigue deshabilitado; abrir trades el fin de semana todavía requiere 40 señales activas.',
+        weekendSessionsUpdated: 'Configuración de sesiones de fin de semana guardada.',
         error: 'Error: {{message}}',
       },
       uiCommon: {
@@ -663,7 +679,7 @@ const resources = {
           'admin-copper': 'Cobre',
         },
       },
-      sessionNotice: { title: 'No hay señales válidas ahora', message: 'No habrá nuevas señales hasta la próxima apertura de <asia>Asia</asia> o <newYork>Nueva York</newYork>.', disclaimerLabel: 'AVISO DE SESIÓN', disclaimerTitle: 'No es recomendable operar fuera de las sesiones', disclaimerMessage: 'Fuera de las sesiones de Asia y Nueva York puede haber menor liquidez y movimientos de precio menos regulares. Considera esperar a que abra una sesión.', disclaimerConfirm: 'Entiendo, continuar', currentSession: 'SESIÓN ACTUAL', elapsed: 'TRANSCURRIDO', endsIn: 'TERMINA EN', nextSession: 'PRÓXIMA SESIÓN', opensIn: 'Abre en {{time}}', opensInSession: '{{session}} abre en {{time}}', withinSession: 'Dentro de {{session}}', sessions: { asia: 'Asia', new_york: 'Nueva York', europe: 'Europa', us: 'EE. UU.', eu_brinks: 'EU Brinks', us_brinks: 'US Brinks' }, countdown: '{{days}} d {{hours}} h {{minutes}} min {{seconds}} s', opensAt: 'Abre a las {{time}} · {{timezone}}' },
+      sessionNotice: { title: 'No hay señales válidas ahora', message: 'No habrá nuevas señales hasta la próxima apertura de <asia>Asia</asia> o <newYork>Nueva York</newYork>.', disclaimerLabel: 'AVISO DE SESIÓN', disclaimerTitle: 'No es recomendable operar fuera de las sesiones', disclaimerMessage: 'Fuera de las sesiones de Asia y Nueva York puede haber menor liquidez y movimientos de precio menos regulares. Considera esperar a que abra una sesión.', disclaimerConfirm: 'Entiendo, continuar', currentSession: 'SESIÓN ACTUAL', outsideSession: 'FUERA DE SESIÓN', weekendMarker: '* WEEKEND', elapsed: 'TRANSCURRIDO', endsIn: 'TERMINA EN', nextSession: 'PRÓXIMA SESIÓN', opensIn: 'Abre en {{time}}', opensInSession: '{{session}} abre en {{time}}', withinSession: 'Dentro de {{session}}', sessions: { asia: 'Asia', new_york: 'Nueva York', europe: 'Europa', us: 'EE. UU.', eu_brinks: 'EU Brinks', us_brinks: 'US Brinks' }, countdown: '{{days}} d {{hours}} h {{minutes}} min {{seconds}} s', opensAt: 'Abre a las {{time}} · {{timezone}}' },
       activeSignals: { title: 'Señales activas', subtitle: '{{count}} activas', liveOnly: 'SOLO SEÑALES ACTIVAS', count: '{{count}} MOSTRADAS', priority: 'PRIORIDAD', priorityForSide: 'Señal prioritaria: {{sides}}', activePool: 'POOL ACTIVO', crowdedPairTitle: 'Parte de un conjunto amplio de señales activas; algunas podrían estar correlacionadas.', entryThreshold: 'Umbral para abrir trades: {{threshold}}', lowSignalsTitle: 'Poca actividad de señales: {{count}} / {{threshold}}', lowSignalsMessage: 'Las nuevas operaciones se pausan hasta que haya al menos {{threshold}} señales activas.', highSignalsTitle: 'Amplia disponibilidad de señales: {{count}} pares activos', highSignalsMessage: 'Las señales podrían estar correlacionadas; controla la exposición total. Las prioritarias alineadas con la EMA 21 en temporalidad de 3m se muestran primero; todas las señales activas siguen visibles.' },
       signalTide: { title: 'Cipher Kairos', live: 'EN VIVO', index: 'ÍNDICE KAIROS', activePairs: 'PARES ACTIVOS', window1h: 'IMPULSO 1H', window6h: 'IMPULSO 6H', repeatedRisesLabel: 'ALZAS · 1H', repeatedRisesValue: '{{rises}} / {{scans}}', historyLabel: 'LÍNEA KAIROS', window24h: 'ÚLTIMAS 24H', timelineStart: 'HACE 24H', timelineNow: 'AHORA', indexTimelineLabel: 'Línea del índice Kairos durante las últimas 24 horas; las ondas marcan perturbaciones de alta actividad', warmingUp: 'Esperando los primeros snapshots del scanner.', buildingHistory: 'Las comparaciones ganan solidez al acumular más scans.', collecting: 'Recopilando...', noChange: '±0', credo: 'La ventaja no está en perseguir cada señal, sino en esperar a que la marea confirme que ha cambiado.', gaugeLabel: 'Índice Cipher Kairos {{score}} de 100, {{status}}', states: { quiet: 'ÓRBITA QUIETA', warming: 'CALIBRANDO', cooling: 'REPLIEGUE DE SEÑALES', steady: 'ÓRBITA ESTABLE', rising: 'ALINEACIÓN CRECIENTE', surge: 'CONVERGENCIA DE SEÑALES' }, guidance: { quiet: 'El campo de señales está quieto. Espera a que la actividad crezca antes de revisar setups.', warming: 'Kairos está calibrando. Deja que se acumulen más scans antes de interpretar el patrón.', cooling: 'El pool activo se está contrayendo. Espera a que el descenso se estabilice antes de revisar setups.', steady: 'El pool está formado, pero no crece de manera consistente. Sé selectivo y deja que los siguientes scans confirmen.', rising: 'Las señales aumentan en scans sucesivos. Es un buen momento para revisar setups, no una orden de entrada.', surge: 'El crecimiento repetido de señales se confirma en scans recientes. Este es el mejor momento para revisar el mercado con calma; valida cada setup y considera la correlación.' } },
       market: { venue: 'BINANCE USD-M', products: 'PERPETUOS USDT' },
@@ -698,6 +714,9 @@ const resources = {
         recentSide: '{{side}} reciente', lastSeen: 'ÚLTIMA · {{signal}}', lastSeenTitle: 'Última señal observada; no está activa en el último scan',
       },
       signalToast: { region: 'Notificaciones de señales nuevas', activeTitle: 'Nueva señal detectada', recentTitle: 'Señal reciente detectada', dismiss: 'Descartar notificación' },
+      tradeToast: { region: 'Notificaciones de operaciones', openedTitle: 'Operación abierta', closedTitle: 'Operación cerrada', details: 'Posición {{side}}', dismiss: 'Descartar notificación' },
+      notificationSounds: { title: 'Sonidos de notificación', description: 'Elige y escucha el sonido para cada tipo de notificación. Estas preferencias se guardan en tu cuenta.', browserPermission: { default: 'Activar notificaciones de escritorio', granted: 'Notificaciones de escritorio activadas', denied: 'Notificaciones bloqueadas en el navegador', unsupported: 'Notificaciones de escritorio no disponibles', help: 'Permite las notificaciones de escritorio para recibir avisos mientras Cipher Desk está en otra pestaña. El navegador o el sistema aún podrían limitar los avisos en segundo plano.', error: 'No se pudo solicitar permiso. Revisa los ajustes de tu navegador.' }, types: { trade_opened: 'Operación abierta', trade_closed: 'Operación cerrada', kairos_peak: 'Pico del índice Kairos', kairos_surge: 'Convergencia Kairos' }, muted: 'Sin sonido', retro: 'Retro', chime: 'Campanilla', double: 'Tono doble', bell: 'Campana', soft: 'Suave', ascending: 'Ascendente', descending: 'Descendente', alert: 'Alerta', sonar: 'Sonar', pop: 'Pop', preview: 'Escuchar', save: 'Guardar sonidos', saving: 'Guardando...', saved: 'Los sonidos de notificación se guardaron en tu cuenta.', saveError: 'No se pudieron guardar los sonidos: {{message}}' },
+      kairosToast: { peakTitle: 'Pico en el índice Kairos', surgeTitle: 'Convergencia de señales confirmada', name: 'Cipher Kairos', peakDetails: 'El índice llegó a {{score}} o subió con fuerza por encima de 60.', surgeDetails: 'Kairos entró en Convergencia de señales con índice {{score}}.', dismiss: 'Descartar notificación' },
       notifications: { open: 'Abrir historial de notificaciones', unread: '{{count}} notificaciones sin leer', title: 'Notificaciones', clear: 'Borrar todas', empty: 'Aún no hay notificaciones.' },
       common: { perp: 'PERP', utc: 'UTC', oneMin: '1 MIN', threeMin: '3 MIN', oneM: '1M', heikinAshi: 'HEIKIN ASHI', binance: 'BINANCE' },
       charts: {

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { CandlestickChart, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import OpenTradeChart from "./OpenTradeChart";
@@ -25,7 +26,7 @@ export default function OpenTradeChartDialog({ trade, onClose }) {
 
   if (!trade) return null;
 
-  return (
+  return createPortal(
     <div
       className="chart-backdrop"
       onMouseDown={(event) => {
@@ -60,6 +61,7 @@ export default function OpenTradeChartDialog({ trade, onClose }) {
         </header>
         <OpenTradeChart trade={trade} />
       </section>
-    </div>
+    </div>,
+    document.body,
   );
 }
