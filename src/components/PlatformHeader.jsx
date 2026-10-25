@@ -77,7 +77,7 @@ function formatSessionCountdown(milliseconds, language) {
 
 export default function PlatformHeader() {
   const { t, i18n } = useTranslation();
-  const { user } = useAuth();
+  const { user, updateLanguagePreference } = useAuth();
   const isAdmin = user?.role === "admin";
   const canViewSignals =
     isAdmin || user?.features?.includes("signals") === true;
@@ -96,6 +96,7 @@ export default function PlatformHeader() {
     useContext(NotificationContext);
   const { setMobileNavOpen } = useContext(SidebarContext);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [languagePreferenceError, setLanguagePreferenceError] = useState(false);
   const [chartSymbol, setChartSymbol] = useState(null);
   const [paletteMenuOpen, setPaletteMenuOpen] = useState(false);
   const [systemStatus, setSystemStatus] = useState({
@@ -171,12 +172,14 @@ export default function PlatformHeader() {
             name: currentSession.name,
             opensAt: currentSession.opens_at,
             deadline: Date.parse(currentSession.closes_at),
+            isWeekend: currentSession.is_weekend === true,
           });
         } else if (nextSession?.name) {
           setMarketSession({
             type: "next",
             name: nextSession.name,
             deadline: Date.parse(nextSession.opens_at),
+            isWeekend: nextSession.is_weekend === true,
           });
         } else {
           setMarketSession(null);
@@ -215,6 +218,19 @@ export default function PlatformHeader() {
   };
 
   const closeChart = () => setChartSymbol(null);
+
+  const handleLanguageChange = async (event) => {
+    const nextLanguage = event.target.value;
+    setLanguagePreferenceError(false);
+    await i18n.changeLanguage(nextLanguage);
+    if (!user) return;
+    try {
+      await updateLanguagePreference(nextLanguage);
+    } catch (error) {
+      console.error("Could not save account language preference:", error);
+      setLanguagePreferenceError(true);
+    }
+  };
 
   const toggleNotifications = () => {
     const opening = !notificationsOpen;
@@ -294,7 +310,7 @@ export default function PlatformHeader() {
             aria-label={t(
               marketSession.type === "active"
                 ? "sessionNotice.currentSession"
-                : "sessionNotice.nextSession",
+                : "sessionNotice.outsideSession",
             )}
           >
             <i aria-hidden="true" />
@@ -303,12 +319,18 @@ export default function PlatformHeader() {
                 {t(
                   marketSession.type === "active"
                     ? "sessionNotice.currentSession"
-                    : "sessionNotice.nextSession",
+                    : "sessionNotice.outsideSession",
                 )}
               </small>
               <strong>
                 {t(
                   `sessionNotice.sessions.${marketSessionPresentation.name}`,
+                )}
+                {marketSession.isWeekend && (
+                  <span className="header-market-session-weekend">
+                    {" "}
+                    {t("sessionNotice.weekendMarker")}
+                  </span>
                 )}
                 {Number.isFinite(marketSession.deadline) && (
                   <em
@@ -413,12 +435,17 @@ export default function PlatformHeader() {
           <select
             className="language-select"
             value={language}
-            onChange={(event) => i18n.changeLanguage(event.target.value)}
+            onChange={handleLanguageChange}
             aria-label={t("language.label")}
           >
             <option value="en">{t("language.english")}</option>
             <option value="es">{t("language.spanish")}</option>
           </select>
+          {languagePreferenceError && (
+            <small className="language-preference-error" role="status">
+              {t("language.saveError")}
+            </small>
+          )}
         </label>
         <div className="palette-menu">
           <button
@@ -560,42 +587,65 @@ export default function PlatformHeader() {
               <ol className="notification-list">
                 {notificationHistory.map((event) => {
                   const isRecent = event.recent_age_bars != null;
+                  const isKairosEvent = event.category === "kairos";
+                  const isTradeEvent =
+                    event.type === "opened" || event.type === "closed";
                   return (
                     <li
-                      className={`notification-item notification-item--${String(event.side).toLowerCase()}`}
+                      className={`notification-item${isKairosEvent ? ` notification-item--kairos notification-item--kairos-${event.type}` : ` notification-item--${String(event.side).toLowerCase()}`}`}
                       key={event.id}
                     >
-                      <Signal size={14} />
+                      {isTradeEvent || isKairosEvent ? (
+                        <Activity size={14} />
+                      ) : (
+                        <Signal size={14} />
+                      )}
                       <div className="notification-copy">
                         <strong>
                           {t(
-                            isRecent
-                              ? "signalToast.recentTitle"
-                              : "signalToast.activeTitle",
+                            isKairosEvent
+                              ? `kairosToast.${event.type}Title`
+                              : isTradeEvent
+                              ? `tradeToast.${event.type}Title`
+                              : isRecent
+                                ? "signalToast.recentTitle"
+                                : "signalToast.activeTitle",
                           )}
                         </strong>
-                        <span>{event.symbol.replace(":USDT", "")}</span>
+                        <span>
+                          {isKairosEvent
+                            ? t("kairosToast.name")
+                            : event.symbol.replace(":USDT", "")}
+                        </span>
                         <small>
-                          {isRecent
-                            ? t("signal.recent", {
-                                side: event.side,
-                                minutes: event.recent_age_bars * 5,
+                          {isKairosEvent
+                            ? t(`kairosToast.${event.type}Details`, {
+                                score: event.score,
                               })
-                            : t("signal.active", { side: event.side })}
+                            : isTradeEvent
+                            ? t("tradeToast.details", { side: event.side })
+                            : isRecent
+                              ? t("signal.recent", {
+                                  side: event.side,
+                                  minutes: event.recent_age_bars * 5,
+                                })
+                              : t("signal.active", { side: event.side })}
                         </small>
-                        <button
-                          className="chart-button notification-chart-button"
-                          type="button"
-                          onClick={() => setChartSymbol(event.symbol)}
-                          title={t("charts.view", {
-                            symbol: event.symbol.replace(":USDT", ""),
-                          })}
-                          aria-label={t("charts.view", {
-                            symbol: event.symbol.replace(":USDT", ""),
-                          })}
-                        >
-                          <CandlestickChart size={15} />
-                        </button>
+                        {!isKairosEvent && (
+                          <button
+                            className="chart-button notification-chart-button"
+                            type="button"
+                            onClick={() => setChartSymbol(event.symbol)}
+                            title={t("charts.view", {
+                              symbol: event.symbol.replace(":USDT", ""),
+                            })}
+                            aria-label={t("charts.view", {
+                              symbol: event.symbol.replace(":USDT", ""),
+                            })}
+                          >
+                            <CandlestickChart size={15} />
+                          </button>
+                        )}
                         <time>
                           {formatTime(
                             Number(event.timestamp_ms),

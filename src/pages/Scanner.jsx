@@ -1,4 +1,4 @@
-import { useContext, useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import Skeleton from "@mui/material/Skeleton";
 import { normalizeCapitalCaosPayload } from "../api/legacyDashboardAdapter";
@@ -26,6 +26,16 @@ import {
 import { NOTIFICATION_HISTORY_LIMIT } from "../contexts/NotificationProvider";
 import SignalTide from "../components/SignalTide";
 import { formatUtcOffset } from "../utils/timeZones";
+import { getOpenTrades } from "../api/openTrades";
+import { detectTradeLifecycleEvents } from "../utils/tradeLifecycleNotifications";
+import { detectKairosEvents } from "../utils/kairosNotifications";
+import { useAuth } from "../contexts/authState";
+import {
+  normalizeNotificationSoundPreferences,
+  notificationSoundForType,
+  playNotificationSound,
+} from "../utils/notificationSounds";
+import { showBrowserNotification } from "../utils/browserNotifications";
 import {
   getUpcomingParentSessionOpening,
   getSessionCountdownClass,
@@ -34,15 +44,12 @@ import {
   SESSION_CRITICAL_WINDOW_MS,
   SESSION_URGENT_WINDOW_MS,
 } from "../utils/sessionPresentation";
-import { selectNewSignalNotifications } from "../utils/signalNotifications";
 import { SIGNAL_TIDE_MIN_ACTIVE } from "../utils/signalTide";
 import TradingViewChartDialog from "../components/TradingViewChartDialog";
 
 const POLL_MS = 5000;
+const TRADE_POLL_MS = 10000;
 const SESSION_HANDOFF_WINDOW_MS = 15 * 60 * 1000;
-const SIGNAL_TOAST_COOLDOWN_MS = 60 * 60 * 1000;
-const SIGNAL_TOAST_STORAGE_KEY = "market-watch-reported-signals";
-const MIN_ACTIVE_SIGNALS_FOR_TRADING = SIGNAL_TIDE_MIN_ACTIVE;
 const ACTIVE_SIGNAL_DENSITY_THRESHOLD = 20;
 const PRIORITY_SIGNAL_CONFIDENCE = 80;
 
@@ -109,80 +116,52 @@ function formatSessionDuration(milliseconds, language) {
   return parts.join(" ");
 }
 
-function scanSignalEvents(scan) {
-  if (Array.isArray(scan?.detected_signals)) return scan.detected_signals;
-
-  const events = [];
-  for (const row of scan?.active_signals || []) {
-    for (const side of [
-      ...(row.signal_long_light ? ["LONG"] : []),
-      ...(row.signal_short_light ? ["SHORT"] : []),
-    ]) {
-      const timestamp =
-        row.current_signal_time_ms ?? Date.parse(scan.timestamp);
-      events.push({
-        id: `${row.symbol}:${side}:${timestamp}`,
-        symbol: row.symbol,
-        side,
-        signal_type: row.notes,
-        timestamp_ms: timestamp,
-        recent_age_bars: null,
-      });
-    }
+function playBackgroundEventSound(event, soundPreferences) {
+  if (
+    window.matchMedia &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  ) {
+    return;
   }
-  for (const row of scan?.recent_long_signals || []) {
-    const timestamp = row.recent_signal_time_ms;
-    if (timestamp == null) continue;
-    events.push({
-      id: `${row.symbol}:LONG:${timestamp}`,
-      symbol: row.symbol,
-      side: "LONG",
-      signal_type: row.recent_signal_note || "SIGNAL",
-      timestamp_ms: timestamp,
-      recent_age_bars: row.recent_signal_age_bars,
+  playNotificationSound(
+    notificationSoundForType(event.type, soundPreferences),
+  );
+}
+
+function showBackgroundEventNotification(event, t) {
+  if (event.category === "kairos") {
+    showBrowserNotification({
+      title: t(`kairosToast.${event.type}Title`),
+      body: t(`kairosToast.${event.type}Details`, { score: event.score }),
+      tag: event.id,
     });
+    return;
   }
-  return events;
+  showBrowserNotification({
+    title: t(`tradeToast.${event.type}Title`),
+    body: t("tradeToast.details", { side: event.side }),
+    tag: event.id,
+  });
 }
 
-function playRetroSound() {
-  try {
-    const AudioCtx =
-      (typeof window !== "undefined" &&
-        (window.AudioContext || window.webkitAudioContext)) ||
-      null;
-    if (!AudioCtx) return;
-    const ctx = new AudioCtx();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = "square";
-    osc.frequency.setValueAtTime(880, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.08);
-    gain.gain.setValueAtTime(0.08, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.18);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.2);
-  } catch {
-    // Audio unavailable or blocked; ignore silently.
-  }
-}
-
-function SignalToast({ event, onDismiss }) {
+function TradeToast({ event, onDismiss, soundPreferences }) {
   const { t } = useTranslation();
   const onDismissRef = useRef(onDismiss);
+  const soundPreferencesRef = useRef(soundPreferences);
   onDismissRef.current = onDismiss;
-  const isRecent = event.recent_age_bars != null;
+  soundPreferencesRef.current = soundPreferences;
 
   useEffect(() => {
     if (
       window.matchMedia &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    )
+    ) {
       return;
-    playRetroSound();
-  }, [event.id]);
+    }
+    playNotificationSound(
+      notificationSoundForType(event.type, soundPreferencesRef.current),
+    );
+  }, [event.id, event.type]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => onDismissRef.current(event.id), 7000);
@@ -191,33 +170,78 @@ function SignalToast({ event, onDismiss }) {
 
   return (
     <div
-      className={`signal-toast signal-toast--${event.side.toLowerCase()}`}
+      className={`trade-toast trade-toast--${event.type} trade-toast--${event.side.toLowerCase()}`}
       role="status"
       aria-live="polite"
     >
-      <span className="signal-toast-mark">
-        <Signal size={15} />
+      <span className="trade-toast-mark">
+        <Activity size={15} />
       </span>
-      <div className="signal-toast-copy">
-        <strong>
-          {t(isRecent ? "signalToast.recentTitle" : "signalToast.activeTitle")}
-        </strong>
+      <div className="trade-toast-copy">
+        <strong>{t(`tradeToast.${event.type}Title`)}</strong>
         <span>{event.symbol.replace(":USDT", "")}</span>
-        <small>
-          {isRecent
-            ? t("signal.recent", {
-                side: event.side,
-                minutes: event.recent_age_bars * 5,
-              })
-            : t("signal.active", { side: event.side })}
-        </small>
+        <small>{t("tradeToast.details", { side: event.side })}</small>
       </div>
       <button
-        className="signal-toast-dismiss"
+        className="trade-toast-dismiss"
         type="button"
         onClick={() => onDismiss(event.id)}
-        aria-label={t("signalToast.dismiss")}
-        title={t("signalToast.dismiss")}
+        aria-label={t("tradeToast.dismiss")}
+        title={t("tradeToast.dismiss")}
+      >
+        <X size={14} />
+      </button>
+    </div>
+  );
+}
+
+function KairosToast({ event, onDismiss, soundPreferences }) {
+  const { t } = useTranslation();
+  const onDismissRef = useRef(onDismiss);
+  const soundPreferencesRef = useRef(soundPreferences);
+  onDismissRef.current = onDismiss;
+  soundPreferencesRef.current = soundPreferences;
+
+  useEffect(() => {
+    if (
+      window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      return;
+    }
+    playNotificationSound(
+      notificationSoundForType(event.type, soundPreferencesRef.current),
+    );
+  }, [event.id, event.type]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(
+      () => onDismissRef.current(event.id),
+      7000,
+    );
+    return () => window.clearTimeout(timer);
+  }, [event.id]);
+
+  return (
+    <div
+      className={`trade-toast trade-toast--kairos trade-toast--kairos-${event.type}`}
+      role="status"
+      aria-live="polite"
+    >
+      <span className="trade-toast-mark">
+        <Activity size={15} />
+      </span>
+      <div className="trade-toast-copy">
+        <strong>{t(`kairosToast.${event.type}Title`)}</strong>
+        <span>{t("kairosToast.name")}</span>
+        <small>{t(`kairosToast.${event.type}Details`, { score: event.score })}</small>
+      </div>
+      <button
+        className="trade-toast-dismiss"
+        type="button"
+        onClick={() => onDismiss(event.id)}
+        aria-label={t("kairosToast.dismiss")}
+        title={t("kairosToast.dismiss")}
       >
         <X size={14} />
       </button>
@@ -691,6 +715,7 @@ function PriceSparkline({ values = [], symbol, loading = false }) {
 
 export default function ScannerDashboard() {
   const { t, i18n } = useTranslation();
+  const { user } = useAuth();
   const { timeZone } = useContext(TimeZoneContext);
   const { setNotificationHistory } = useContext(NotificationContext);
   const [dashboard, setDashboard] = useState(null);
@@ -701,21 +726,26 @@ export default function ScannerDashboard() {
   const [refreshTime, setRefreshTime] = useState(null);
   const [chartSymbol, setChartSymbol] = useState(null);
   const [showSessionDisclaimer, setShowSessionDisclaimer] = useState(false);
-  const [signalToasts, setSignalToasts] = useState([]);
+  const [tradeToasts, setTradeToasts] = useState([]);
+  const [kairosToasts, setKairosToasts] = useState([]);
   const [sessionDisclaimerResolved, setSessionDisclaimerResolved] =
     useState(false);
   const sessionDisclaimerRef = useRef(null);
-  const seenSignalTimesRef = useRef(null);
-  const listedSignalSymbolsRef = useRef(null);
+  const previousOpenTradesRef = useRef(null);
+  const previousKairosSnapshotRef = useRef(null);
   const [activityExpanded, setActivityExpanded] = useState(false);
   const language = i18n.resolvedLanguage === "es" ? "es" : "en";
+  const soundPreferences = useMemo(
+    () => normalizeNotificationSoundPreferences(user?.notification_sounds),
+    [user?.notification_sounds],
+  );
 
   useEffect(() => {
     let alive = true;
     let timer;
     let polling = false;
     const poll = async () => {
-      if (document.visibilityState !== "visible" || polling) return;
+      if (polling) return;
       polling = true;
       try {
         const candidates = ["/api/state", "/api/momentum_pairs"];
@@ -742,6 +772,50 @@ export default function ScannerDashboard() {
         const next = payload?.last_scan
           ? payload
           : normalizeCapitalCaosPayload(payload);
+        const lastScan = next.last_scan;
+        const signalRows = Array.isArray(lastScan?.active_signals)
+          ? lastScan.active_signals
+          : (lastScan?.top || []).filter(
+              (row) => row.signal_long_light || row.signal_short_light,
+            );
+        const { events: kairosEvents, snapshot } = detectKairosEvents(
+          previousKairosSnapshotRef.current,
+          signalRows.length,
+          next.signal_tide?.history || [],
+        );
+        previousKairosSnapshotRef.current = snapshot;
+        if (kairosEvents.length > 0) {
+          if (document.visibilityState === "visible") {
+            setKairosToasts((current) => {
+              const existingIds = new Set(current.map((event) => event.id));
+              const added = kairosEvents.filter(
+                (event) => !existingIds.has(event.id),
+              );
+              return [...added, ...current].slice(0, 5);
+            });
+          } else {
+            kairosEvents.forEach((event) => {
+              playBackgroundEventSound(event, soundPreferences);
+              showBackgroundEventNotification(
+                { ...event, category: "kairos" },
+                t,
+              );
+            });
+          }
+          setNotificationHistory((current) => {
+            const existingIds = new Set(current.map((event) => event.id));
+            const added = kairosEvents
+              .filter((event) => !existingIds.has(event.id))
+              .map((event) => ({
+                ...event,
+                category: "kairos",
+                symbol: "Cipher Kairos",
+                received_at: Date.now(),
+                read: false,
+              }));
+            return [...added, ...current].slice(0, NOTIFICATION_HISTORY_LIMIT);
+          });
+        }
         setDashboard(next);
         setConnected(true);
         setError("");
@@ -756,14 +830,12 @@ export default function ScannerDashboard() {
         );
       } finally {
         polling = false;
-        if (alive && document.visibilityState === "visible") {
-          timer = window.setTimeout(poll, POLL_MS);
-        }
+        if (alive) timer = window.setTimeout(poll, POLL_MS);
       }
     };
     const handleVisibilityChange = () => {
       window.clearTimeout(timer);
-      if (document.visibilityState === "visible") poll();
+      poll();
     };
     document.addEventListener("visibilitychange", handleVisibilityChange);
     if (document.visibilityState === "visible") poll();
@@ -772,81 +844,63 @@ export default function ScannerDashboard() {
       window.clearTimeout(timer);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [t]);
+  }, [setNotificationHistory, soundPreferences, t]);
 
   useEffect(() => {
-    const scan = dashboard?.last_scan;
-    if (!scan) return;
+    let alive = true;
+    let timer;
+    let polling = false;
 
-    const events = scanSignalEvents(scan);
-    const listedRows =
-      scan.top?.length > 0
-        ? scan.top
-        : [...(scan.active_signals || []), ...(scan.recent_long_signals || [])];
-    const currentSymbols = new Set(
-      listedRows
-        .map((row) => row.symbol)
-        .filter((symbol) => typeof symbol === "string" && symbol.length > 0),
-    );
-    const newListedEvents = selectNewSignalNotifications(
-      events,
-      currentSymbols,
-      listedSignalSymbolsRef.current,
-    );
-    listedSignalSymbolsRef.current = currentSymbols;
-
-    if (seenSignalTimesRef.current === null) {
-      let storedSignals = {};
+    const pollOpenTrades = async () => {
+      if (polling) return;
+      polling = true;
       try {
-        storedSignals = JSON.parse(
-          window.sessionStorage.getItem(SIGNAL_TOAST_STORAGE_KEY) || "{}",
-        );
-      } catch {
-        storedSignals = {};
-      }
-      seenSignalTimesRef.current = storedSignals;
-    }
+        const payload = await getOpenTrades();
+        if (!alive || !Array.isArray(payload?.open_trades)) return;
 
-    const seen = seenSignalTimesRef.current;
-    const newToasts = [];
-    for (const event of newListedEvents) {
-      const key = `${event.symbol}:${event.side}`;
-      const timestamp = Number(event.timestamp_ms);
-      if (!Number.isFinite(timestamp)) continue;
-      const previousTimestamp = Number(seen[key]);
-      if (
-        previousTimestamp > 0 &&
-        (timestamp <= previousTimestamp ||
-          timestamp - previousTimestamp < SIGNAL_TOAST_COOLDOWN_MS)
-      ) {
-        continue;
+        const currentTrades = payload.open_trades;
+        const events = detectTradeLifecycleEvents(
+          previousOpenTradesRef.current,
+          currentTrades,
+        );
+        previousOpenTradesRef.current = currentTrades;
+
+        if (events.length > 0) {
+          if (document.visibilityState === "visible") {
+            setTradeToasts((current) => [...events, ...current].slice(0, 5));
+          } else {
+            events.forEach((event) => {
+              playBackgroundEventSound(event, soundPreferences);
+              showBackgroundEventNotification(event, t);
+            });
+          }
+          setNotificationHistory((current) => {
+            const existingIds = new Set(current.map((event) => event.id));
+            const added = events
+              .filter((event) => !existingIds.has(event.id))
+              .map((event) => ({ ...event, received_at: Date.now(), read: false }));
+            return [...added, ...current].slice(0, NOTIFICATION_HISTORY_LIMIT);
+          });
+        }
+      } finally {
+        polling = false;
+        if (alive) timer = window.setTimeout(pollOpenTrades, TRADE_POLL_MS);
       }
-      seen[key] = timestamp;
-      newToasts.push(event);
-    }
-    const entries = Object.entries(seen);
-    if (entries.length > 500) {
-      seenSignalTimesRef.current = Object.fromEntries(entries.slice(-500));
-    }
-    try {
-      window.sessionStorage.setItem(
-        SIGNAL_TOAST_STORAGE_KEY,
-        JSON.stringify(seenSignalTimesRef.current),
-      );
-    } catch {
-      // Storage may be unavailable in private browsing contexts.
-    }
-    if (newToasts.length) {
-      setSignalToasts((current) => [...newToasts, ...current].slice(0, 5));
-      setNotificationHistory((current) => {
-        const existingIds = new Set(current.map((event) => event.id));
-        const added = newToasts
-          .filter((event) => !existingIds.has(event.id))
-          .map((event) => ({ ...event, received_at: Date.now(), read: false }));
-        return [...added, ...current].slice(0, NOTIFICATION_HISTORY_LIMIT);
-      });
-    }
-  }, [dashboard, setNotificationHistory]);
+    };
+
+    const handleVisibilityChange = () => {
+      window.clearTimeout(timer);
+      pollOpenTrades();
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    if (document.visibilityState === "visible") pollOpenTrades();
+    return () => {
+      alive = false;
+      window.clearTimeout(timer);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [setNotificationHistory, soundPreferences, t]);
 
   useEffect(() => {
     if (sessionDisclaimerResolved || !Array.isArray(dashboard?.valid_sessions))
@@ -865,6 +919,8 @@ export default function ScannerDashboard() {
   }, [showSessionDisclaimer]);
 
   const lastScan = dashboard?.last_scan;
+  const minimumActiveSignalsForTrading =
+    dashboard?.trade_signal_threshold ?? SIGNAL_TIDE_MIN_ACTIVE;
   const initialLoading = !dashboard && !error;
   const rows = lastScan?.top || [];
   const activity = dashboard?.activity || [];
@@ -952,22 +1008,36 @@ export default function ScannerDashboard() {
       ? t("connection.scanning")
       : t("connection.connected")
     : t("connection.offline");
-  const dismissSignalToast = (eventId) => {
-    setSignalToasts((current) =>
+  const dismissTradeToast = (eventId) => {
+    setTradeToasts((current) =>
+      current.filter((toast) => toast.id !== eventId),
+    );
+  };
+  const dismissKairosToast = (eventId) => {
+    setKairosToasts((current) =>
       current.filter((toast) => toast.id !== eventId),
     );
   };
   return (
     <div className="shell" id="scanner">
       <aside
-        className="signal-toast-stack"
-        aria-label={t("signalToast.region")}
+        className="trade-toast-stack"
+        aria-label={t("tradeToast.region")}
       >
-        {signalToasts.map((event) => (
-          <SignalToast
+        {tradeToasts.map((event) => (
+          <TradeToast
             key={event.id}
             event={event}
-            onDismiss={dismissSignalToast}
+            onDismiss={dismissTradeToast}
+            soundPreferences={soundPreferences}
+          />
+        ))}
+        {kairosToasts.map((event) => (
+          <KairosToast
+            key={event.id}
+            event={event}
+            onDismiss={dismissKairosToast}
+            soundPreferences={soundPreferences}
           />
         ))}
       </aside>
@@ -1127,9 +1197,9 @@ export default function ScannerDashboard() {
           </span>
           <strong
             className={
-              lastScan && activeCount < MIN_ACTIVE_SIGNALS_FOR_TRADING
+              lastScan && activeCount < minimumActiveSignalsForTrading
                 ? "stat-accent-amber"
-                : lastScan && activeCount >= MIN_ACTIVE_SIGNALS_FOR_TRADING
+                : lastScan && activeCount >= minimumActiveSignalsForTrading
                   ? "stat-accent-green"
                   : ""
             }
@@ -1141,7 +1211,7 @@ export default function ScannerDashboard() {
           <small>
             {lastScan
               ? t("activeSignals.entryThreshold", {
-                  threshold: MIN_ACTIVE_SIGNALS_FOR_TRADING,
+                  threshold: minimumActiveSignalsForTrading,
                 })
               : t("stats.inLatestScan")}
           </small>
@@ -1179,7 +1249,7 @@ export default function ScannerDashboard() {
         />
       )}
 
-      {lastScan && activeCount < MIN_ACTIVE_SIGNALS_FOR_TRADING && (
+      {lastScan && activeCount < minimumActiveSignalsForTrading && (
         <div
           className="signal-availability-notice signal-availability-notice--low"
           role="status"
@@ -1190,13 +1260,13 @@ export default function ScannerDashboard() {
             <strong>
               {t("activeSignals.lowSignalsTitle", {
                 count: activeCount,
-                threshold: MIN_ACTIVE_SIGNALS_FOR_TRADING,
+                threshold: minimumActiveSignalsForTrading,
               })}
             </strong>
             <p>
               {t("activeSignals.lowSignalsMessage", {
                 count: activeCount,
-                threshold: MIN_ACTIVE_SIGNALS_FOR_TRADING,
+                threshold: minimumActiveSignalsForTrading,
               })}
             </p>
           </div>

@@ -71,7 +71,13 @@ describe("SignalTide", () => {
     expect(
       screen.getByRole("img", { name: /Kairos index timeline/ }),
     ).toBeVisible();
+    expect(
+      container.querySelector(".signal-tide-timeline-line"),
+    ).toHaveAttribute("pathLength", "1");
     expect(document.querySelector(".signal-tide-disturbance")).toBeInTheDocument();
+    expect(
+      container.querySelector(".signal-tide-disturbance .signal-tide-current-wave"),
+    ).not.toBeInTheDocument();
   });
 
   it("distinguishes warming history from a confirmed signal build-up", () => {
@@ -91,5 +97,46 @@ describe("SignalTide", () => {
     ).toBeInTheDocument();
     expect(screen.queryByText(/20 active pairs|entry floor/i)).not.toBeInTheDocument();
     expect(screen.queryByText("SIGNAL CONVERGENCE")).not.toBeInTheDocument();
+  });
+
+  it("positions samples on a fixed 24-hour timeline", () => {
+    const { container } = renderSignalTide(25, [
+      {
+        timestamp: new Date(now - 60 * 60 * 1000).toISOString(),
+        active_count: 20,
+      },
+    ]);
+    const timelineLine = container.querySelector(".signal-tide-timeline-line");
+    const [, startX] = timelineLine.getAttribute("d").match(/^M([^,]+),/);
+
+    expect(Number(startX)).toBeGreaterThan(95);
+    expect(Number(startX)).toBeLessThan(97);
+  });
+
+  it("pulses a recent level-75 crossing only at the current marker", () => {
+    const history = [
+      ...[11.5, 10.5, 9.5, 8.5, 7.5, 6.5].map((hoursAgo) => ({
+        timestamp: new Date(now - hoursAgo * 60 * 60 * 1000).toISOString(),
+        active_count: 0,
+      })),
+      ...[5.5, 5, 4.5, 4, 3.5, 3, 2.5].map((hoursAgo) => ({
+        timestamp: new Date(now - hoursAgo * 60 * 60 * 1000).toISOString(),
+        active_count: 20,
+      })),
+      ...[1.8, 1.5, 1.2].map((hoursAgo) => ({
+        timestamp: new Date(now - hoursAgo * 60 * 60 * 1000).toISOString(),
+        active_count: 0,
+      })),
+      ...[0.8, 0.5, 0.05].map((hoursAgo) => ({
+        timestamp: new Date(now - hoursAgo * 60 * 60 * 1000).toISOString(),
+        active_count: 20,
+      })),
+    ];
+    const { container } = renderSignalTide(20, history);
+
+    expect(container.querySelector(".signal-tide-current-wave")).toBeInTheDocument();
+    expect(
+      container.querySelector(".signal-tide-disturbance .signal-tide-current-wave"),
+    ).not.toBeInTheDocument();
   });
 });

@@ -25,6 +25,7 @@ const renderHeader = ({
     role: "member",
     features: ["signals", "bot_trades"],
   },
+  updateLanguagePreference = vi.fn(),
   mode = "dark",
   setMode = vi.fn(),
   palette = "classic",
@@ -36,7 +37,7 @@ const renderHeader = ({
 } = {}) =>
   render(
     <BrowserRouter>
-      <AuthContext.Provider value={{ user }}>
+      <AuthContext.Provider value={{ user, updateLanguagePreference }}>
         <PlatformThemeContext.Provider
           value={{ mode, setMode, palette, setPalette }}
         >
@@ -131,6 +132,25 @@ describe("PlatformHeader", () => {
 
     expect(setTimeZone).toHaveBeenCalledWith("Asia/Tokyo");
     expect(window.localStorage.getItem("timeZone")).toBe("Asia/Tokyo");
+  });
+
+  test("saves language changes to the signed-in account", async () => {
+    const updateLanguagePreference = vi.fn().mockResolvedValue({
+      language_preference: "es",
+    });
+    renderHeader({ updateLanguagePreference });
+
+    fireEvent.change(screen.getByRole("combobox", { name: "Language" }), {
+      target: { value: "es" },
+    });
+
+    await waitFor(() =>
+      expect(updateLanguagePreference).toHaveBeenCalledWith("es"),
+    );
+    await waitFor(() =>
+      expect(screen.getByRole("combobox", { name: "Idioma" })).toHaveValue("es"),
+    );
+    await i18n.changeLanguage("en");
   });
 
   test("updates the shared currency selection from the header", () => {
@@ -275,6 +295,49 @@ describe("PlatformHeader", () => {
     expect(screen.getByText(/ENDS IN/)).toBeInTheDocument();
   });
 
+  test("marks an active weekend session explicitly", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          current_session: {
+            name: "new_york",
+            closes_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+            is_weekend: true,
+          },
+        }),
+      }),
+    );
+    renderHeader();
+
+    expect(await screen.findByText("* WEEKEND")).toBeInTheDocument();
+    expect(screen.getByText("New York")).toBeInTheDocument();
+  });
+
+  test("explicitly shows when the market is out of session", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          next_session: {
+            name: "asia",
+            opens_at: new Date(Date.now() + 20 * 60 * 60 * 1000).toISOString(),
+          },
+        }),
+      }),
+    );
+    renderHeader();
+
+    expect(await screen.findByText("OUT OF SESSION")).toBeInTheDocument();
+    expect(screen.getByText("Asia")).toBeInTheDocument();
+    expect(screen.getByText(/Opens in/)).toBeInTheDocument();
+    expect(
+      screen.getByLabelText("OUT OF SESSION").closest(".header-market-session"),
+    ).toHaveClass("header-market-session--next");
+  });
+
   test("shows the New York opening countdown during US Brinks", async () => {
     vi.stubGlobal(
       "fetch",
@@ -361,6 +424,53 @@ describe("PlatformHeader", () => {
           window.localStorage.getItem(NOTIFICATION_HISTORY_STORAGE_KEY),
         )[0].read,
       ).toBe(true);
+    });
+  });
+
+  test("shows accumulated Kairos events in notification history", async () => {
+    window.localStorage.setItem(
+      NOTIFICATION_HISTORY_STORAGE_KEY,
+      JSON.stringify([
+        {
+          id: "kairos-peak:1000",
+          category: "kairos",
+          type: "peak",
+          symbol: "Cipher Kairos",
+          score: 78,
+          timestamp_ms: 1000,
+          read: false,
+        },
+        {
+          id: "kairos-surge:2000",
+          category: "kairos",
+          type: "surge",
+          symbol: "Cipher Kairos",
+          score: 82,
+          timestamp_ms: 2000,
+          read: true,
+        },
+      ]),
+    );
+    renderHeader();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "1 unread notifications" }),
+    );
+
+    expect(screen.getByText("Kairos index peak")).toBeInTheDocument();
+    expect(
+      screen.getByText("Signal convergence confirmed"),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText("Cipher Kairos")).toHaveLength(2);
+    expect(screen.getByText(/Index reached 78/)).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /View Cipher Kairos chart/ }),
+    ).not.toBeInTheDocument();
+    await waitFor(() => {
+      const history = JSON.parse(
+        window.localStorage.getItem(NOTIFICATION_HISTORY_STORAGE_KEY),
+      );
+      expect(history.every((event) => event.read)).toBe(true);
     });
   });
 

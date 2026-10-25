@@ -106,6 +106,36 @@ describe("Cipher Kairos reading", () => {
     expect(reading.hasSixHourComparison).toBe(false);
   });
 
+  it("compares one snapshot from each hourly window when scans are sparse", () => {
+    const reading = getSignalTideReading(
+      25,
+      samples([
+        [1.5, 20],
+        [0.5, 25],
+      ]),
+      now,
+    );
+
+    expect(reading.change1h).toBe(5);
+    expect(reading.hasOneHourComparison).toBe(true);
+    expect(reading.risingTransitions).toBe(0);
+    expect(reading.hourlyTransitions).toBe(0);
+  });
+
+  it("keeps hourly momentum collecting when the previous hour has no snapshot", () => {
+    const reading = getSignalTideReading(
+      25,
+      samples([
+        [0.5, 20],
+        [0.25, 25],
+      ]),
+      now,
+    );
+
+    expect(reading.change1h).toBeNull();
+    expect(reading.hasOneHourComparison).toBe(false);
+  });
+
   it("keeps a rising pool below the entry floor in the quiet score range", () => {
     const reading = getSignalTideReading(
       19,

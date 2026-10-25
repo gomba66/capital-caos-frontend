@@ -79,17 +79,20 @@ describe("Sidebar", () => {
     expect(
       screen.getByRole("link", { name: "System status" }),
     ).toHaveAttribute("href", "/system-status");
-    expect(screen.getByText("Settings")).toBeInTheDocument();
+    expect(screen.queryByText("Settings")).not.toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: "Live Scanner" }),
     ).toHaveAttribute("href", "/#scanner");
     expect(screen.queryByText("CAPITAL CAOS")).not.toBeInTheDocument();
     expect(screen.queryByText("UTC")).not.toBeInTheDocument();
     expect(
-      within(screen.getByText("My account").closest("a")).getByTestId(
+      within(screen.getByText("Account & settings").closest("a")).getByTestId(
         "admin-astronaut-icon",
       ),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Account & settings" }),
+    ).toHaveAttribute("href", "/account");
   });
 
   test("limits a signals account to scanner and account navigation", () => {
@@ -128,9 +131,9 @@ describe("Sidebar", () => {
     );
 
     expect(screen.getByText("Dashboard")).toBeInTheDocument();
-    expect(screen.getByText("My account")).toBeInTheDocument();
+    expect(screen.getByText("Account & settings")).toBeInTheDocument();
     expect(
-      within(screen.getByText("My account").closest("a")).queryByTestId(
+      within(screen.getByText("Account & settings").closest("a")).queryByTestId(
         "admin-astronaut-icon",
       ),
     ).not.toBeInTheDocument();
@@ -176,7 +179,7 @@ describe("Sidebar", () => {
       </BrowserRouter>,
     );
 
-    expect(screen.getByText("My account")).toBeInTheDocument();
+    expect(screen.getByText("Account & settings")).toBeInTheDocument();
     expect(screen.queryByText("Dashboard")).not.toBeInTheDocument();
     expect(screen.queryByText("Charts")).not.toBeInTheDocument();
     expect(screen.queryByText("System status")).not.toBeInTheDocument();

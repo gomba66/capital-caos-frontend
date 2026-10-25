@@ -8,6 +8,8 @@ export const AuthContext = createContext({
   logout: async () => {},
   refresh: async () => {},
   updateThemePreferences: async () => {},
+  updateNotificationSoundPreferences: async () => {},
+  updateLanguagePreference: async () => {},
 });
 
 export function useAuth() {

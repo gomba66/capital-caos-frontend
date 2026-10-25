@@ -477,6 +477,11 @@ button {
   color: var(--amber-ink);
 }
 
+.language-preference-error {
+  color: var(--red);
+  font: 9px var(--mono);
+}
+
 .header-market-session-copy strong {
   display: flex;
   align-items: baseline;
@@ -490,6 +495,11 @@ button {
   font-size: 9.2px;
   font-style: normal;
   font-weight: 400;
+}
+
+.header-market-session-weekend {
+  color: var(--amber-ink);
+  font-size: 9px;
 }
 
 .header-status-connection > i,
@@ -531,6 +541,12 @@ button {
 .header-status-scanner--stopped > svg,
 .header-status-scanner--offline > svg {
   color: var(--red);
+}
+.notification-item--kairos > svg {
+  color: var(--amber);
+}
+.notification-item--kairos-surge > svg {
+  color: var(--green);
 }
 
 @keyframes header-status-pulse {
@@ -1529,9 +1545,6 @@ h1 {
   filter: drop-shadow(0 0 3px var(--signal-tide-accent));
   animation: signal-tide-surge-chart 1.1s ease-in-out infinite alternate;
 }
-.signal-tide--surge .signal-tide-disturbance-wave {
-  animation-duration: 900ms;
-}
 .signal-tide--surge .signal-tide-credo {
   animation: signal-tide-surge-text 1.8s ease-in-out infinite;
 }
@@ -1774,8 +1787,8 @@ h1 {
   stroke-linejoin: round;
   stroke-width: 1.8;
   vector-effect: non-scaling-stroke;
-  stroke-dasharray: 240;
-  stroke-dashoffset: 240;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
   animation: signal-tide-chart-draw 1.4s cubic-bezier(0.2, 0.8, 0.2, 1) 250ms forwards;
 }
 .signal-tide-timeline-threshold {
@@ -1784,16 +1797,6 @@ h1 {
   stroke-width: 0.6;
   stroke-dasharray: 1.5 2.5;
   vector-effect: non-scaling-stroke;
-}
-.signal-tide-disturbance-wave {
-  fill: var(--signal-tide-accent);
-  opacity: 0;
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: signal-tide-disturbance-wave 2.2s ease-out infinite;
-}
-.signal-tide-disturbance:nth-of-type(3n) .signal-tide-disturbance-wave {
-  animation-delay: 600ms;
 }
 .signal-tide-disturbance-point {
   fill: var(--signal-tide-accent);
@@ -1806,6 +1809,13 @@ h1 {
   stroke: var(--signal-tide-accent);
   stroke-width: 1.2;
   vector-effect: non-scaling-stroke;
+}
+.signal-tide-current-wave {
+  fill: var(--signal-tide-accent);
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: signal-tide-disturbance-wave 2.2s ease-out infinite;
 }
 .signal-tide-timeline-axis {
   display: flex;
@@ -2068,7 +2078,7 @@ h1 {
   .signal-tide-count,
   .signal-tide-comparison,
   .signal-tide-timeline-line,
-  .signal-tide-disturbance-wave,
+  .signal-tide-current-wave,
   .signal-tide-credo {
     animation: none;
   }
@@ -2079,7 +2089,7 @@ h1 {
     stroke-dasharray: none;
     stroke-dashoffset: 0;
   }
-  .signal-tide-disturbance-wave {
+  .signal-tide-current-wave {
     animation: none;
     opacity: 0.2;
     transform: scale(2);
@@ -3205,17 +3215,27 @@ h2 {
     min-height: 260px;
   }
 }
-.signal-toast-stack {
+.trade-toast-stack {
   position: fixed;
   z-index: 30;
-  top: 16px;
+  top: 88px;
   right: 16px;
   width: min(360px, calc(100vw - 32px));
   display: grid;
   gap: 8px;
   pointer-events: none;
 }
-.signal-toast {
+@media (min-width: 900px) {
+  .trade-toast-stack {
+    top: 94px;
+  }
+}
+@media (max-width: 560px) {
+  .trade-toast-stack {
+    top: 74px;
+  }
+}
+.trade-toast {
   min-width: 0;
   display: grid;
   grid-template-columns: 30px minmax(0, 1fr) 28px;
@@ -3229,12 +3249,29 @@ h2 {
   background: var(--white);
   box-shadow: none;
   pointer-events: auto;
-  animation: signal-toast-in 0.24s ease-out both;
+  animation: trade-toast-in 0.24s ease-out both;
 }
-.signal-toast--short {
+.trade-toast--short {
   border-left-color: var(--red);
 }
-.signal-toast-mark {
+.trade-toast--closed {
+  border-left-color: var(--amber);
+}
+.trade-toast--kairos {
+  border-left-color: var(--signal-tide-accent, var(--amber));
+}
+.trade-toast--kairos-surge {
+  --signal-tide-accent: var(--green);
+}
+.trade-toast--kairos .trade-toast-mark {
+  color: var(--signal-tide-accent, var(--amber));
+  background: color-mix(
+    in srgb,
+    var(--signal-tide-accent, var(--amber)) 12%,
+    transparent
+  );
+}
+.trade-toast-mark {
   width: 30px;
   height: 30px;
   display: grid;
@@ -3243,35 +3280,35 @@ h2 {
   color: var(--green-ink);
   background: var(--green-soft);
 }
-.signal-toast--short .signal-toast-mark {
+.trade-toast--short .trade-toast-mark {
   color: var(--error-ink);
   background: var(--surface-error);
 }
-.signal-toast-copy {
+.trade-toast-copy {
   min-width: 0;
   display: grid;
   gap: 3px;
 }
-.signal-toast-copy strong {
+.trade-toast-copy strong {
   color: var(--muted);
   font: 9.2px var(--mono);
   text-transform: uppercase;
 }
-.signal-toast-copy > span {
+.trade-toast-copy > span {
   overflow: hidden;
   font-size: 13.8px;
   font-weight: 800;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.signal-toast-copy small {
+.trade-toast-copy small {
   overflow: hidden;
   color: var(--text-secondary);
   font: 10.4px var(--mono);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.signal-toast-dismiss {
+.trade-toast-dismiss {
   width: 28px;
   height: 28px;
   display: grid;
@@ -3282,16 +3319,16 @@ h2 {
   background: transparent;
   cursor: pointer;
 }
-.signal-toast-dismiss:hover {
+.trade-toast-dismiss:hover {
   border-color: var(--line);
   color: var(--ink);
   background: var(--surface-hover);
 }
-.signal-toast-dismiss:focus-visible {
+.trade-toast-dismiss:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
-@keyframes signal-toast-in {
+@keyframes trade-toast-in {
   from {
     opacity: 0;
     transform: translateY(-7px);
@@ -4906,7 +4943,7 @@ h2 {
 }
 
 .operations-table__protected-hint--symbol {
-  max-width: 132px;
+  max-width: 148px;
 }
 
 .operations-table__protected-hint--side {

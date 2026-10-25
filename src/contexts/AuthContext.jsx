@@ -14,6 +14,8 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const themePreferenceQueue = useRef(Promise.resolve());
+  const notificationPreferenceQueue = useRef(Promise.resolve());
+  const languagePreferenceQueue = useRef(Promise.resolve());
   const currentUserId = useRef(user?.id);
   currentUserId.current = user?.id;
 
@@ -103,6 +105,69 @@ export function AuthProvider({ children }) {
     [user?.id],
   );
 
+  const updateNotificationSoundPreferences = useCallback(
+    (preferences) => {
+      const userId = user?.id;
+      const save = async () => {
+        if (!userId || currentUserId.current !== userId) {
+          throw new Error(
+            "Notification preferences update was superseded by an account change",
+          );
+        }
+        const response = await fetch("/api/auth/notification-preferences", {
+          method: "PUT",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(preferences),
+        });
+        const savedPreferences = await readResponse(response);
+        setUser((current) =>
+          current?.id === userId
+            ? { ...current, notification_sounds: savedPreferences }
+            : current,
+        );
+        return savedPreferences;
+      };
+      const pending = notificationPreferenceQueue.current.then(save, save);
+      notificationPreferenceQueue.current = pending.catch(() => {});
+      return pending;
+    },
+    [user?.id],
+  );
+
+  const updateLanguagePreference = useCallback(
+    (language) => {
+      const userId = user?.id;
+      const save = async () => {
+        if (!userId || currentUserId.current !== userId) {
+          throw new Error(
+            "Language preference update was superseded by an account change",
+          );
+        }
+        const response = await fetch("/api/auth/language-preference", {
+          method: "PUT",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ language }),
+        });
+        const preference = await readResponse(response);
+        setUser((current) =>
+          current?.id === userId
+            ? {
+                ...current,
+                language_preference: preference.language_preference,
+              }
+            : current,
+        );
+        return preference;
+      };
+      const pending = languagePreferenceQueue.current.then(save, save);
+      languagePreferenceQueue.current = pending.catch(() => {});
+      return pending;
+    },
+    [user?.id],
+  );
+
   const value = useMemo(
     () => ({
       user,
@@ -112,8 +177,20 @@ export function AuthProvider({ children }) {
       logout,
       refresh,
       updateThemePreferences,
+      updateNotificationSoundPreferences,
+      updateLanguagePreference,
     }),
-    [user, loading, error, login, logout, refresh, updateThemePreferences],
+    [
+      user,
+      loading,
+      error,
+      login,
+      logout,
+      refresh,
+      updateThemePreferences,
+      updateNotificationSoundPreferences,
+      updateLanguagePreference,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

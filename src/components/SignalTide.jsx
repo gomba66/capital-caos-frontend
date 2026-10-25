@@ -2,6 +2,9 @@ import { Activity, Cog, Orbit } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { getSignalTideReading } from "../utils/signalTide";
 
+const TIMELINE_WINDOW_MS = 24 * 60 * 60 * 1000;
+const CURRENT_EVENT_WINDOW_MS = 5 * 60 * 1000;
+
 function gaugePoint(progress, radius = 91) {
   const angle = Math.PI * (1 - progress);
   return {
@@ -29,10 +32,11 @@ function changeLabel(value, t) {
 }
 
 function timelinePoint(point, index, points) {
-  const span = points.at(-1).time - points[0].time;
-  const x = span === 0 ? 100 : ((point.time - points[0].time) / span) * 100;
+  const timelineEnd = points.at(-1).time;
+  const timelineStart = timelineEnd - TIMELINE_WINDOW_MS;
+  const x = ((point.time - timelineStart) / TIMELINE_WINDOW_MS) * 100;
   const y = 30 - (point.score / 100) * 25;
-  return { x, y, key: `${point.time}-${index}` };
+  return { x, y, key: `${point.time}-${index}`, disturbance: point.disturbance };
 }
 
 function timelinePath(points) {
@@ -52,8 +56,17 @@ export default function SignalTide({ activeCount, history }) {
   const needleRotation = (reading.score / 100) * 180 - 90;
   const timeline = reading.indexTimeline;
   const timelineLine = timelinePath(timeline);
-  const lastTimelinePoint = timeline.length
-    ? timelinePoint(timeline.at(-1), timeline.length - 1, timeline)
+  const latestReading = timeline.at(-1);
+  const previousReading = timeline.at(-2);
+  const lastTimelinePoint = latestReading
+    ? {
+        ...timelinePoint(latestReading, timeline.length - 1, timeline),
+        disturbance:
+          latestReading.disturbance ||
+          (latestReading.score >= 75 &&
+            previousReading?.disturbance &&
+            latestReading.time - previousReading.time <= CURRENT_EVENT_WINDOW_MS),
+      }
     : null;
 
   return (
@@ -184,18 +197,16 @@ export default function SignalTide({ activeCount, history }) {
                 aria-label={t("signalTide.indexTimelineLabel")}
               >
                 <path className="signal-tide-timeline-threshold" d="M0,11.25 H100" />
-                <path className="signal-tide-timeline-line" d={timelineLine} />
+                <path
+                  className="signal-tide-timeline-line"
+                  d={timelineLine}
+                  pathLength="1"
+                />
                 {timeline.map((point, index) => {
                   if (!point.disturbance) return null;
                   const { x, y, key } = timelinePoint(point, index, timeline);
                   return (
                     <g key={key} className="signal-tide-disturbance">
-                      <circle
-                        className="signal-tide-disturbance-wave"
-                        cx={x}
-                        cy={y}
-                        r="3"
-                      />
                       <circle
                         className="signal-tide-disturbance-point"
                         cx={x}
@@ -206,12 +217,22 @@ export default function SignalTide({ activeCount, history }) {
                   );
                 })}
                 {lastTimelinePoint && (
-                  <circle
-                    className="signal-tide-sparkline-point"
-                    cx={lastTimelinePoint.x}
-                    cy={lastTimelinePoint.y}
-                    r="1.6"
-                  />
+                  <g>
+                    {lastTimelinePoint.disturbance && (
+                      <circle
+                        className="signal-tide-current-wave"
+                        cx={lastTimelinePoint.x}
+                        cy={lastTimelinePoint.y}
+                        r="2"
+                      />
+                    )}
+                    <circle
+                      className="signal-tide-sparkline-point"
+                      cx={lastTimelinePoint.x}
+                      cy={lastTimelinePoint.y}
+                      r="1.6"
+                    />
+                  </g>
                 )}
               </svg>
               <div className="signal-tide-timeline-axis" aria-hidden="true">

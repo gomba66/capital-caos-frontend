@@ -19,7 +19,6 @@ import {
 } from "@mui/material";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import BarChartIcon from "@mui/icons-material/BarChart";
-import SettingsIcon from "@mui/icons-material/Settings";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import GroupIcon from "@mui/icons-material/Group";
 import LogoutIcon from "@mui/icons-material/Logout";
@@ -113,15 +112,10 @@ export default function Sidebar() {
             icon: <GroupIcon />,
             path: "/admin/users",
           },
-          {
-            label: "navigation.settings",
-            icon: <SettingsIcon />,
-            path: "/settings",
-          },
         ]
       : []),
     {
-      label: "navigation.account",
+      label: "navigation.accountSettings",
       icon:
         user?.role === "admin" ? (
           <AdminAstronautIcon />

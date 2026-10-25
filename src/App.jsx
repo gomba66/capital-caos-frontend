@@ -13,7 +13,6 @@ import {
 } from "react-router-dom";
 import Home from "./pages/Home";
 import Charts from "./pages/Charts";
-import Settings from "./pages/Settings";
 import Evaluations from "./pages/Evaluations";
 import Account from "./pages/Account";
 import AdminUsers from "./pages/AdminUsers";
@@ -107,6 +106,7 @@ function AppContent() {
     error: authError,
     updateThemePreferences,
   } = useAuth();
+  const { i18n } = useTranslation();
   const { mode, setMode, palette, setPalette } =
     useContext(PlatformThemeContext);
   const themeRole = user?.role || "guest";
@@ -141,6 +141,15 @@ function AppContent() {
     isAdmin || user?.features?.includes("signals") === true;
   const canViewTrades =
     isAdmin || user?.features?.includes("bot_trades") === true;
+
+  useEffect(() => {
+    if (loading || !user?.language_preference) return;
+    if (i18n.resolvedLanguage !== user.language_preference) {
+      i18n.changeLanguage(user.language_preference).catch((error) => {
+        console.error("Could not apply account language preference:", error);
+      });
+    }
+  }, [i18n, loading, user?.id, user?.language_preference]);
 
   useEffect(() => {
     if (loading) return;
@@ -313,7 +322,7 @@ function AppContent() {
                   />
                   <Route
                     path="/settings"
-                    element={isAdmin ? <Settings /> : <Navigate to="/" replace />}
+                    element={<Navigate to="/account?tab=system" replace />}
                   />
                   <Route
                     path="/system-status"
