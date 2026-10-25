@@ -294,7 +294,7 @@ function SessionOpening({ nextSession, timeZone }) {
   );
 }
 
-function CurrentSessionTracker({ currentSession, nextSession }) {
+export function CurrentSessionTracker({ currentSession, nextSession }) {
   const { t, i18n } = useTranslation();
   const [now, setNow] = useState(Date.now());
   const language = i18n.resolvedLanguage === "es" ? "es" : "en";
@@ -344,6 +344,11 @@ function CurrentSessionTracker({ currentSession, nextSession }) {
             className={`session-name session-name--${presentation.name}`}
           >
             {sessionName}
+            {currentSession.is_weekend && (
+              <span className="session-weekend-marker">
+                {t("sessionNotice.weekendMarker")}
+              </span>
+            )}
           </strong>
           {presentation.parent && (
             <small className="session-parent-context">
