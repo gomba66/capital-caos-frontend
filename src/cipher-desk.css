@@ -2244,6 +2244,13 @@ h1 {
 .session-tracker .session-opening {
   flex: 1 1 auto;
 }
+.session-weekend-marker {
+  margin-left: 6px;
+  color: var(--amber-ink);
+  font: 9px var(--mono);
+  letter-spacing: 0.04em;
+  vertical-align: middle;
+}
 .session-tracker--active {
   display: grid;
   grid-template-columns: 17px minmax(0, 1fr);
