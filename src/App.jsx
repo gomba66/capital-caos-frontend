@@ -272,7 +272,7 @@ function AppContent() {
 
   if (!user) {
     return (
-      <Routes key={`${user.id}:${user.role}:${user.plan_code}`}>
+      <Routes>
         <Route path="/" element={<Landing />} />
         <Route
           path="/login"
