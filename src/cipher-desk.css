@@ -1777,7 +1777,9 @@ h1 {
   background: var(--white);
 }
 .signal-tide {
-  --signal-tide-accent: var(--brand-mark);
+  --tide-fg: var(--ink);
+  --tide-bg: var(--white);
+  --signal-tide-accent: var(--tide-fg);
   position: relative;
   display: grid;
   grid-template-columns: minmax(250px, 0.9fr) minmax(260px, 1.1fr);
@@ -1786,11 +1788,15 @@ h1 {
   margin-top: 12px;
   padding: 16px 18px 14px;
   border-left: 3px solid var(--signal-tide-accent);
-  color: var(--brand-mark);
+  color: var(--tide-fg);
   background:
     linear-gradient(120deg, transparent 42%, rgba(255, 255, 255, 0.025)),
-    var(--brand-tile);
+    var(--tide-bg);
   animation: signal-tide-arrive 360ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+:root[data-theme="dark"] .signal-tide {
+  --tide-fg: var(--brand-mark);
+  --tide-bg: var(--brand-tile);
 }
 .signal-tide::before {
   position: absolute;
@@ -1896,14 +1902,14 @@ h1 {
 .signal-tide-live,
 .signal-tide-comparison > span,
 .signal-tide-history-heading {
-  color: color-mix(in srgb, var(--brand-mark) 67%, transparent);
+  color: color-mix(in srgb, var(--tide-fg) 67%, transparent);
   font: 9px var(--mono);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 .signal-tide-heading h2 {
   margin: 0;
-  color: var(--brand-mark);
+  color: var(--tide-fg);
   font: 700 15px var(--mono);
   letter-spacing: 0.025em;
 }
@@ -1940,7 +1946,7 @@ h1 {
   stroke-width: 7;
 }
 .signal-tide-gauge-track {
-  stroke: color-mix(in srgb, var(--brand-mark) 14%, transparent);
+  stroke: color-mix(in srgb, var(--tide-fg) 14%, transparent);
 }
 .signal-tide-gauge-value {
   stroke: url(#signal-tide-gradient);
@@ -1956,7 +1962,7 @@ h1 {
   transition: none;
 }
 .signal-tide-needle line {
-  stroke: var(--brand-mark);
+  stroke: var(--tide-fg);
   stroke-linecap: round;
   stroke-width: 2;
 }
@@ -1967,17 +1973,17 @@ h1 {
 }
 .signal-tide-hub {
   fill: var(--signal-tide-accent);
-  stroke: var(--brand-tile);
+  stroke: var(--tide-bg);
   stroke-width: 2;
 }
 .signal-tide-score {
-  fill: var(--brand-mark);
+  fill: var(--tide-fg);
   font: 700 26px var(--mono);
   text-anchor: middle;
 }
 .signal-tide-score-unit,
 .signal-tide-scale {
-  fill: color-mix(in srgb, var(--brand-mark) 55%, transparent);
+  fill: color-mix(in srgb, var(--tide-fg) 55%, transparent);
   font: 7px var(--mono);
   letter-spacing: 0.06em;
   text-anchor: middle;
@@ -2003,7 +2009,7 @@ h1 {
   animation: signal-tide-gear-turn 3s linear infinite;
 }
 .signal-tide-state span {
-  color: color-mix(in srgb, var(--brand-mark) 74%, transparent);
+  color: color-mix(in srgb, var(--tide-fg) 74%, transparent);
   font-size: 10.5px;
   line-height: 1.45;
 }
@@ -2014,7 +2020,7 @@ h1 {
   align-content: center;
   gap: 14px 18px;
   padding-left: 18px;
-  border-left: 1px solid color-mix(in srgb, var(--brand-mark) 15%, transparent);
+  border-left: 1px solid color-mix(in srgb, var(--tide-fg) 15%, transparent);
 }
 .signal-tide-comparisons {
   display: grid;
@@ -2027,8 +2033,8 @@ h1 {
   align-content: start;
   gap: 7px;
   padding: 9px 10px;
-  border: 1px solid color-mix(in srgb, var(--brand-mark) 13%, transparent);
-  background: color-mix(in srgb, var(--brand-mark) 4%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tide-fg) 13%, transparent);
+  background: color-mix(in srgb, var(--tide-fg) 4%, transparent);
   animation: signal-tide-card-breathe 5s ease-in-out infinite;
 }
 .signal-tide-comparison:nth-child(2) {
@@ -2046,7 +2052,7 @@ h1 {
 }
 .signal-tide-comparison > strong {
   min-width: 0;
-  color: var(--brand-mark);
+  color: var(--tide-fg);
   font: 500 clamp(9px, 0.8vw, 12px) var(--mono);
   font-variant-numeric: tabular-nums;
   line-height: 1.25;
@@ -2056,7 +2062,7 @@ h1 {
   min-width: 0;
   grid-column: 1 / -1;
   padding-top: 10px;
-  border-top: 1px solid color-mix(in srgb, var(--brand-mark) 13%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--tide-fg) 13%, transparent);
 }
 .signal-tide-history-heading {
   display: flex;
@@ -2070,7 +2076,7 @@ h1 {
   gap: 6px;
 }
 .signal-tide-history-heading small {
-  color: color-mix(in srgb, var(--brand-mark) 53%, transparent);
+  color: color-mix(in srgb, var(--tide-fg) 53%, transparent);
   font: 8px var(--mono);
 }
 .signal-tide-sparkline {
@@ -2097,12 +2103,12 @@ h1 {
 }
 .signal-tide-disturbance-point {
   fill: var(--signal-tide-accent);
-  stroke: var(--brand-tile);
+  stroke: var(--tide-bg);
   stroke-width: 0.7;
   vector-effect: non-scaling-stroke;
 }
 .signal-tide-sparkline-point {
-  fill: var(--brand-tile);
+  fill: var(--tide-bg);
   stroke: var(--signal-tide-accent);
   stroke-width: 1.2;
   vector-effect: non-scaling-stroke;
@@ -2118,14 +2124,14 @@ h1 {
   display: flex;
   justify-content: space-between;
   margin-top: 2px;
-  color: color-mix(in srgb, var(--brand-mark) 48%, transparent);
+  color: color-mix(in srgb, var(--tide-fg) 48%, transparent);
   font: 7px var(--mono);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 .signal-tide-warming {
   margin: 8px 0 0;
-  color: color-mix(in srgb, var(--brand-mark) 58%, transparent);
+  color: color-mix(in srgb, var(--tide-fg) 58%, transparent);
   font: 9px var(--mono);
   line-height: 1.45;
 }
@@ -2133,8 +2139,8 @@ h1 {
   grid-column: 1 / -1;
   margin: 0;
   padding-top: 9px;
-  border-top: 1px solid color-mix(in srgb, var(--brand-mark) 13%, transparent);
-  color: color-mix(in srgb, var(--brand-mark) 72%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--tide-fg) 13%, transparent);
+  color: color-mix(in srgb, var(--tide-fg) 72%, transparent);
   font-size: 10px;
   font-style: italic;
   line-height: 1.45;
@@ -2288,8 +2294,8 @@ h1 {
 @keyframes signal-tide-card-breathe {
   0%,
   100% {
-    border-color: color-mix(in srgb, var(--brand-mark) 13%, transparent);
-    background-color: color-mix(in srgb, var(--brand-mark) 4%, transparent);
+    border-color: color-mix(in srgb, var(--tide-fg) 13%, transparent);
+    background-color: color-mix(in srgb, var(--tide-fg) 4%, transparent);
   }
   50% {
     border-color: color-mix(in srgb, var(--signal-tide-accent) 28%, transparent);
@@ -2330,7 +2336,7 @@ h1 {
     gap: 12px;
     padding-top: 12px;
     padding-left: 0;
-    border-top: 1px solid color-mix(in srgb, var(--brand-mark) 15%, transparent);
+    border-top: 1px solid color-mix(in srgb, var(--tide-fg) 15%, transparent);
     border-left: 0;
   }
 }
