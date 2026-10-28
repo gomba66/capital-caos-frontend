@@ -3,6 +3,7 @@ import React, {
   useMemo,
   useEffect,
   useContext,
+  useRef,
 } from "react";
 import {
   BrowserRouter as Router,
@@ -117,6 +118,8 @@ function AppContent() {
   const themePreferenceOwner = `${themeRole}:${themeUserId || "default"}`;
   const [loadedThemePreferenceOwner, setLoadedThemePreferenceOwner] =
     useState(null);
+  // Theme just received from the account/storage that local state has not caught up with yet.
+  const appliedThemeRef = useRef(null);
   const localZone = DateTime.local().zoneName;
   const [timeZone, setTimeZone] = useState(() => {
     return localStorage.getItem("timeZone") || localZone;
@@ -176,6 +179,7 @@ function AppContent() {
             palette: user.theme_palette,
           })
         : readThemePreferences(themeRole, themeUserId);
+    appliedThemeRef.current = preferences;
     setMode(preferences.mode);
     setPalette(preferences.palette);
     setLoadedThemePreferenceOwner(themePreferenceOwner);
@@ -209,6 +213,11 @@ function AppContent() {
       loadedThemePreferenceOwner !== themePreferenceOwner
     ) {
       return;
+    }
+    const applied = appliedThemeRef.current;
+    if (applied) {
+      if (applied.mode !== mode || applied.palette !== palette) return;
+      appliedThemeRef.current = null;
     }
     const preferences = normalizeThemePreferences(themeRole, { mode, palette });
     if (
