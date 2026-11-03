@@ -226,4 +226,25 @@ describe("SignalTide", () => {
       container.querySelector(".signal-tide-disturbance .signal-tide-current-wave"),
     ).not.toBeInTheDocument();
   });
+
+  it("labels each rising marker with its time and shows clock ticks on the axis", () => {
+    const history = [
+      ...[11.5, 10.5, 9.5, 8.5, 7.5, 6.5].map((hoursAgo) => ({
+        timestamp: new Date(now - hoursAgo * 60 * 60 * 1000).toISOString(),
+        active_count: 0,
+      })),
+      ...[5.5, 5, 4.5, 4, 3.5, 3, 2.5].map((hoursAgo) => ({
+        timestamp: new Date(now - hoursAgo * 60 * 60 * 1000).toISOString(),
+        active_count: 20,
+      })),
+    ];
+    const { container } = renderSignalTide(20, history);
+
+    const markers = container.querySelectorAll(".signal-tide-disturbance");
+    expect(markers.length).toBeGreaterThan(0);
+    markers.forEach((marker) => {
+      expect(marker.getAttribute("title")).toMatch(/^Rising at .+ \(index \d+\)$/);
+    });
+    expect(container.querySelectorAll(".signal-tide-timeline-tick").length).toBeGreaterThan(0);
+  });
 });
