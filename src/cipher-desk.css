@@ -2079,11 +2079,14 @@ h1 {
   color: color-mix(in srgb, var(--tide-fg) 53%, transparent);
   font: 8px var(--mono);
 }
+.signal-tide-chart {
+  position: relative;
+  margin-top: 7px;
+}
 .signal-tide-sparkline {
   width: 100%;
   height: 42px;
   display: block;
-  margin-top: 7px;
   overflow: visible;
 }
 .signal-tide-timeline-line {
@@ -2101,33 +2104,70 @@ h1 {
   stroke-dasharray: 1.5 2.5;
   vector-effect: non-scaling-stroke;
 }
+.signal-tide-markers {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.signal-tide-disturbance,
+.signal-tide-current-marker {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+.signal-tide-disturbance {
+  pointer-events: auto;
+  cursor: help;
+}
+.signal-tide-disturbance::before {
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  transform: translate(-50%, -50%);
+}
+.signal-tide-disturbance-point,
+.signal-tide-sparkline-point,
+.signal-tide-current-wave {
+  position: absolute;
+  display: block;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
 .signal-tide-disturbance-point {
-  fill: var(--signal-tide-accent);
-  stroke: var(--tide-bg);
-  stroke-width: 0.7;
-  vector-effect: non-scaling-stroke;
+  width: 7px;
+  height: 7px;
+  background: var(--signal-tide-accent);
+  box-shadow: 0 0 0 1.5px var(--tide-bg);
 }
 .signal-tide-sparkline-point {
-  fill: var(--tide-bg);
-  stroke: var(--signal-tide-accent);
-  stroke-width: 1.2;
-  vector-effect: non-scaling-stroke;
+  width: 8px;
+  height: 8px;
+  background: var(--tide-bg);
+  border: 1.5px solid var(--signal-tide-accent);
+  box-sizing: border-box;
 }
 .signal-tide-current-wave {
-  fill: var(--signal-tide-accent);
+  width: 8px;
+  height: 8px;
+  background: var(--signal-tide-accent);
   opacity: 0;
-  transform-box: fill-box;
-  transform-origin: center;
   animation: signal-tide-disturbance-wave 2.2s ease-out infinite;
 }
 .signal-tide-timeline-axis {
+  position: relative;
   display: flex;
   justify-content: space-between;
-  margin-top: 2px;
+  margin-top: 4px;
   color: color-mix(in srgb, var(--tide-fg) 48%, transparent);
   font: 7px var(--mono);
   letter-spacing: 0.06em;
   text-transform: uppercase;
+}
+.signal-tide-timeline-tick {
+  position: absolute;
+  transform: translateX(-50%);
+  white-space: nowrap;
 }
 .signal-tide-warming {
   margin: 8px 0 0;
@@ -2305,11 +2345,11 @@ h1 {
 @keyframes signal-tide-disturbance-wave {
   0% {
     opacity: 0.64;
-    transform: scale(0.55);
+    transform: translate(-50%, -50%) scale(0.55);
   }
   100% {
     opacity: 0;
-    transform: scale(3.8);
+    transform: translate(-50%, -50%) scale(3.8);
   }
 }
 @keyframes signal-tide-credo-arrive {

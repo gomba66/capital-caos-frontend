@@ -6,6 +6,29 @@ import { getSignalTideReading } from "../utils/signalTide";
 const TIMELINE_WINDOW_MS = 24 * 60 * 60 * 1000;
 const CURRENT_EVENT_WINDOW_MS = 5 * 60 * 1000;
 const PREVIEW_SCORE_TRANSITION_MS = 2200;
+const AXIS_TICK_INTERVAL_MS = 6 * 60 * 60 * 1000;
+const TIMELINE_VIEWBOX_HEIGHT = 32;
+
+function formatClock(time, locale) {
+  return new Date(time).toLocaleTimeString(locale, {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function axisTicks(timeline) {
+  const end = timeline.at(-1).time;
+  const start = end - TIMELINE_WINDOW_MS;
+  const ticks = [];
+  for (
+    let time = Math.ceil(start / AXIS_TICK_INTERVAL_MS) * AXIS_TICK_INTERVAL_MS;
+    time < end;
+    time += AXIS_TICK_INTERVAL_MS
+  ) {
+    ticks.push({ time, x: ((time - start) / TIMELINE_WINDOW_MS) * 100 });
+  }
+  return ticks.filter((tick) => tick.x > 4 && tick.x < 94);
+}
 
 function gaugePoint(progress, radius = 91) {
   const angle = Math.PI * (1 - progress);
@@ -56,7 +79,7 @@ export default function SignalTide({
   preview = false,
   now = Date.now(),
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const reading = useMemo(
     () => getSignalTideReading(activeCount, history, now),
     [activeCount, history, now],
@@ -138,6 +161,7 @@ export default function SignalTide({
   const timelineLine = timelinePath(timeline);
   const latestReading = timeline.at(-1);
   const previousReading = timeline.at(-2);
+  const locale = i18n?.language;
   const lastTimelinePoint = latestReading
     ? {
         ...timelinePoint(latestReading, timeline.length - 1, timeline),
@@ -270,54 +294,71 @@ export default function SignalTide({
           </div>
           {timeline.length ? (
             <>
-              <svg
-                className="signal-tide-sparkline"
-                viewBox="0 0 100 32"
-                preserveAspectRatio="none"
-                role="img"
-                aria-label={t("signalTide.indexTimelineLabel")}
-              >
-                <path className="signal-tide-timeline-threshold" d="M0,11.25 H100" />
-                <path
-                  className="signal-tide-timeline-line"
-                  d={timelineLine}
-                  pathLength="1"
-                />
-                {timeline.map((point, index) => {
-                  if (!point.disturbance) return null;
-                  const { x, y, key } = timelinePoint(point, index, timeline);
-                  return (
-                    <g key={key} className="signal-tide-disturbance">
-                      <circle
-                        className="signal-tide-disturbance-point"
-                        cx={x}
-                        cy={y}
-                        r="1.4"
-                      />
-                    </g>
-                  );
-                })}
-                {lastTimelinePoint && (
-                  <g>
-                    {lastTimelinePoint.disturbance && (
-                      <circle
-                        className="signal-tide-current-wave"
-                        cx={lastTimelinePoint.x}
-                        cy={lastTimelinePoint.y}
-                        r="2"
-                      />
-                    )}
-                    <circle
-                      className="signal-tide-sparkline-point"
-                      cx={lastTimelinePoint.x}
-                      cy={lastTimelinePoint.y}
-                      r="1.6"
-                    />
-                  </g>
-                )}
-              </svg>
+              <div className="signal-tide-chart">
+                <svg
+                  className="signal-tide-sparkline"
+                  viewBox="0 0 100 32"
+                  preserveAspectRatio="none"
+                  role="img"
+                  aria-label={t("signalTide.indexTimelineLabel")}
+                >
+                  <path className="signal-tide-timeline-threshold" d="M0,11.25 H100" />
+                  <path
+                    className="signal-tide-timeline-line"
+                    d={timelineLine}
+                    pathLength="1"
+                  />
+                </svg>
+                <div className="signal-tide-markers">
+                  {timeline.map((point, index) => {
+                    if (!point.disturbance) return null;
+                    const { x, y, key } = timelinePoint(point, index, timeline);
+                    const label = t("signalTide.risingAt", {
+                      time: formatClock(point.time, locale),
+                      score: point.score,
+                    });
+                    return (
+                      <span
+                        key={key}
+                        className="signal-tide-disturbance"
+                        style={{
+                          left: `${x}%`,
+                          top: `${(y / TIMELINE_VIEWBOX_HEIGHT) * 100}%`,
+                        }}
+                        title={label}
+                        aria-label={label}
+                      >
+                        <i className="signal-tide-disturbance-point" />
+                      </span>
+                    );
+                  })}
+                  {lastTimelinePoint && (
+                    <span
+                      className="signal-tide-current-marker"
+                      style={{
+                        left: `${lastTimelinePoint.x}%`,
+                        top: `${(lastTimelinePoint.y / TIMELINE_VIEWBOX_HEIGHT) * 100}%`,
+                      }}
+                    >
+                      {lastTimelinePoint.disturbance && (
+                        <i className="signal-tide-current-wave" />
+                      )}
+                      <i className="signal-tide-sparkline-point" />
+                    </span>
+                  )}
+                </div>
+              </div>
               <div className="signal-tide-timeline-axis" aria-hidden="true">
                 <span>{t("signalTide.timelineStart")}</span>
+                {axisTicks(timeline).map((tick) => (
+                  <span
+                    key={tick.time}
+                    className="signal-tide-timeline-tick"
+                    style={{ left: `${tick.x}%` }}
+                  >
+                    {formatClock(tick.time, locale)}
+                  </span>
+                ))}
                 <span>{t("signalTide.timelineNow")}</span>
               </div>
             </>
